@@ -54,6 +54,19 @@ services/groth.ts`) y el contrato `auction` la exige y la verifica on-chain
 cross-contract contra `verifier`. La ruta Noir/UltraHonk queda como prueba
 off-chain alternativa (modo demo).
 
+## Limitación conocida: solvencia confidencial del token
+
+El token Pedersen es ocultante/vinculante/homomórfico y auditable por apertura
+(`verify_opening`). Lo que **no** está implementado es una *prueba de rango*
+que demuestre on-chain que una transferencia no deja el balance negativo
+(`monto ≤ balance`) **sin revelar nada**. Una prueba así, ligada al compromiso
+Pedersen concreto de la cuenta, requiere hacer aritmética de curva *dentro* del
+circuito; para que sea eficiente hace falta un par de curvas en ciclo (p. ej.
+BN254/Grumpkin), de modo que las operaciones del grupo de compromisos sean
+operaciones nativas del campo del circuito. Es el siguiente paso de
+endurecimiento y es trabajo de nivel investigación; no se incluye una versión
+sin ese binding porque sería insegura (security theater).
+
 ## Modelo de privacidad
 
 | Dato | Visibilidad |

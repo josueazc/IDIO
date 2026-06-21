@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuctions } from '../utils/useAuctions'
 import { fmtUSD } from '../utils/format'
+import ConfidentialBalance from '../components/ConfidentialBalance'
 
 export default function Audit() {
   const { auctions } = useAuctions()
@@ -96,11 +97,13 @@ export default function Audit() {
           <div className="space-y-2 border-t border-edge/60 p-5">
             <Verdict label="Proceso justo — mayor oferta gana" />
             <Verdict label="Sin manipulación de compromisos" />
-            <Verdict label="Verificado matemáticamente (Poseidon2)" />
+            <Verdict label="Verificado matemáticamente (compromisos SHA-256 / Groth16)" />
             <button className="btn-primary mt-3">Generar reporte firmado</button>
           </div>
         </div>
       )}
+
+      <ConfidentialBalance />
     </div>
   )
 }

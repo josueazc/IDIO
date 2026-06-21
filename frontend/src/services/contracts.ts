@@ -258,6 +258,23 @@ export const chain = {
     await invokeContract(config.contracts.auction, 'settle', [u64(auctionId)], caller)
   },
 
+  /** Compromiso Pedersen del balance de una cuenta (64 bytes hex). */
+  async tokenCommitment(who: string): Promise<string> {
+    const res = (await readContract(config.contracts.token, 'commitment', [addr(who)])) as Uint8Array
+    return [...res].map((b) => b.toString(16).padStart(2, '0')).join('')
+  },
+
+  /** Verifica una apertura del balance: ¿C_who == amount·G + blinding·H? */
+  async tokenVerifyOpening(who: string, amount: number, blindingHex: string): Promise<boolean> {
+    return Boolean(
+      await readContract(config.contracts.token, 'verify_opening', [
+        addr(who),
+        i128(amount),
+        bytes32(blindingHex),
+      ])
+    )
+  },
+
   /** Compromiso Pedersen del monto (lectura): `amount·G + blinding·H`. */
   async tokenCommitValue(amount: number, blindingHex: string): Promise<string> {
     const res = (await readContract(config.contracts.token, 'commit_value', [

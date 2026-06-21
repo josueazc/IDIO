@@ -16,6 +16,9 @@ import type { Auction } from '../types'
 /** Resultado de la última prueba ZK generada (para mostrar en la UI). */
 export let lastProof: ZkResult | null = null
 
+/** Secreto de la última oferta (para que el usuario lo guarde y revele luego). */
+export let lastBidSecret: { amount: number; salt: string } | null = null
+
 export type Mode = 'demo' | 'chain'
 const MODE_KEY = 'idio.mode'
 const SALT_KEY = 'idio.salts'
@@ -109,6 +112,7 @@ export async function submitBid(
     lastProof = { proofHex: proof.a, witnessOk: true, proofOk: true, ms: 0 }
     await chain.submitSealedBid(auctionId, address, commitment, proof)
     saveSalt(auctionId, address, amount, salt)
+    lastBidSecret = { amount, salt }
   } else {
     // Demo: prueba Noir UltraHonk (verificable off-chain en el navegador).
     lastProof = await proveSealedBid(amount, balance, minBid, salt, commitment)
@@ -124,6 +128,18 @@ export async function revealBid(auctionId: number, address: string): Promise<voi
     await chain.revealBid(auctionId, address, s.amount, s.salt)
     emit()
   }
+}
+
+/** Revela con datos provistos manualmente (p. ej. desde otro dispositivo). */
+export async function revealBidManual(
+  auctionId: number,
+  address: string,
+  amount: number,
+  salt: string
+): Promise<void> {
+  await chain.revealBid(auctionId, address, amount, salt)
+  saveSalt(auctionId, address, amount, salt)
+  emit()
 }
 
 export async function settle(auctionId: number, caller: string): Promise<void> {

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuctions } from '../utils/useAuctions'
 import AuctionCard from '../components/AuctionCard'
 import BidForm from '../components/BidForm'
-import { settle, revealBid, payWinner, resetDemo, getMode } from '../services/data'
+import { settle, revealBid, revealBidManual, getSalt, payWinner, resetDemo, getMode } from '../services/data'
 import { useRole } from '../utils/useRole'
 import { can } from '../services/role'
 import type { Auction } from '../types'
@@ -39,10 +39,23 @@ export default function Auctions({ address }: Props) {
       // En testnet, primero revelamos la oferta propia (con el salt local)
       // y luego liquidamos. Si ya estaba revelada o no es nuestra, seguimos.
       if (getMode() === 'chain' && address) {
-        try {
-          await revealBid(au.id, address)
-        } catch {
-          /* sin oferta propia para revelar, o ya revelada */
+        if (getSalt(au.id, address)) {
+          try {
+            await revealBid(au.id, address)
+          } catch {
+            /* ya revelada */
+          }
+        } else {
+          // Sin salt local (p. ej. otro dispositivo): pedir los datos.
+          const amountStr = window.prompt('Monto de tu oferta a revelar (ej. 15000000):')
+          const salt = amountStr ? window.prompt('Salt (hex) de tu oferta:') : null
+          if (amountStr && salt) {
+            try {
+              await revealBidManual(au.id, address, Number(amountStr), salt.trim())
+            } catch (e) {
+              alert((e as Error).message)
+            }
+          }
         }
       }
       await settle(au.id, address ?? '')

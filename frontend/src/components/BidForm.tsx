@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Auction } from '../types'
 import { fmtUSD } from '../utils/format'
-import { submitBid, getMode, lastProof } from '../services/data'
+import { submitBid, getMode, lastProof, lastBidSecret } from '../services/data'
 
 interface Props {
   auction: Auction
@@ -108,6 +108,13 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
           <div className="mt-4 rounded-lg bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-300">
             Oferta sellada registrada. Nadie puede ver tu monto.
             {proofInfo && <div className="mt-1 text-xs text-emerald-400/80">{proofInfo}</div>}
+            {getMode() === 'chain' && lastBidSecret && (
+              <div className="mt-2 rounded bg-ink/50 p-2 text-[11px] text-slate-300">
+                Guardá esto para revelar luego (incluso en otro dispositivo):
+                <div className="mt-1 font-mono break-all">monto={lastBidSecret.amount}</div>
+                <div className="font-mono break-all">salt={lastBidSecret.salt}</div>
+              </div>
+            )}
           </div>
         )}
 
