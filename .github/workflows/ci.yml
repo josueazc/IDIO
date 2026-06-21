@@ -21,6 +21,15 @@ jobs:
         working-directory: contracts
         run: cargo build --target wasm32v1-none --release
 
+  prover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test prover (circuitos Groth16)
+        working-directory: prover
+        run: cargo test
+
   frontend:
     runs-on: ubuntu-latest
     steps:

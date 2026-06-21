@@ -205,7 +205,7 @@
                   "u64": "100"
                 },
                 {
-                  "bytes": "f1b5451c9839ef8cf6c80903a499a0bf5a9d1446981d29c8a2102c318cf46862"
+                  "bytes": "3fde2252541b244d37685dd6b870bb6cff07426a1111bfef71b66bf5fe51c7c7"
                 },
                 {
                   "map": [
@@ -335,7 +335,7 @@
                       "symbol": "reserves_commitment"
                     },
                     "val": {
-                      "bytes": "f1b5451c9839ef8cf6c80903a499a0bf5a9d1446981d29c8a2102c318cf46862"
+                      "bytes": "3fde2252541b244d37685dd6b870bb6cff07426a1111bfef71b66bf5fe51c7c7"
                     }
                   },
                   {

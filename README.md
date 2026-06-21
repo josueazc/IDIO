@@ -48,20 +48,21 @@ Los cuatro contratos están desplegados, inicializados y verificados en testnet.
 
 | Contrato | ID |
 |----------|----|
-| Auction | [`CB5LFRG2ZKWDDIC4EISCJYLHFR5HNENHQKWLHZ6SVSL33WQRWAQQO6LZ`](https://stellar.expert/explorer/testnet/contract/CB5LFRG2ZKWDDIC4EISCJYLHFR5HNENHQKWLHZ6SVSL33WQRWAQQO6LZ) |
-| ASP | [`CA7Z7PRBUW4WTBGZQJTKUXQQVCOVEXM3OQSZB2GLDMPDWGZANEXARERO`](https://stellar.expert/explorer/testnet/contract/CA7Z7PRBUW4WTBGZQJTKUXQQVCOVEXM3OQSZB2GLDMPDWGZANEXARERO) |
-| Token | [`CD7L23OCVDMB2PQ4Y7GJZ4SPAUQ7R44BF5UHHHZHSD7WGAA3KYFYGCUB`](https://stellar.expert/explorer/testnet/contract/CD7L23OCVDMB2PQ4Y7GJZ4SPAUQ7R44BF5UHHHZHSD7WGAA3KYFYGCUB) |
-| Verifier | [`CBJQ3FADEOOVBN3G7ZN66FUHSB7MOK5SBJ2F3NZBJHLWK3PCONYF4YLV`](https://stellar.expert/explorer/testnet/contract/CBJQ3FADEOOVBN3G7ZN66FUHSB7MOK5SBJ2F3NZBJHLWK3PCONYF4YLV) |
+| Auction | [`CAYM26B6AVARFVTQEXPXSB753MMPLA7GZ4RANN7ID3M7LFYM3KTZQRFT`](https://stellar.expert/explorer/testnet/contract/CAYM26B6AVARFVTQEXPXSB753MMPLA7GZ4RANN7ID3M7LFYM3KTZQRFT) |
+| ASP | [`CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY`](https://stellar.expert/explorer/testnet/contract/CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY) |
+| Token | [`CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH`](https://stellar.expert/explorer/testnet/contract/CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH) |
+| Verifier | [`CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6`](https://stellar.expert/explorer/testnet/contract/CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6) |
 
 **Lo que funciona de verdad, hoy:**
 
 - Subastas, ofertas selladas y gating de compliance **on-chain** (cross-contract real auction → ASP).
-- **Pruebas Zero-Knowledge reales en el navegador**: el circuito Noir `sealed_bid` se ejecuta y se genera una prueba UltraHonk (~14.6 KB, ~3.7 s) con `@aztec/bb.js`, sin revelar el monto.
-- **Verificación Groth16 BN254 on-chain real**: `verify_groth16` evalúa la ecuación de pairings con las host functions BN254 nativas de Protocol 26 (`g1_mul`/`g1_add`/`pairing_check`); test con prueba real de arkworks.
-- **Token confidencial real**: balances como compromisos Pedersen `v·G + r·H` sobre BN254, transferencias homomórficas, monto nunca en claro (verificado on-chain en testnet).
+- **Puente ZK navegador → cadena (Groth16 BN254):** al ofertar, el navegador genera una prueba Groth16 de elegibilidad (`balance ≥ oferta ≥ mínimo`) con un prover arkworks compilado a **WASM** (~1.3 s); el contrato la **exige y la verifica on-chain** vía cross-contract `auction → verifier` (`pairing_check` nativo). Al crear una subasta exige una prueba de reservas (`total ≥ monto`). Verificado en testnet.
+- **Token confidencial real**: balances como compromisos Pedersen `v·G + r·H` sobre BN254, transferencias homomórficas, monto nunca en claro.
 - **Pago/liquidación confidencial**: el ganador paga al emisor vía `settle_payment` (cross-contract auction → token), con el monto oculto en un compromiso.
-- Compromiso `SHA-256(be16(monto) ‖ salt)` **idéntico byte a byte** en las tres capas (frontend, contrato y circuito) — vector verificado `d772f954…123825`.
-- El frontend tiene un toggle **Demo / Testnet**: Demo funciona offline; Testnet lee por simulación y escribe firmando con Freighter.
+- **Pruebas Noir UltraHonk en el navegador** (modo demo): el circuito `sealed_bid` se ejecuta y se prueba con `@aztec/bb.js`, sin revelar el monto.
+- Compromiso `SHA-256(be16(monto) ‖ salt)` **idéntico byte a byte** en las tres capas — vector verificado `d772f954…123825`.
+- **Separación por rol**: Emisor / Oferente / Auditor / Regulador; cada rol ve y puede hacer solo lo suyo.
+- Toggle **Demo / Testnet**: Demo funciona offline; Testnet lee por simulación y escribe firmando con Freighter.
 
 ---
 

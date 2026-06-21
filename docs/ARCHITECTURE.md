@@ -45,8 +45,14 @@ IDIO usa **dos** tecnologías ZK que cumplen roles distintos:
   predicados de elegibilidad expresados como circuitos Groth16.
 
 UltraHonk no se verifica on-chain (su verificador es mucho más complejo que un
-par de pairings); por eso la verificación on-chain usa Groth16. Unir ambos
-mundos (Noir→Groth16) es trabajo futuro.
+par de pairings); por eso la verificación on-chain usa Groth16.
+
+**Puente Noir→Groth16 (implementado).** El flujo de oferta en testnet usa el
+camino Groth16 de extremo a extremo: el navegador genera la prueba de
+elegibilidad con un prover arkworks en WASM (`prover/`, ver `frontend/src/
+services/groth.ts`) y el contrato `auction` la exige y la verifica on-chain
+cross-contract contra `verifier`. La ruta Noir/UltraHonk queda como prueba
+off-chain alternativa (modo demo).
 
 ## Modelo de privacidad
 
