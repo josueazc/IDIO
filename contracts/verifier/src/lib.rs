@@ -62,7 +62,7 @@ mod test {
     #[test]
     fn commitment_roundtrip() {
         let env = Env::default();
-        let id = env.register_contract(None, Verifier);
+        let id = env.register(Verifier, ());
         let client = VerifierClient::new(&env, &id);
 
         let salt = BytesN::random(&env);

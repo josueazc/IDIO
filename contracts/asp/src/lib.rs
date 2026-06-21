@@ -109,7 +109,7 @@ mod test {
     fn allow_and_check() {
         let env = Env::default();
         env.mock_all_auths();
-        let id = env.register_contract(None, Asp);
+        let id = env.register(Asp, ());
         let client = AspClient::new(&env, &id);
 
         let admin = Address::generate(&env);

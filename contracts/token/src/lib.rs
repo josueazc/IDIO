@@ -109,7 +109,7 @@ mod test {
     fn confidential_transfer() {
         let env = Env::default();
         env.mock_all_auths();
-        let id = env.register_contract(None, ConfidentialToken);
+        let id = env.register(ConfidentialToken, ());
         let client = ConfidentialTokenClient::new(&env, &id);
 
         let admin = Address::generate(&env);

@@ -361,7 +361,7 @@ mod test {
 
     /// Despliega un ASP real, lo inicializa y autoriza a `banks`.
     fn setup_asp(env: &Env, admin: &Address, banks: &[&Address]) -> Address {
-        let asp_id = env.register_contract(None, Asp);
+        let asp_id = env.register(Asp, ());
         let asp = RealAspClient::new(env, &asp_id);
         asp.initialize(admin);
         for b in banks {
@@ -374,7 +374,7 @@ mod test {
     fn full_auction_flow() {
         let env = Env::default();
         env.mock_all_auths();
-        let id = env.register_contract(None, AuctionContract);
+        let id = env.register(AuctionContract, ());
         let client = AuctionContractClient::new(&env, &id);
 
         let admin = Address::generate(&env);
@@ -426,7 +426,7 @@ mod test {
     fn reveal_with_wrong_amount_fails() {
         let env = Env::default();
         env.mock_all_auths();
-        let id = env.register_contract(None, AuctionContract);
+        let id = env.register(AuctionContract, ());
         let client = AuctionContractClient::new(&env, &id);
 
         let admin = Address::generate(&env);
@@ -457,7 +457,7 @@ mod test {
     fn bid_from_non_whitelisted_fails() {
         let env = Env::default();
         env.mock_all_auths();
-        let id = env.register_contract(None, AuctionContract);
+        let id = env.register(AuctionContract, ());
         let client = AuctionContractClient::new(&env, &id);
 
         let admin = Address::generate(&env);
