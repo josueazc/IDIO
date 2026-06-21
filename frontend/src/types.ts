@@ -1,0 +1,35 @@
+export type AuctionStatus = 'BiddingOpen' | 'BiddingClosed' | 'Settled' | 'Cancelled'
+
+export type Role = 'issuer' | 'bidder' | 'auditor' | 'regulator'
+
+export interface SealedBid {
+  /** Nombre legible del banco (solo para demo / view key). */
+  bidderName: string
+  bidderAddress: string
+  /** Compromiso H(monto || salt) — lo único público durante la subasta. */
+  commitment: string
+  /** Monto revelado (oculto hasta el reveal). */
+  amount: number
+  revealed: boolean
+  timestamp: number
+  /** Estado de compliance del participante. */
+  whitelisted: boolean
+}
+
+export interface Auction {
+  id: number
+  issuer: string
+  asset: string
+  amount: number
+  minBid: number
+  currency: string
+  status: AuctionStatus
+  description: string
+  reservesCommitment: string
+  bids: SealedBid[]
+  winner?: string
+  winnerName?: string
+  winningAmount?: number
+  createdAt: number
+  endTime: number
+}
