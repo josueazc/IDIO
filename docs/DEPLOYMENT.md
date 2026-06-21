@@ -1,5 +1,10 @@
 # Deployment (Stellar Testnet)
 
+> Ya hay un despliegue activo en testnet — ver direcciones en
+> [`deployments.testnet.json`](../deployments.testnet.json) y en el README.
+> El frontend apunta a esos contratos por defecto. Esta guía es para
+> redesplegar desde cero.
+
 ## 1. Identidad y fondos
 
 ```bash

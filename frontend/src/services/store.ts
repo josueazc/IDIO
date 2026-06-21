@@ -6,7 +6,7 @@
  * contratos Soroban (ver `contracts.ts`).
  */
 import type { Auction, SealedBid } from '../types'
-import { commitBid, generateSealedBidProof, generateReservesProof } from './proofs'
+import { commitBid, generateReservesProof } from './proofs'
 
 const KEY = 'idio.auctions.v1'
 type Listener = () => void
@@ -145,30 +145,6 @@ export async function createAuction(input: CreateAuctionInput): Promise<Auction>
   }
   save([auction, ...auctions])
   return auction
-}
-
-export async function submitBid(
-  auctionId: number,
-  bidderName: string,
-  bidderAddress: string,
-  amount: number,
-  availableBalance: number
-): Promise<void> {
-  const auctions = load()
-  const auction = auctions.find((a) => a.id === auctionId)
-  if (!auction) throw new Error('Subasta no encontrada')
-
-  const { commitment } = await generateSealedBidProof(amount, availableBalance, auction.minBid)
-  auction.bids.push({
-    bidderName,
-    bidderAddress,
-    commitment: commitment.slice(0, 8) + '…',
-    amount,
-    revealed: false,
-    timestamp: Date.now(),
-    whitelisted: true,
-  })
-  save(auctions)
 }
 
 /** Registra una oferta sellada con un compromiso ya calculado. */

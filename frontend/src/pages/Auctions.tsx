@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuctions } from '../utils/useAuctions'
 import AuctionCard from '../components/AuctionCard'
 import BidForm from '../components/BidForm'
-import { settle, resetDemo, getMode } from '../services/data'
+import { settle, revealBid, resetDemo, getMode } from '../services/data'
 import type { Auction } from '../types'
 
 interface Props {
@@ -22,6 +22,15 @@ export default function Auctions({ address }: Props) {
   async function onSettle(au: Auction) {
     setBusy(au.id)
     try {
+      // En testnet, primero revelamos la oferta propia (con el salt local)
+      // y luego liquidamos. Si ya estaba revelada o no es nuestra, seguimos.
+      if (getMode() === 'chain' && address) {
+        try {
+          await revealBid(au.id, address)
+        } catch {
+          /* sin oferta propia para revelar, o ya revelada */
+        }
+      }
       await settle(au.id, address ?? '')
     } catch (e) {
       alert((e as Error).message)
