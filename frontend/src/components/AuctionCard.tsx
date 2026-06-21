@@ -6,9 +6,10 @@ interface Props {
   auction: Auction
   onBid?: (a: Auction) => void
   onSettle?: (a: Auction) => void
+  onPay?: (a: Auction) => void
 }
 
-export default function AuctionCard({ auction, onBid, onSettle }: Props) {
+export default function AuctionCard({ auction, onBid, onSettle, onPay }: Props) {
   const open = auction.status === 'BiddingOpen'
   const closed = open && auction.endTime <= Date.now()
   return (
@@ -36,9 +37,20 @@ export default function AuctionCard({ auction, onBid, onSettle }: Props) {
           {auction.bids.length !== 1 ? 's' : ''}
         </div>
         {auction.status === 'Settled' ? (
-          <span className="text-xs text-slate-400">
-            Ganador: <span className="font-semibold text-brand-soft">{auction.winnerName}</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400">
+              Ganador: <span className="font-semibold text-brand-soft">{auction.winnerName}</span>
+            </span>
+            {auction.paid ? (
+              <span className="pill bg-emerald-500/15 text-emerald-300">Pagado</span>
+            ) : (
+              onPay && (
+                <button className="btn-primary py-1.5 text-xs" onClick={() => onPay(auction)}>
+                  Pagar confidencial
+                </button>
+              )
+            )}
+          </div>
         ) : closed ? (
           <button className="btn-ghost py-1.5 text-xs" onClick={() => onSettle?.(auction)}>
             Revelar & liquidar

@@ -152,6 +152,7 @@ function mapAuction(raw: any, bids: SealedBid[]): Auction {
     winner: raw.winner ? raw.winner.toString?.() : undefined,
     winnerName: raw.winner ? raw.winner.toString?.().slice(0, 4) + '…' : undefined,
     winningAmount: Number(raw.winning_amount ?? 0n),
+    paid: Boolean(raw.paid),
     createdAt: Date.now(),
     endTime: Number(raw.end_time) * 1000,
   }
@@ -234,5 +235,24 @@ export const chain = {
 
   async settle(auctionId: number, caller: string): Promise<void> {
     await invokeContract(config.contracts.auction, 'settle', [u64(auctionId)], caller)
+  },
+
+  /** Compromiso Pedersen del monto (lectura): `amount·G + blinding·H`. */
+  async tokenCommitValue(amount: number, blindingHex: string): Promise<string> {
+    const res = (await readContract(config.contracts.token, 'commit_value', [
+      i128(amount),
+      bytes32(blindingHex),
+    ])) as Uint8Array
+    return [...res].map((b) => b.toString(16).padStart(2, '0')).join('')
+  },
+
+  /** Pago confidencial ganador→emisor: `settle_payment(auction_id, value_commitment)`. */
+  async settlePayment(auctionId: number, valueCommitmentHex: string, winner: string): Promise<void> {
+    await invokeContract(
+      config.contracts.auction,
+      'settle_payment',
+      [u64(auctionId), bytes32(valueCommitmentHex)],
+      winner
+    )
   },
 }

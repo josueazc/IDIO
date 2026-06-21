@@ -189,6 +189,15 @@ export function revealAndSettle(auctionId: number): void {
   save(auctions)
 }
 
+/** Marca una subasta como pagada (demo). */
+export function markPaid(auctionId: number): void {
+  const auctions = load()
+  const auction = auctions.find((a) => a.id === auctionId)
+  if (!auction) return
+  auction.paid = true
+  save(auctions)
+}
+
 export function resetDemo(): void {
   localStorage.removeItem(KEY)
   save(seed())

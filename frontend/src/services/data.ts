@@ -130,6 +130,22 @@ export async function settle(auctionId: number, caller: string): Promise<void> {
   }
 }
 
+/**
+ * Pago confidencial del ganador al emisor (Pasos 4-5).
+ * En testnet calcula el compromiso Pedersen del monto ganador y llama a
+ * `settle_payment`; en demo marca la subasta como pagada.
+ */
+export async function payWinner(auctionId: number, winner: string, amount: number): Promise<void> {
+  if (getMode() === 'chain') {
+    const blinding = randomSalt()
+    const valueCommitment = await chain.tokenCommitValue(amount, blinding)
+    await chain.settlePayment(auctionId, valueCommitment, winner)
+    emit()
+  } else {
+    demo.markPaid(auctionId)
+  }
+}
+
 export function resetDemo() {
   demo.resetDemo()
 }

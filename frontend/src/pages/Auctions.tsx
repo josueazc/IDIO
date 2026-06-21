@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuctions } from '../utils/useAuctions'
 import AuctionCard from '../components/AuctionCard'
 import BidForm from '../components/BidForm'
-import { settle, revealBid, resetDemo, getMode } from '../services/data'
+import { settle, revealBid, payWinner, resetDemo, getMode } from '../services/data'
 import type { Auction } from '../types'
 
 interface Props {
@@ -18,6 +18,17 @@ export default function Auctions({ address }: Props) {
   const filtered = auctions.filter((a) =>
     filter === 'all' ? true : filter === 'open' ? a.status === 'BiddingOpen' : a.status === 'Settled'
   )
+
+  async function onPay(au: Auction) {
+    setBusy(au.id)
+    try {
+      await payWinner(au.id, au.winner ?? address ?? '', au.winningAmount ?? 0)
+    } catch (e) {
+      alert((e as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
 
   async function onSettle(au: Auction) {
     setBusy(au.id)
@@ -83,6 +94,7 @@ export default function Auctions({ address }: Props) {
               auction={a}
               onBid={setBidding}
               onSettle={busy === a.id ? undefined : onSettle}
+              onPay={busy === a.id ? undefined : onPay}
             />
           ))}
         </div>

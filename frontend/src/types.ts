@@ -30,6 +30,8 @@ export interface Auction {
   winner?: string
   winnerName?: string
   winningAmount?: number
+  /** Si el ganador ya pagó confidencialmente al emisor (Pasos 4-5). */
+  paid?: boolean
   createdAt: number
   endTime: number
 }
