@@ -961,6 +961,7 @@ name = "idio-auction"
 version = "0.1.0"
 dependencies = [
  "idio-asp",
+ "idio-token",
  "soroban-sdk",
 ]
 

@@ -31,6 +31,13 @@ pub trait AspInterface {
     fn is_allowed(env: Env, who: Address) -> bool;
 }
 
+/// Interfaz del token confidencial para la liquidación del pago.
+/// Genera `TokenClient`, usado por la subasta en la fase de pago.
+#[contractclient(name = "TokenClient")]
+pub trait TokenInterface {
+    fn transfer(env: Env, from: Address, to: Address, value_commitment: BytesN<64>);
+}
+
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(u32)]
@@ -46,6 +53,9 @@ pub enum AuctionError {
     NotAllowed = 9,
     AlreadySettled = 10,
     BidNotFound = 11,
+    NotWinner = 12,
+    NotSettled = 13,
+    AlreadyPaid = 14,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -83,6 +93,8 @@ pub struct Auction {
     pub winner: Option<Address>,
     pub winning_amount: i128,
     pub end_time: u64,
+    /// Si el ganador ya pagó confidencialmente al emisor (Paso 4-5).
+    pub paid: bool,
 }
 
 #[contracttype]
@@ -90,6 +102,8 @@ enum DataKey {
     Admin,
     /// Contrato ASP usado para validar participantes.
     Asp,
+    /// Token confidencial usado para liquidar el pago.
+    Token,
     Counter,
     Auction(u64),
     Bids(u64),
@@ -100,11 +114,13 @@ pub struct AuctionContract;
 
 #[contractimpl]
 impl AuctionContract {
-    /// Inicializa el contrato con el admin y el contrato ASP de compliance.
-    pub fn initialize(env: Env, admin: Address, asp: Address) {
+    /// Inicializa el contrato con el admin, el ASP de compliance y el token
+    /// confidencial usado para liquidar pagos.
+    pub fn initialize(env: Env, admin: Address, asp: Address, token: Address) {
         admin.require_auth();
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Asp, &asp);
+        env.storage().instance().set(&DataKey::Token, &token);
         env.storage().instance().set(&DataKey::Counter, &0u64);
     }
 
@@ -139,6 +155,7 @@ impl AuctionContract {
             winner: None,
             winning_amount: 0,
             end_time: env.ledger().timestamp() + duration,
+            paid: false,
         };
 
         env.storage().persistent().set(&DataKey::Auction(id), &auction);
@@ -278,6 +295,41 @@ impl AuctionContract {
         winner
     }
 
+    /// Pago confidencial y liquidación (Pasos 4-5).
+    ///
+    /// El ganador paga al emisor mediante el token confidencial: la subasta
+    /// invoca `token.transfer(ganador, emisor, value_commitment)` como llamada
+    /// cross-contract. `value_commitment` es el compromiso Pedersen del monto
+    /// ganador, por lo que la cantidad transferida permanece oculta on-chain.
+    pub fn settle_payment(env: Env, auction_id: u64, value_commitment: BytesN<64>) {
+        let mut auction = Self::get(&env, auction_id);
+        if auction.status != AuctionStatus::Settled {
+            panic(&env, AuctionError::NotSettled);
+        }
+        if auction.paid {
+            panic(&env, AuctionError::AlreadyPaid);
+        }
+        let winner = match &auction.winner {
+            Some(w) => w.clone(),
+            None => panic(&env, AuctionError::NotWinner),
+        };
+        winner.require_auth();
+
+        // Transferencia confidencial ganador -> emisor vía el token.
+        let token_id: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Token)
+            .unwrap_or_else(|| panic(&env, AuctionError::NotInitialized));
+        let token = TokenClient::new(&env, &token_id);
+        token.transfer(&winner, &auction.issuer, &value_commitment);
+
+        auction.paid = true;
+        env.storage()
+            .persistent()
+            .set(&DataKey::Auction(auction_id), &auction);
+    }
+
     /// Cancela una subasta (solo el emisor, antes de liquidar).
     pub fn cancel_auction(env: Env, auction_id: u64) {
         let mut auction = Self::get(&env, auction_id);
@@ -350,7 +402,21 @@ fn panic(env: &Env, err: AuctionError) -> ! {
 mod test {
     use super::*;
     use idio_asp::{Asp, AspClient as RealAspClient};
+    use idio_token::{ConfidentialToken, ConfidentialTokenClient};
     use soroban_sdk::testutils::{Address as _, BytesN as _, Ledger};
+
+    /// Despliega el token confidencial e inicializa su generador H.
+    /// (Para el test usamos el generador estándar como H; basta para probar
+    /// la orquestación del pago cross-contract.)
+    fn setup_token(env: &Env, admin: &Address) -> Address {
+        let token_id = env.register(ConfidentialToken, ());
+        let token = ConfidentialTokenClient::new(env, &token_id);
+        let mut h = [0u8; 64];
+        h[31] = 1;
+        h[63] = 2;
+        token.initialize(admin, &BytesN::from_array(env, &h));
+        token_id
+    }
 
     fn commit(env: &Env, amount: i128, salt: &BytesN<32>) -> BytesN<32> {
         let mut preimage = soroban_sdk::Bytes::new(env);
@@ -383,7 +449,8 @@ mod test {
         let bank_b = Address::generate(&env);
 
         let asp = setup_asp(&env, &admin, &[&bank_a, &bank_b]);
-        client.initialize(&admin, &asp);
+        let token = setup_token(&env, &admin);
+        client.initialize(&admin, &asp, &token);
 
         let reserves = BytesN::random(&env);
         let auction_id = client.create_auction(
@@ -433,7 +500,8 @@ mod test {
         let issuer = Address::generate(&env);
         let bank = Address::generate(&env);
         let asp = setup_asp(&env, &admin, &[&bank]);
-        client.initialize(&admin, &asp);
+        let token = setup_token(&env, &admin);
+        client.initialize(&admin, &asp, &token);
 
         let reserves = BytesN::random(&env);
         let auction_id = client.create_auction(
@@ -465,7 +533,8 @@ mod test {
         let outsider = Address::generate(&env);
         // ASP sin autorizar a `outsider`.
         let asp = setup_asp(&env, &admin, &[]);
-        client.initialize(&admin, &asp);
+        let token = setup_token(&env, &admin);
+        client.initialize(&admin, &asp, &token);
 
         let reserves = BytesN::random(&env);
         let auction_id = client.create_auction(
@@ -479,5 +548,52 @@ mod test {
         let salt = BytesN::random(&env);
         // Debe abortar con NotAllowed.
         client.submit_sealed_bid(&auction_id, &outsider, &commit(&env, 12_000_000, &salt));
+    }
+
+    #[test]
+    fn payment_flow_settles_confidentially() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let id = env.register(AuctionContract, ());
+        let client = AuctionContractClient::new(&env, &id);
+
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let winner = Address::generate(&env);
+
+        let asp = setup_asp(&env, &admin, &[&winner]);
+        let token_id = setup_token(&env, &admin);
+        client.initialize(&admin, &asp, &token_id);
+
+        let reserves = BytesN::random(&env);
+        let auction_id = client.create_auction(
+            &issuer,
+            &String::from_str(&env, "Bonos"),
+            &500_000_000,
+            &10_000_000,
+            &100,
+            &reserves,
+        );
+
+        let salt = BytesN::random(&env);
+        let bid = 15_000_000i128;
+        client.submit_sealed_bid(&auction_id, &winner, &commit(&env, bid, &salt));
+        env.ledger().with_mut(|l| l.timestamp += 200);
+        client.reveal_bid(&auction_id, &winner, &bid, &salt);
+        assert_eq!(client.settle(&auction_id), Some(winner.clone()));
+
+        // Compromiso Pedersen del monto ganador (blinding arbitrario).
+        let token = ConfidentialTokenClient::new(&env, &token_id);
+        let blinding = BytesN::from_array(&env, &[9u8; 32]);
+        let value_commitment = token.commit_value(&bid, &blinding);
+
+        // Pago confidencial ganador -> emisor (cross-contract).
+        client.settle_payment(&auction_id, &value_commitment);
+
+        let auction = client.get_auction(&auction_id);
+        assert!(auction.paid);
+        // El emisor recibió el compromiso del monto (oculto).
+        let issuer_c = token.commitment(&issuer);
+        assert_eq!(issuer_c, value_commitment);
     }
 }
