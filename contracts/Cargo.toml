@@ -1,18 +1,14 @@
-[package]
-name = "idio-contracts"
+[workspace]
+resolver = "2"
+members = ["asp", "token", "verifier", "auction"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
-description = "IDIO — Institutional Decentralized Issuance & Offerings (Soroban contracts)"
 license = "MIT"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
-[dependencies]
+[workspace.dependencies]
 soroban-sdk = "21.7.6"
-
-[dev-dependencies]
-soroban-sdk = { version = "21.7.6", features = ["testutils"] }
 
 [profile.release]
 opt-level = "z"

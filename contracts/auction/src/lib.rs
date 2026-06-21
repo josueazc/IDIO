@@ -1,3 +1,4 @@
+#![no_std]
 //! Contrato principal de subastas *sealed-bid*.
 //!
 //! Ciclo de vida de una subasta:
@@ -19,8 +20,16 @@
 //! compromisos en cadena; los montos se conocen únicamente en el reveal.
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, Address, BytesN, Env, String, Vec,
+    contract, contractclient, contracterror, contractimpl, contracttype, Address, BytesN, Env,
+    String, Vec,
 };
+
+/// Interfaz del contrato ASP para la llamada cross-contract de gating.
+/// Genera `AspClient`, usado por la subasta para validar participantes.
+#[contractclient(name = "AspClient")]
+pub trait AspInterface {
+    fn is_allowed(env: Env, who: Address) -> bool;
+}
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -317,11 +326,19 @@ impl AuctionContract {
         env.crypto().sha256(&preimage).into()
     }
 
-    fn require_allowed(env: &Env, _who: &Address) {
-        // El gating real consulta el contrato ASP vía cross-contract call.
-        // Se deja como punto de extensión para no acoplar los tests del MVP
-        // a un despliegue del ASP.
-        let _ = env.storage().instance().get::<_, Address>(&DataKey::Asp);
+    /// Gating de compliance: consulta el contrato ASP vía cross-contract call
+    /// y exige que el participante esté en la allow-list. Aborta con
+    /// `NotAllowed` si no lo está.
+    fn require_allowed(env: &Env, who: &Address) {
+        let asp_id: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Asp)
+            .unwrap_or_else(|| panic(env, AuctionError::NotInitialized));
+        let asp = AspClient::new(env, &asp_id);
+        if !asp.is_allowed(who) {
+            panic(env, AuctionError::NotAllowed);
+        }
     }
 }
 
@@ -332,6 +349,7 @@ fn panic(env: &Env, err: AuctionError) -> ! {
 #[cfg(test)]
 mod test {
     use super::*;
+    use idio_asp::{Asp, AspClient as RealAspClient};
     use soroban_sdk::testutils::{Address as _, BytesN as _, Ledger};
 
     fn commit(env: &Env, amount: i128, salt: &BytesN<32>) -> BytesN<32> {
@@ -339,6 +357,17 @@ mod test {
         preimage.extend_from_array(&amount.to_be_bytes());
         preimage.append(&soroban_sdk::Bytes::from(salt.clone()));
         env.crypto().sha256(&preimage).into()
+    }
+
+    /// Despliega un ASP real, lo inicializa y autoriza a `banks`.
+    fn setup_asp(env: &Env, admin: &Address, banks: &[&Address]) -> Address {
+        let asp_id = env.register_contract(None, Asp);
+        let asp = RealAspClient::new(env, &asp_id);
+        asp.initialize(admin);
+        for b in banks {
+            asp.allow(b);
+        }
+        asp_id
     }
 
     #[test]
@@ -349,11 +378,11 @@ mod test {
         let client = AuctionContractClient::new(&env, &id);
 
         let admin = Address::generate(&env);
-        let asp = Address::generate(&env);
         let issuer = Address::generate(&env);
         let bank_a = Address::generate(&env);
         let bank_b = Address::generate(&env);
 
+        let asp = setup_asp(&env, &admin, &[&bank_a, &bank_b]);
         client.initialize(&admin, &asp);
 
         let reserves = BytesN::random(&env);
@@ -401,9 +430,9 @@ mod test {
         let client = AuctionContractClient::new(&env, &id);
 
         let admin = Address::generate(&env);
-        let asp = Address::generate(&env);
         let issuer = Address::generate(&env);
         let bank = Address::generate(&env);
+        let asp = setup_asp(&env, &admin, &[&bank]);
         client.initialize(&admin, &asp);
 
         let reserves = BytesN::random(&env);
@@ -421,5 +450,34 @@ mod test {
         env.ledger().with_mut(|l| l.timestamp += 200);
         // Revela un monto distinto al comprometido -> CommitmentMismatch
         client.reveal_bid(&auction_id, &bank, &13_000_000, &salt);
+    }
+
+    #[test]
+    #[should_panic]
+    fn bid_from_non_whitelisted_fails() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let id = env.register_contract(None, AuctionContract);
+        let client = AuctionContractClient::new(&env, &id);
+
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let outsider = Address::generate(&env);
+        // ASP sin autorizar a `outsider`.
+        let asp = setup_asp(&env, &admin, &[]);
+        client.initialize(&admin, &asp);
+
+        let reserves = BytesN::random(&env);
+        let auction_id = client.create_auction(
+            &issuer,
+            &String::from_str(&env, "Bonos"),
+            &500_000_000,
+            &10_000_000,
+            &100,
+            &reserves,
+        );
+        let salt = BytesN::random(&env);
+        // Debe abortar con NotAllowed.
+        client.submit_sealed_bid(&auction_id, &outsider, &commit(&env, 12_000_000, &salt));
     }
 }

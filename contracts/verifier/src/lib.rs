@@ -1,3 +1,4 @@
+#![no_std]
 //! Verificación de pruebas ZK y compromisos.
 //!
 //! En una integración completa, este contrato verifica una prueba Noir

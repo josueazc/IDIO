@@ -1,3 +1,4 @@
+#![no_std]
 //! Association Set Provider (ASP).
 //!
 //! Mantiene la lista de participantes autorizados (allow-list) para

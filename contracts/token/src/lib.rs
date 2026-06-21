@@ -1,3 +1,4 @@
+#![no_std]
 //! Token confidencial (MVP).
 //!
 //! Modelo de privacidad: las **direcciones** de las cuentas son visibles
