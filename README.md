@@ -48,15 +48,18 @@ Los cuatro contratos están desplegados, inicializados y verificados en testnet.
 
 | Contrato | ID |
 |----------|----|
-| Auction | [`CCMBQIP3Y53DQUM3APIWPJATL6SZUW3SVOCXRPAAPWBPHGZOO66SNO5Q`](https://stellar.expert/explorer/testnet/contract/CCMBQIP3Y53DQUM3APIWPJATL6SZUW3SVOCXRPAAPWBPHGZOO66SNO5Q) |
-| ASP | [`CDO3GEOQMUWNUAIIJJG5HUJIUQYLBSYJ3WTZCQGIBMLNORHVCHBVQOA3`](https://stellar.expert/explorer/testnet/contract/CDO3GEOQMUWNUAIIJJG5HUJIUQYLBSYJ3WTZCQGIBMLNORHVCHBVQOA3) |
-| Token | [`CB3OQN6NKSEGMGC5OIMEL4ALSMPSKKZ3NDWUY5GZCJOPZHVZKSCQUIHX`](https://stellar.expert/explorer/testnet/contract/CB3OQN6NKSEGMGC5OIMEL4ALSMPSKKZ3NDWUY5GZCJOPZHVZKSCQUIHX) |
-| Verifier | [`CB4ROINDQOTHMV7DBEUXEM5K5PAEBSX6DF6C4FBFKMBCJUPVF3PKVOAB`](https://stellar.expert/explorer/testnet/contract/CB4ROINDQOTHMV7DBEUXEM5K5PAEBSX6DF6C4FBFKMBCJUPVF3PKVOAB) |
+| Auction | [`CB5LFRG2ZKWDDIC4EISCJYLHFR5HNENHQKWLHZ6SVSL33WQRWAQQO6LZ`](https://stellar.expert/explorer/testnet/contract/CB5LFRG2ZKWDDIC4EISCJYLHFR5HNENHQKWLHZ6SVSL33WQRWAQQO6LZ) |
+| ASP | [`CA7Z7PRBUW4WTBGZQJTKUXQQVCOVEXM3OQSZB2GLDMPDWGZANEXARERO`](https://stellar.expert/explorer/testnet/contract/CA7Z7PRBUW4WTBGZQJTKUXQQVCOVEXM3OQSZB2GLDMPDWGZANEXARERO) |
+| Token | [`CD7L23OCVDMB2PQ4Y7GJZ4SPAUQ7R44BF5UHHHZHSD7WGAA3KYFYGCUB`](https://stellar.expert/explorer/testnet/contract/CD7L23OCVDMB2PQ4Y7GJZ4SPAUQ7R44BF5UHHHZHSD7WGAA3KYFYGCUB) |
+| Verifier | [`CBJQ3FADEOOVBN3G7ZN66FUHSB7MOK5SBJ2F3NZBJHLWK3PCONYF4YLV`](https://stellar.expert/explorer/testnet/contract/CBJQ3FADEOOVBN3G7ZN66FUHSB7MOK5SBJ2F3NZBJHLWK3PCONYF4YLV) |
 
 **Lo que funciona de verdad, hoy:**
 
 - Subastas, ofertas selladas y gating de compliance **on-chain** (cross-contract real auction → ASP).
 - **Pruebas Zero-Knowledge reales en el navegador**: el circuito Noir `sealed_bid` se ejecuta y se genera una prueba UltraHonk (~14.6 KB, ~3.7 s) con `@aztec/bb.js`, sin revelar el monto.
+- **Verificación Groth16 BN254 on-chain real**: `verify_groth16` evalúa la ecuación de pairings con las host functions BN254 nativas de Protocol 26 (`g1_mul`/`g1_add`/`pairing_check`); test con prueba real de arkworks.
+- **Token confidencial real**: balances como compromisos Pedersen `v·G + r·H` sobre BN254, transferencias homomórficas, monto nunca en claro (verificado on-chain en testnet).
+- **Pago/liquidación confidencial**: el ganador paga al emisor vía `settle_payment` (cross-contract auction → token), con el monto oculto en un compromiso.
 - Compromiso `SHA-256(be16(monto) ‖ salt)` **idéntico byte a byte** en las tres capas (frontend, contrato y circuito) — vector verificado `d772f954…123825`.
 - El frontend tiene un toggle **Demo / Testnet**: Demo funciona offline; Testnet lee por simulación y escribe firmando con Freighter.
 

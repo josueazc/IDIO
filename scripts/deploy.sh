@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# Despliega los contratos de IDIO en Stellar Testnet.
+# Despliega los 4 contratos de IDIO en Stellar Testnet e imprime sus IDs.
 # Requiere: stellar CLI, una identidad fondeada (por defecto "idio").
+# Tras desplegar, inicializa con scripts/init.sh o manualmente (ver DEPLOYMENT.md).
 set -euo pipefail
 
 NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-idio}"
-WASM="contracts/target/wasm32-unknown-unknown/release/idio_contracts.wasm"
+REL="contracts/target/wasm32v1-none/release"
 
-echo "▶ Compilando contratos…"
-(cd contracts && cargo build --target wasm32-unknown-unknown --release)
+echo "▶ Compilando contratos (wasm32v1-none)…"
+(cd contracts && cargo build --target wasm32v1-none --release)
 
-echo "▶ Desplegando en $NETWORK (source: $SOURCE)…"
-CONTRACT_ID=$(stellar contract deploy --wasm "$WASM" --source "$SOURCE" --network "$NETWORK")
+for name in asp token verifier auction; do
+  WASM="$REL/idio_${name}.wasm"
+  ID=$(stellar contract deploy --wasm "$WASM" --source "$SOURCE" --network "$NETWORK")
+  echo "${name}: ${ID}"
+done
 
-echo "✅ Contrato desplegado: $CONTRACT_ID"
-echo "Añade el ID correspondiente a frontend/.env (VITE_*_CONTRACT_ID)."
+echo "Copia los IDs a deployments.testnet.json y frontend/src/config.ts."

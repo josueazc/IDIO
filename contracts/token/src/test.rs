@@ -83,3 +83,4 @@ fn confidential_pedersen_flow() {
     let c = client.commitment(&central);
     assert_eq!(c.to_array().len(), 64);
 }
+
