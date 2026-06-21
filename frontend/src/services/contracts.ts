@@ -31,11 +31,20 @@ const addr = (a: string): xdr.ScVal => new Address(a).toScVal()
 const str = (s: string): xdr.ScVal => nativeToScVal(s, { type: 'string' })
 const i128 = (n: number | bigint): xdr.ScVal => nativeToScVal(BigInt(n), { type: 'i128' })
 const u64 = (n: number | bigint): xdr.ScVal => nativeToScVal(BigInt(n), { type: 'u64' })
-const bytes32 = (hex: string): xdr.ScVal => {
+function hexToBytes(hex: string): Uint8Array {
   const clean = hex.startsWith('0x') ? hex.slice(2) : hex
   const buf = new Uint8Array(clean.length / 2)
   for (let i = 0; i < buf.length; i++) buf[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16)
-  return nativeToScVal(buf, { type: 'bytes' })
+  return buf
+}
+const bytes32 = (hex: string): xdr.ScVal => nativeToScVal(hexToBytes(hex), { type: 'bytes' })
+
+/** Construye el ScVal del struct `Groth16Proof { a, b, c }` (bytes). */
+function proofScVal(p: { a: string; b: string; c: string }): xdr.ScVal {
+  return nativeToScVal(
+    { a: hexToBytes(p.a), b: hexToBytes(p.b), c: hexToBytes(p.c) },
+    { type: { a: ['symbol', 'bytes'], b: ['symbol', 'bytes'], c: ['symbol', 'bytes'] } }
+  )
 }
 
 // ---- Lectura por simulación ----
@@ -198,23 +207,35 @@ export const chain = {
     amount: number,
     minBid: number,
     durationSecs: number,
-    reservesCommitmentHex: string
+    reservesCommitmentHex: string,
+    reservesProof: { a: string; b: string; c: string }
   ): Promise<void> {
     await invokeContract(
       config.contracts.auction,
       'create_auction',
-      [issuer && addr(issuer), str(asset), i128(amount), i128(minBid), u64(durationSecs), bytes32(reservesCommitmentHex)].filter(
-        Boolean
-      ) as xdr.ScVal[],
+      [
+        addr(issuer),
+        str(asset),
+        i128(amount),
+        i128(minBid),
+        u64(durationSecs),
+        bytes32(reservesCommitmentHex),
+        proofScVal(reservesProof),
+      ],
       issuer
     )
   },
 
-  async submitSealedBid(auctionId: number, bidder: string, commitmentHex: string): Promise<void> {
+  async submitSealedBid(
+    auctionId: number,
+    bidder: string,
+    commitmentHex: string,
+    eligibilityProof: { a: string; b: string; c: string }
+  ): Promise<void> {
     await invokeContract(
       config.contracts.auction,
       'submit_sealed_bid',
-      [u64(auctionId), addr(bidder), bytes32(commitmentHex)],
+      [u64(auctionId), addr(bidder), bytes32(commitmentHex), proofScVal(eligibilityProof)],
       bidder
     )
   },

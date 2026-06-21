@@ -999,6 +999,8 @@ dependencies = [
  "ark-serialize",
  "ark-snark",
  "ark-std",
+ "getrandom",
+ "wasm-bindgen",
 ]
 
 [[package]]

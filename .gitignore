@@ -23,3 +23,6 @@ circuits/target/
 .idea/
 .vscode/
 *.log
+
+# TS build info
+*.tsbuildinfo

@@ -205,6 +205,43 @@ pub fn proof_bytes(p: &ark_groth16::Proof<Bn254>) -> ([u8; 64], [u8; 128], [u8; 
     (g1_bytes(&p.a), g2_bytes(&p.b), g1_bytes(&p.c))
 }
 
+// ---------------------------------------------------------------------------
+// Exports WASM para el navegador (frontend)
+// ---------------------------------------------------------------------------
+
+#[cfg(target_arch = "wasm32")]
+mod wasm {
+    use super::*;
+    use std::sync::OnceLock;
+    use wasm_bindgen::prelude::*;
+
+    fn elig_pk() -> &'static ProvingKey<Bn254> {
+        static PK: OnceLock<ProvingKey<Bn254>> = OnceLock::new();
+        PK.get_or_init(|| setup_eligibility().0)
+    }
+    fn reserves_pk() -> &'static ProvingKey<Bn254> {
+        static PK: OnceLock<ProvingKey<Bn254>> = OnceLock::new();
+        PK.get_or_init(|| setup_reserves().0)
+    }
+
+    /// Prueba de elegibilidad. Devuelve la prueba como hex de 256 bytes
+    /// (`a‖b‖c`) lista para construir el `Groth16Proof` del contrato.
+    #[wasm_bindgen]
+    pub fn prove_eligibility_hex(min_bid: u64, bid: u64, balance: u64, seed: u64) -> String {
+        let p = prove_eligibility(elig_pk(), min_bid, bid, balance, seed);
+        let (a, b, c) = proof_bytes(&p);
+        ark_std::format!("{}{}{}", hex(&a), hex(&b), hex(&c))
+    }
+
+    /// Prueba de reservas. Devuelve `a‖b‖c` en hex (256 bytes).
+    #[wasm_bindgen]
+    pub fn prove_reserves_hex(auction_amount: u64, total: u64, seed: u64) -> String {
+        let p = prove_reserves(reserves_pk(), auction_amount, total, seed);
+        let (a, b, c) = proof_bytes(&p);
+        ark_std::format!("{}{}{}", hex(&a), hex(&b), hex(&c))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

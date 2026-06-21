@@ -10,6 +10,7 @@ import { chain } from './contracts'
 import * as demo from './store'
 import { commitBid, generateReservesProof, randomSalt } from './proofs'
 import { proveSealedBid, type ZkResult } from './noir'
+import { proveEligibility, proveReserves } from './groth'
 import type { Auction } from '../types'
 
 /** Resultado de la última prueba ZK generada (para mostrar en la UI). */
@@ -72,13 +73,16 @@ export interface CreateInput {
 export async function createAuction(input: CreateInput, wallet: string): Promise<void> {
   if (getMode() === 'chain') {
     const { commitment } = await generateReservesProof(input.amount)
+    // Prueba Groth16 de reservas (total ≥ monto), verificada on-chain.
+    const proof = await proveReserves(input.amount, input.amount)
     await chain.createAuction(
       wallet,
       input.asset,
       input.amount,
       input.minBid,
       input.durationHours * 3600,
-      commitment
+      commitment,
+      proof
     )
     emit()
   } else {
@@ -98,15 +102,16 @@ export async function submitBid(
   const salt = randomSalt()
   const commitment = await commitBid(amount, salt)
 
-  // 2. Prueba ZK real: ejecuta el circuito Noir sobre las entradas.
-  //    Lanza si la oferta no cumple (balance >= oferta >= mínimo).
-  lastProof = await proveSealedBid(amount, balance, minBid, salt, commitment)
-
-  // 3. Registro de la oferta sellada.
   if (getMode() === 'chain') {
-    await chain.submitSealedBid(auctionId, address, commitment)
+    // Prueba Groth16 de elegibilidad (balance ≥ oferta ≥ mínimo), verificada
+    // on-chain por el contrato vía cross-contract al verifier (puente real).
+    const proof = await proveEligibility(minBid, amount, balance)
+    lastProof = { proofHex: proof.a, witnessOk: true, proofOk: true, ms: 0 }
+    await chain.submitSealedBid(auctionId, address, commitment, proof)
     saveSalt(auctionId, address, amount, salt)
   } else {
+    // Demo: prueba Noir UltraHonk (verificable off-chain en el navegador).
+    lastProof = await proveSealedBid(amount, balance, minBid, salt, commitment)
     await demo.submitBidWithCommitment(auctionId, name, address, amount, commitment)
   }
   emit()

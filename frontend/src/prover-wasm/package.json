@@ -1,0 +1,17 @@
+{
+  "name": "idio-prover",
+  "type": "module",
+  "description": "Circuitos de elegibilidad/reservas Groth16 (BN254) y prover para IDIO",
+  "version": "0.1.0",
+  "license": "MIT",
+  "files": [
+    "idio_prover_bg.wasm",
+    "idio_prover.js",
+    "idio_prover.d.ts"
+  ],
+  "main": "idio_prover.js",
+  "types": "idio_prover.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
