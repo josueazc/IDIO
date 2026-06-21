@@ -52,13 +52,19 @@ export default function AuctionCard({ auction, onBid, onSettle, onPay }: Props) 
             )}
           </div>
         ) : closed ? (
-          <button className="btn-ghost py-1.5 text-xs" onClick={() => onSettle?.(auction)}>
-            Revelar & liquidar
-          </button>
-        ) : (
-          <button className="btn-primary py-1.5 text-xs" onClick={() => onBid?.(auction)}>
+          onSettle ? (
+            <button className="btn-ghost py-1.5 text-xs" onClick={() => onSettle(auction)}>
+              Revelar & liquidar
+            </button>
+          ) : (
+            <span className="text-xs text-slate-500">Esperando liquidación</span>
+          )
+        ) : onBid ? (
+          <button className="btn-primary py-1.5 text-xs" onClick={() => onBid(auction)}>
             Ofertar
           </button>
+        ) : (
+          <span className="text-xs text-slate-500">Abierta</span>
         )}
       </div>
     </div>

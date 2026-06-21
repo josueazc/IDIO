@@ -3,6 +3,8 @@ import { useAuctions } from '../utils/useAuctions'
 import AuctionCard from '../components/AuctionCard'
 import BidForm from '../components/BidForm'
 import { settle, revealBid, payWinner, resetDemo, getMode } from '../services/data'
+import { useRole } from '../utils/useRole'
+import { can } from '../services/role'
 import type { Auction } from '../types'
 
 interface Props {
@@ -11,6 +13,7 @@ interface Props {
 
 export default function Auctions({ address }: Props) {
   const { auctions, loading, error } = useAuctions()
+  const role = useRole()
   const [bidding, setBidding] = useState<Auction | null>(null)
   const [filter, setFilter] = useState<'all' | 'open' | 'settled'>('all')
   const [busy, setBusy] = useState<number | null>(null)
@@ -92,9 +95,9 @@ export default function Auctions({ address }: Props) {
             <AuctionCard
               key={a.id}
               auction={a}
-              onBid={setBidding}
-              onSettle={busy === a.id ? undefined : onSettle}
-              onPay={busy === a.id ? undefined : onPay}
+              onBid={can(role, 'bid') ? setBidding : undefined}
+              onSettle={can(role, 'settle') && busy !== a.id ? onSettle : undefined}
+              onPay={can(role, 'pay') && busy !== a.id ? onPay : undefined}
             />
           ))}
         </div>

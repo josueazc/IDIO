@@ -2,6 +2,8 @@ import { NavLink } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import WalletConnect from './WalletConnect'
 import ModeToggle from './ModeToggle'
+import { useRole } from '../utils/useRole'
+import { ROLES, ROLE_ROUTES, setRole } from '../services/role'
 
 interface Props {
   children: ReactNode
@@ -10,15 +12,18 @@ interface Props {
   onConnect: (a: string, d: boolean) => void
 }
 
-const NAV = [
-  { to: '/', label: 'Dashboard', end: true },
-  { to: '/auctions', label: 'Subastas' },
-  { to: '/create', label: 'Crear' },
-  { to: '/audit', label: 'Auditoría' },
-  { to: '/compliance', label: 'Compliance' },
-]
+const LABELS: Record<string, string> = {
+  '/': 'Dashboard',
+  '/auctions': 'Subastas',
+  '/create': 'Crear',
+  '/audit': 'Auditoría',
+  '/compliance': 'Compliance',
+}
 
 export default function Layout({ children, address, demo, onConnect }: Props) {
+  const role = useRole()
+  const nav = role ? ROLE_ROUTES[role].map((to) => ({ to, label: LABELS[to], end: to === '/' })) : []
+  const roleInfo = ROLES.find((r) => r.id === role)
   return (
     <div className="min-h-full">
       <header className="sticky top-0 z-20 border-b border-edge/70 bg-ink/70 backdrop-blur-md">
@@ -34,7 +39,7 @@ export default function Layout({ children, address, demo, onConnect }: Props) {
           </NavLink>
 
           <nav className="hidden items-center gap-1 md:flex">
-            {NAV.map((n) => (
+            {nav.map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}
@@ -51,6 +56,18 @@ export default function Layout({ children, address, demo, onConnect }: Props) {
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
+            {roleInfo && (
+              <button
+                onClick={() => setRole(null)}
+                className="pill border border-edge bg-white/5 text-slate-300 hover:bg-white/10"
+                title="Cambiar de rol"
+              >
+                <span>{roleInfo.icon}</span>
+                {roleInfo.label}
+                <span className="text-slate-500">·</span>
+                <span className="text-brand-soft">cambiar</span>
+              </button>
+            )}
             <ModeToggle />
             <WalletConnect address={address} demo={demo} onConnect={onConnect} />
           </div>
