@@ -9,7 +9,11 @@
 import { chain } from './contracts'
 import * as demo from './store'
 import { commitBid, generateReservesProof, randomSalt } from './proofs'
+import { proveSealedBid, type ZkResult } from './noir'
 import type { Auction } from '../types'
+
+/** Resultado de la última prueba ZK generada (para mostrar en la UI). */
+export let lastProof: ZkResult | null = null
 
 export type Mode = 'demo' | 'chain'
 const MODE_KEY = 'idio.mode'
@@ -87,17 +91,25 @@ export async function submitBid(
   name: string,
   address: string,
   amount: number,
-  balance: number
+  balance: number,
+  minBid: number
 ): Promise<void> {
+  // 1. Compromiso y salt (consistentes con contrato y circuito).
+  const salt = randomSalt()
+  const commitment = await commitBid(amount, salt)
+
+  // 2. Prueba ZK real: ejecuta el circuito Noir sobre las entradas.
+  //    Lanza si la oferta no cumple (balance >= oferta >= mínimo).
+  lastProof = await proveSealedBid(amount, balance, minBid, salt, commitment)
+
+  // 3. Registro de la oferta sellada.
   if (getMode() === 'chain') {
-    const salt = randomSalt()
-    const commitment = await commitBid(amount, salt)
     await chain.submitSealedBid(auctionId, address, commitment)
     saveSalt(auctionId, address, amount, salt)
-    emit()
   } else {
-    await demo.submitBid(auctionId, name, address, amount, balance)
+    await demo.submitBidWithCommitment(auctionId, name, address, amount, commitment)
   }
+  emit()
 }
 
 export async function revealBid(auctionId: number, address: string): Promise<void> {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Auction } from '../types'
 import { fmtUSD } from '../utils/format'
-import { submitBid, getMode } from '../services/data'
+import { submitBid, getMode, lastProof } from '../services/data'
 
 interface Props {
   auction: Auction
@@ -17,6 +17,7 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
   const [name, setName] = useState('Mi Banco')
   const [phase, setPhase] = useState<'form' | 'proving' | 'done'>('form')
   const [error, setError] = useState<string | null>(null)
+  const [proofInfo, setProofInfo] = useState<string | null>(null)
 
   const checks = {
     balance: BALANCE >= amount,
@@ -30,12 +31,19 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
     setError(null)
     setPhase('proving')
     try {
-      await submitBid(auction.id, name, bidderAddress, amount, BALANCE)
+      await submitBid(auction.id, name, bidderAddress, amount, BALANCE, auction.minBid)
+      if (lastProof) {
+        setProofInfo(
+          lastProof.proofOk
+            ? `Prueba ZK generada (${Math.round(lastProof.ms)} ms)`
+            : `Circuito ejecutado y restricciones verificadas (${Math.round(lastProof.ms)} ms)`
+        )
+      }
       setPhase('done')
       setTimeout(() => {
         onDone()
         onClose()
-      }, 1100)
+      }, 1600)
     } catch (e) {
       setError((e as Error).message)
       setPhase('form')
@@ -98,7 +106,8 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
 
         {phase === 'done' && (
           <div className="mt-4 rounded-lg bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-300">
-            ✅ Oferta sellada registrada. Nadie puede ver tu monto.
+            Oferta sellada registrada. Nadie puede ver tu monto.
+            {proofInfo && <div className="mt-1 text-xs text-emerald-400/80">{proofInfo}</div>}
           </div>
         )}
 

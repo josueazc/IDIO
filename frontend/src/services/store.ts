@@ -171,6 +171,29 @@ export async function submitBid(
   save(auctions)
 }
 
+/** Registra una oferta sellada con un compromiso ya calculado. */
+export function submitBidWithCommitment(
+  auctionId: number,
+  bidderName: string,
+  bidderAddress: string,
+  amount: number,
+  commitment: string
+): void {
+  const auctions = load()
+  const auction = auctions.find((a) => a.id === auctionId)
+  if (!auction) throw new Error('Subasta no encontrada')
+  auction.bids.push({
+    bidderName,
+    bidderAddress,
+    commitment: commitment.slice(0, 8) + '…',
+    amount,
+    revealed: false,
+    timestamp: Date.now(),
+    whitelisted: true,
+  })
+  save(auctions)
+}
+
 /** Cierra y liquida: revela todas las ofertas y elige la mayor. */
 export function revealAndSettle(auctionId: number): void {
   const auctions = load()
