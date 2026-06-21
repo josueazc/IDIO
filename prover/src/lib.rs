@@ -186,6 +186,25 @@ pub fn proof_to_hex(p: &ark_groth16::Proof<Bn254>) -> (ark_std::string::String, 
     (hex(&g1_bytes(&p.a)), hex(&g2_bytes(&p.b)), hex(&g1_bytes(&p.c)))
 }
 
+/// VK como bytes crudos en formato Soroban: (alpha, beta, gamma, delta, ic).
+pub fn vk_bytes(
+    vk: &VerifyingKey<Bn254>,
+) -> ([u8; 64], [u8; 128], [u8; 128], [u8; 128], ark_std::vec::Vec<[u8; 64]>) {
+    let ic = vk.gamma_abc_g1.iter().map(|p| g1_bytes(p)).collect();
+    (
+        g1_bytes(&vk.alpha_g1),
+        g2_bytes(&vk.beta_g2),
+        g2_bytes(&vk.gamma_g2),
+        g2_bytes(&vk.delta_g2),
+        ic,
+    )
+}
+
+/// Prueba como bytes crudos en formato Soroban: (a, b, c).
+pub fn proof_bytes(p: &ark_groth16::Proof<Bn254>) -> ([u8; 64], [u8; 128], [u8; 64]) {
+    (g1_bytes(&p.a), g2_bytes(&p.b), g1_bytes(&p.c))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -9,8 +9,12 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 soroban-sdk = { workspace = true }
+idio-verifier = { path = "../verifier" }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
 idio-asp = { path = "../asp" }
 idio-token = { path = "../token" }
+idio-prover = { path = "../../prover" }
+ark-bn254 = "0.5"
+ark-groth16 = "0.5"
