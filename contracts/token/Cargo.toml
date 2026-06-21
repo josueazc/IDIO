@@ -12,3 +12,5 @@ soroban-sdk = { workspace = true }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
+ark-bn254 = "0.5"
+ark-ff = "0.5"
