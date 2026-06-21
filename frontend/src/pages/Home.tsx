@@ -3,7 +3,7 @@ import { useAuctions } from '../utils/useAuctions'
 import { fmtUSD } from '../utils/format'
 
 export default function Home() {
-  const auctions = useAuctions()
+  const { auctions } = useAuctions()
   const open = auctions.filter((a) => a.status === 'BiddingOpen')
   const settled = auctions.filter((a) => a.status === 'Settled')
   const volume = settled.reduce((s, a) => s + (a.winningAmount ?? 0), 0)

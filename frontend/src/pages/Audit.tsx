@@ -3,7 +3,7 @@ import { useAuctions } from '../utils/useAuctions'
 import { fmtUSD } from '../utils/format'
 
 export default function Audit() {
-  const auctions = useAuctions()
+  const { auctions } = useAuctions()
   const [selected, setSelected] = useState<number>(auctions[0]?.id ?? 1)
   const [unlocked, setUnlocked] = useState(false)
   const [viewKey, setViewKey] = useState('')

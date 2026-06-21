@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createAuction } from '../services/store'
+import { createAuction, getMode } from '../services/data'
 
 interface Props {
   address: string | null
@@ -17,17 +17,29 @@ export default function CreateAuction({ address }: Props) {
   const [phase, setPhase] = useState<'form' | 'proving'>('form')
 
   async function submit() {
+    const wallet = address ?? 'GISSUER0000000000000000000000000000000000000000000000000'
+    if (getMode() === 'chain' && !address) {
+      alert('Conecta tu wallet Freighter para crear una subasta on-chain.')
+      return
+    }
     setPhase('proving')
-    await createAuction({
-      issuer: address ?? 'GISSUER0000000000000000000000000000000000000000000000000',
-      asset,
-      amount,
-      minBid,
-      currency,
-      description: description || 'Emisión institucional.',
-      durationHours: duration,
-    })
-    nav('/auctions')
+    try {
+      await createAuction(
+        {
+          asset,
+          amount,
+          minBid,
+          currency,
+          description: description || 'Emisión institucional.',
+          durationHours: duration,
+        },
+        wallet
+      )
+      nav('/auctions')
+    } catch (e) {
+      alert((e as Error).message)
+      setPhase('form')
+    }
   }
 
   return (

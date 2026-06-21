@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import WalletConnect from './WalletConnect'
+import ModeToggle from './ModeToggle'
 
 interface Props {
   children: ReactNode
@@ -49,7 +50,8 @@ export default function Layout({ children, address, demo, onConnect }: Props) {
             ))}
           </nav>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <ModeToggle />
             <WalletConnect address={address} demo={demo} onConnect={onConnect} />
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Auction } from '../types'
 import { fmtUSD } from '../utils/format'
-import { submitBid } from '../services/store'
+import { submitBid, getMode } from '../services/data'
 
 interface Props {
   auction: Auction
@@ -85,7 +85,11 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
 
         {phase === 'proving' && (
           <div className="mt-4">
-            <div className="mb-1.5 text-xs text-slate-400">Generando prueba ZK…</div>
+            <div className="mb-1.5 text-xs text-slate-400">
+              {getMode() === 'chain'
+                ? 'Generando prueba y firmando transacción (Freighter)…'
+                : 'Generando prueba ZK…'}
+            </div>
             <div className="h-2 overflow-hidden rounded-full bg-ink">
               <div className="h-full w-2/3 animate-pulse rounded-full bg-gradient-to-r from-brand to-accent" />
             </div>
