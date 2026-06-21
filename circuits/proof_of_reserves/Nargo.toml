@@ -1,0 +1,7 @@
+[package]
+name = "proof_of_reserves"
+type = "bin"
+authors = ["IDIO"]
+compiler_version = ">=0.30.0"
+
+[dependencies]
