@@ -75,6 +75,10 @@ compromiso es correcto, sin revelar el monto.
 
 El compromiso público es el mismo valor que el contrato almacena por oferta.
 En el reveal, `auction.rs` recomputa `SHA-256(be16(monto) ‖ salt)` y exige
-coincidencia. La verificación on-chain de la prueba UltraHonk (BN254) es
-trabajo futuro; `verifier.rs` valida hoy el binding del compromiso y deja
-`verify_proof` como punto de extensión.
+coincidencia.
+
+La prueba UltraHonk de `sealed_bid` se verifica off-chain (navegador). Para
+verificación **on-chain** el contrato `verifier` implementa `verify_groth16`
+sobre BN254 con las host functions nativas (`g1_mul`/`g1_add`/`pairing_check`),
+probado con pruebas Groth16 reales generadas con arkworks. Unir Noir→Groth16
+para verificar la oferta sellada on-chain es trabajo futuro.
