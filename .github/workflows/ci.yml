@@ -36,6 +36,22 @@ jobs:
       - name: Typecheck
         working-directory: frontend
         run: npm run lint
+      - name: Test
+        working-directory: frontend
+        run: npm test
       - name: Build
         working-directory: frontend
         run: npm run build
+
+  circuits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Noir (nargo)
+        run: |
+          curl -L https://raw.githubusercontent.com/noir-lang/noirup/main/install | bash
+          echo "$HOME/.nargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.nargo/bin/noirup"
+      - name: Test circuits
+        working-directory: circuits
+        run: nargo test
