@@ -1,0 +1,25 @@
+# Node
+node_modules/
+dist/
+.vite/
+*.local
+
+# Rust / Soroban
+target/
+**/*.rs.bk
+.soroban/
+
+# Noir
+circuits/target/
+*.proof
+
+# Env
+.env
+.env.*
+!.env.example
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+*.log

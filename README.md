@@ -1,0 +1,147 @@
+<div align="center">
+
+# 🏛️ IDIO
+
+### Institutional Decentralized Issuance & Offerings
+
+**Subastas privadas institucionales sobre Stellar, con privacidad verificable mediante Zero-Knowledge Proofs.**
+
+[![Stellar](https://img.shields.io/badge/Stellar-Protocol_26-7D00FF?style=for-the-badge&logo=stellar&logoColor=white)](https://stellar.org)
+[![Soroban](https://img.shields.io/badge/Soroban-Smart_Contracts-000000?style=for-the-badge&logo=rust&logoColor=white)](https://soroban.stellar.org)
+[![Noir](https://img.shields.io/badge/Noir-ZK_Circuits-1E1E1E?style=for-the-badge&logo=data:image/svg+xml;base64,&logoColor=white)](https://noir-lang.org)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
+[![Rust](https://img.shields.io/badge/Rust-Soroban_SDK-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org)
+
+</div>
+
+---
+
+## 🎯 El problema
+
+Las subastas institucionales de activos —bonos soberanos, RWA, emisiones de deuda— enfrentan un dilema:
+
+- 🔓 **Si son públicas**, cada banco revela su estrategia y precio máximo. Los competidores se coordinan, los precios se distorsionan.
+- 🕶️ **Si son opacas**, no hay forma de probar que el proceso fue justo. Confías o no confías.
+
+No existe un punto medio donde **la oferta sea privada** *y* **el proceso sea verificable**.
+
+## 💡 La solución
+
+IDIO combina **privacidad** y **verificación matemática** en una sola plataforma sobre Stellar:
+
+- ✅ **Sealed-bid auctions** — las ofertas se envían selladas; nadie ve los montos.
+- ✅ **Zero-Knowledge Proofs** — cada participante prueba que tiene fondos suficientes *sin revelar cuánto*.
+- ✅ **Liquidación confidencial** — el monto ganador se transfiere oculto en cadena.
+- ✅ **Auditoría con view keys** — un auditor autorizado verifica que todo fue justo.
+- ✅ **Compliance integrado** — listas ASP (allow/deny) y validación FATF/OFAC.
+
+> Privacidad para los participantes. Transparencia para los reguladores. Confianza para todos.
+
+---
+
+## 🏗️ Arquitectura
+
+```
+┌──────────────────────────────────────────────────────────┐
+│   USUARIOS  ·  Bancos · Gobiernos · Auditores · Reguladores│
+└───────────────────────────┬──────────────────────────────┘
+                            │
+┌───────────────────────────▼──────────────────────────────┐
+│   FRONTEND (React + Tailwind)                             │
+│   Dashboard · Subastas · Bid Form · Auditoría · Compliance│
+│   Wallet (Freighter) · Generación de pruebas ZK (WASM)    │
+└───────────────────────────┬──────────────────────────────┘
+                            │
+┌───────────────────────────▼──────────────────────────────┐
+│   SMART CONTRACTS (Soroban / Rust)                        │
+│   auction.rs · token.rs · asp.rs · verifier.rs            │
+└───────────────────────────┬──────────────────────────────┘
+                            │
+┌───────────────────────────▼──────────────────────────────┐
+│   ZK CIRCUITS (Noir)                                      │
+│   sealed_bid.nr · proof_of_reserves.nr                    │
+└───────────────────────────┬──────────────────────────────┘
+                            │
+┌───────────────────────────▼──────────────────────────────┐
+│   STELLAR  ·  Protocol 26 · BN254 · Poseidon2 · Soroban   │
+└──────────────────────────────────────────────────────────┘
+```
+
+## 🔄 Cómo funciona
+
+| Paso | Actor | Acción |
+|------|-------|--------|
+| 1️⃣ | **Emisor** (Banco Central) | Crea la subasta y genera *proof-of-reserves* del activo |
+| 2️⃣ | **Bidders** (Bancos) | Envían ofertas selladas con ZK proof de fondos |
+| 3️⃣ | **Smart Contract** | Al cerrar el plazo, revela y determina al ganador |
+| 4️⃣ | **Ganador** | Paga de forma confidencial (monto oculto en cadena) |
+| 5️⃣ | **On-chain** | Liquidación RWA ↔ USDC verificable |
+| 6️⃣ | **Auditor** | Verifica el proceso con su *view key* |
+| 7️⃣ | **Regulador** | Confirma compliance (ASP / FATF / OFAC) |
+
+---
+
+## 🧰 Stack tecnológico
+
+<div align="center">
+
+| Capa | Tecnología |
+|------|-----------|
+| **Frontend** | ![React](https://img.shields.io/badge/-React_18-61DAFB?logo=react&logoColor=black) ![TS](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white) ![Tailwind](https://img.shields.io/badge/-Tailwind-06B6D4?logo=tailwindcss&logoColor=white) ![Vite](https://img.shields.io/badge/-Vite-646CFF?logo=vite&logoColor=white) |
+| **Contratos** | ![Rust](https://img.shields.io/badge/-Rust-000000?logo=rust&logoColor=white) ![Soroban](https://img.shields.io/badge/-Soroban_SDK-7D00FF?logo=stellar&logoColor=white) |
+| **ZK** | ![Noir](https://img.shields.io/badge/-Noir-1E1E1E) Poseidon2 · BN254 |
+| **Blockchain** | ![Stellar](https://img.shields.io/badge/-Stellar_P26-7D00FF?logo=stellar&logoColor=white) |
+
+</div>
+
+## 📁 Estructura del repo
+
+```
+idio/
+├── contracts/        Smart contracts Soroban (Rust)
+│   └── src/          auction · token · asp · verifier
+├── circuits/         Circuitos ZK (Noir)
+├── frontend/         Aplicación React + Tailwind
+│   └── src/          components · services · pages · utils
+├── docs/             Arquitectura, setup, deployment
+└── scripts/          Deploy, test, setup de testnet
+```
+
+## 🚀 Quick start
+
+```bash
+# Frontend
+cd frontend
+npm install
+npm run dev
+
+# Contratos
+cd contracts
+cargo build --target wasm32-unknown-unknown --release
+
+# Circuitos
+cd circuits
+nargo build
+```
+
+Requisitos: Node 18+, Rust + target `wasm32-unknown-unknown`, [Stellar CLI](https://developers.stellar.org/docs/tools/cli), [Nargo (Noir)](https://noir-lang.org).
+
+## 📚 Documentación
+
+- [Arquitectura](docs/ARCHITECTURE.md)
+- [Setup](docs/SETUP.md)
+- [Circuitos ZK](docs/CIRCUITS.md)
+- [Deployment](docs/DEPLOYMENT.md)
+
+## 📄 Licencia
+
+MIT — ver [LICENSE](LICENSE).
+
+<div align="center">
+
+**Construido sobre Stellar 🚀**
+
+</div>
