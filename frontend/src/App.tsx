@@ -7,6 +7,7 @@ import Auctions from './pages/Auctions'
 import CreateAuction from './pages/CreateAuction'
 import Audit from './pages/Audit'
 import Compliance from './pages/Compliance'
+import BankProfile from './pages/BankProfile'
 import { useRole } from './utils/useRole'
 import { ROLE_ROUTES } from './services/role'
 
@@ -31,8 +32,10 @@ export default function App() {
   }
 
   // Guarda: si la ruta no pertenece al rol, vuelve al inicio del rol.
+  // El perfil de banco (/banco/:address) es de solo lectura para todos.
   const allowed = ROLE_ROUTES[role]
-  if (!allowed.includes(location.pathname)) {
+  const isPublic = location.pathname.startsWith('/banco/')
+  if (!isPublic && !allowed.includes(location.pathname)) {
     return <Navigate to="/" replace />
   }
 
@@ -44,6 +47,7 @@ export default function App() {
         <Route path="/create" element={<CreateAuction address={address} />} />
         <Route path="/audit" element={<Audit />} />
         <Route path="/compliance" element={<Compliance />} />
+        <Route path="/banco/:address" element={<BankProfile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { ASSET_TYPES, type Auction } from '../types'
 import { fmtUSD, timeLeft } from '../utils/format'
 import StatusBadge from './StatusBadge'
@@ -31,6 +32,14 @@ export default function AuctionCard({ auction, onBid, onSettle, onPay }: Props) 
       </div>
 
       <p className="mt-1.5 line-clamp-2 text-sm text-slate-400">{auction.description}</p>
+
+      <Link
+        to={`/banco/${auction.issuer}`}
+        className="mt-1.5 inline-block font-mono text-[11px] text-slate-500 hover:text-brand-soft"
+        onClick={(e) => e.stopPropagation()}
+      >
+        Emisor: {auction.issuer.slice(0, 6)}…{auction.issuer.slice(-4)} →
+      </Link>
 
       <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
         <Stat label="Monto" value={fmtUSD(auction.amount)} />
