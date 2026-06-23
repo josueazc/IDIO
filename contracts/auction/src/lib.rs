@@ -246,13 +246,29 @@ impl AuctionContract {
             .persistent()
             .get(&DataKey::Bids(auction_id))
             .unwrap();
-        bids.push_back(SealedBid {
-            bidder,
+
+        let new_bid = SealedBid {
+            bidder: bidder.clone(),
             commitment,
             revealed_amount: 0,
             revealed: false,
             timestamp: env.ledger().timestamp(),
-        });
+        };
+
+        // Si el bidder ya tiene una oferta no revelada, la REEMPLAZA
+        // (puede mejorar su oferta antes del cierre, sin ver las demás).
+        let mut replaced = false;
+        for i in 0..bids.len() {
+            let existing = bids.get(i).unwrap();
+            if existing.bidder == bidder && !existing.revealed {
+                bids.set(i, new_bid.clone());
+                replaced = true;
+                break;
+            }
+        }
+        if !replaced {
+            bids.push_back(new_bid);
+        }
         env.storage().persistent().set(&DataKey::Bids(auction_id), &bids);
 
         // Persistimos por si cambió el estado en el futuro.
@@ -623,6 +639,58 @@ mod test {
         assert_eq!(winner, Some(bank_b.clone()));
         let auction = client.get_auction(&auction_id);
         assert_eq!(auction.winning_amount, 15_000_000);
+    }
+
+    #[test]
+    fn bidder_can_replace_own_bid() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let id = env.register(AuctionContract, ());
+        let client = AuctionContractClient::new(&env, &id);
+
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let bank = Address::generate(&env);
+        let asp = setup_asp(&env, &admin, &[&bank]);
+        let token = setup_token(&env, &admin);
+        let z = setup_zk(&env);
+        client.initialize(&admin, &asp, &token, &z.verifier, &z.elig_vk, &z.reserves_vk);
+
+        let reserves = BytesN::random(&env);
+        let auction_id = client.create_auction(
+            &issuer,
+            &String::from_str(&env, "Bonos"),
+            &500_000_000,
+            &10_000_000,
+            &100,
+            &reserves,
+            &reserves_proof(&env, &z, 500_000_000, 600_000_000),
+        );
+
+        // Primera oferta (12M), luego la reemplaza por una mayor (18M).
+        let salt1 = BytesN::random(&env);
+        let salt2 = BytesN::random(&env);
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, 12_000_000, &salt1),
+            &elig_proof(&env, &z, 10_000_000, 12_000_000, 50_000_000),
+        );
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, 18_000_000, &salt2),
+            &elig_proof(&env, &z, 10_000_000, 18_000_000, 50_000_000),
+        );
+
+        // Una sola oferta (reemplazada, no duplicada).
+        assert_eq!(client.get_bids(&auction_id).len(), 1);
+
+        env.ledger().with_mut(|l| l.timestamp += 200);
+        // Solo revela con el monto/salt de la oferta vigente (18M).
+        client.reveal_bid(&auction_id, &bank, &18_000_000, &salt2);
+        assert_eq!(client.settle(&auction_id), Some(bank));
+        assert_eq!(client.get_auction(&auction_id).winning_amount, 18_000_000);
     }
 
     #[test]
