@@ -66,6 +66,7 @@ export async function loadAuctions(): Promise<Auction[]> {
 
 export interface CreateInput {
   asset: string
+  assetType: import('../types').AssetType
   amount: number
   minBid: number
   currency: string

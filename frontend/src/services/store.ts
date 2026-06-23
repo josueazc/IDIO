@@ -5,7 +5,7 @@
  * producción esta capa se reemplaza por lecturas/escrituras a los
  * contratos Soroban (ver `contracts.ts`).
  */
-import type { Auction, SealedBid } from '../types'
+import type { Auction, AssetType, SealedBid } from '../types'
 import { commitBid, generateReservesProof } from './proofs'
 
 const KEY = 'idio.auctions.v1'
@@ -21,6 +21,7 @@ function seed(): Auction[] {
       id: 1,
       issuer: 'GBANCOCENTRALARG000000000000000000000000000000000000000',
       asset: 'Bonos Soberanos Argentina',
+      assetType: 'soberano',
       amount: 500_000_000,
       minBid: 10_000_000,
       currency: 'USDC',
@@ -38,12 +39,13 @@ function seed(): Auction[] {
     {
       id: 2,
       issuer: 'GBANCOCENTRALBRA000000000000000000000000000000000000000',
-      asset: 'Bonos Soberanos Brasil',
+      asset: 'RWA: Cartera Hipotecaria Brasil',
+      assetType: 'rwa',
       amount: 300_000_000,
       minBid: 8_000_000,
       currency: 'USDC',
       status: 'Settled',
-      description: 'Letras del tesoro a 5 años.',
+      description: 'Cartera de hipotecas tokenizada (RWA).',
       reservesCommitment: 'b92c…proof',
       createdAt: now - 50 * HOUR,
       endTime: now - 2 * HOUR,
@@ -59,12 +61,13 @@ function seed(): Auction[] {
     {
       id: 3,
       issuer: 'GBANCOCENTRALMEX000000000000000000000000000000000000000',
-      asset: 'Bonos Soberanos México',
+      asset: 'Bono Corporativo Pemex',
+      assetType: 'corporativo',
       amount: 450_000_000,
       minBid: 9_000_000,
       currency: 'USDC',
       status: 'BiddingOpen',
-      description: 'CETES institucionales a 7 años.',
+      description: 'Bono corporativo a 7 años.',
       reservesCommitment: 'c44a…proof',
       createdAt: now - 1 * HOUR,
       endTime: now + 24 * HOUR,
@@ -118,6 +121,7 @@ export function getAuction(id: number): Auction | undefined {
 export interface CreateAuctionInput {
   issuer: string
   asset: string
+  assetType: AssetType
   amount: number
   minBid: number
   currency: string
@@ -133,6 +137,7 @@ export async function createAuction(input: CreateAuctionInput): Promise<Auction>
     id: (auctions.reduce((m, a) => Math.max(m, a.id), 0) || 0) + 1,
     issuer: input.issuer,
     asset: input.asset,
+    assetType: input.assetType,
     amount: input.amount,
     minBid: input.minBid,
     currency: input.currency,

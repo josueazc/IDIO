@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createAuction, getMode } from '../services/data'
+import { ASSET_TYPES, type AssetType } from '../types'
 
 interface Props {
   address: string | null
@@ -9,6 +10,7 @@ interface Props {
 export default function CreateAuction({ address }: Props) {
   const nav = useNavigate()
   const [asset, setAsset] = useState('Bonos Soberanos')
+  const [assetType, setAssetType] = useState<AssetType>('soberano')
   const [amount, setAmount] = useState(500_000_000)
   const [minBid, setMinBid] = useState(10_000_000)
   const [currency, setCurrency] = useState('USDC')
@@ -27,6 +29,7 @@ export default function CreateAuction({ address }: Props) {
       await createAuction(
         {
           asset,
+          assetType,
           amount,
           minBid,
           currency,
@@ -52,9 +55,25 @@ export default function CreateAuction({ address }: Props) {
       </div>
 
       <div className="card space-y-4 p-6">
-        <div>
-          <label className="label">Activo</label>
-          <input className="input" value={asset} onChange={(e) => setAsset(e.target.value)} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="label">Activo</label>
+            <input className="input" value={asset} onChange={(e) => setAsset(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">Tipo de subasta</label>
+            <select
+              className="input"
+              value={assetType}
+              onChange={(e) => setAssetType(e.target.value as AssetType)}
+            >
+              {ASSET_TYPES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

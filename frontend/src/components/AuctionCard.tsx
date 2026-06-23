@@ -1,6 +1,11 @@
-import type { Auction } from '../types'
+import { ASSET_TYPES, type Auction } from '../types'
 import { fmtUSD, timeLeft } from '../utils/format'
 import StatusBadge from './StatusBadge'
+
+const ASSET_TYPE_LABEL = Object.fromEntries(ASSET_TYPES.map((t) => [t.id, t.label])) as Record<
+  string,
+  string
+>
 
 interface Props {
   auction: Auction
@@ -16,8 +21,11 @@ export default function AuctionCard({ auction, onBid, onSettle, onPay }: Props) 
     <div className="card p-5 transition hover:border-brand-soft/50">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[11px] font-mono text-slate-500">#{String(auction.id).padStart(3, '0')}</div>
-          <h3 className="text-lg font-bold text-white">{auction.asset}</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-mono text-slate-500">#{String(auction.id).padStart(3, '0')}</span>
+            <span className="pill bg-accent/10 text-accent">{ASSET_TYPE_LABEL[auction.assetType]}</span>
+          </div>
+          <h3 className="mt-0.5 text-lg font-bold text-white">{auction.asset}</h3>
         </div>
         <StatusBadge status={auction.status} />
       </div>

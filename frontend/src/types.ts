@@ -2,6 +2,15 @@ export type AuctionStatus = 'BiddingOpen' | 'BiddingClosed' | 'Settled' | 'Cance
 
 export type Role = 'issuer' | 'bidder' | 'auditor' | 'regulator'
 
+export type AssetType = 'soberano' | 'rwa' | 'corporativo' | 'licitacion'
+
+export const ASSET_TYPES: { id: AssetType; label: string }[] = [
+  { id: 'soberano', label: 'Bono soberano' },
+  { id: 'rwa', label: 'RWA tokenizado' },
+  { id: 'corporativo', label: 'Bono corporativo' },
+  { id: 'licitacion', label: 'Licitación pública' },
+]
+
 export interface SealedBid {
   /** Nombre legible del banco (solo para demo / view key). */
   bidderName: string
@@ -20,6 +29,7 @@ export interface Auction {
   id: number
   issuer: string
   asset: string
+  assetType: AssetType
   amount: number
   minBid: number
   currency: string

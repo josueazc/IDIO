@@ -5,7 +5,7 @@ import BidForm from '../components/BidForm'
 import { settle, revealBid, revealBidManual, getSalt, payWinner, resetDemo, getMode } from '../services/data'
 import { useRole } from '../utils/useRole'
 import { can } from '../services/role'
-import type { Auction } from '../types'
+import { ASSET_TYPES, type Auction, type AssetType } from '../types'
 
 interface Props {
   address: string | null
@@ -16,11 +16,14 @@ export default function Auctions({ address }: Props) {
   const role = useRole()
   const [bidding, setBidding] = useState<Auction | null>(null)
   const [filter, setFilter] = useState<'all' | 'open' | 'settled'>('all')
+  const [typeFilter, setTypeFilter] = useState<'all' | AssetType>('all')
   const [busy, setBusy] = useState<number | null>(null)
 
-  const filtered = auctions.filter((a) =>
-    filter === 'all' ? true : filter === 'open' ? a.status === 'BiddingOpen' : a.status === 'Settled'
-  )
+  const filtered = auctions
+    .filter((a) =>
+      filter === 'all' ? true : filter === 'open' ? a.status === 'BiddingOpen' : a.status === 'Settled'
+    )
+    .filter((a) => (typeFilter === 'all' ? true : a.assetType === typeFilter))
 
   async function onPay(au: Auction) {
     setBusy(au.id)
@@ -80,7 +83,7 @@ export default function Auctions({ address }: Props) {
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {(['all', 'open', 'settled'] as const).map((f) => (
           <button
             key={f}
@@ -90,6 +93,26 @@ export default function Auctions({ address }: Props) {
             }`}
           >
             {f === 'all' ? 'Todas' : f === 'open' ? 'Abiertas' : 'Liquidadas'}
+          </button>
+        ))}
+        <span className="mx-1 self-center text-edge">·</span>
+        <button
+          onClick={() => setTypeFilter('all')}
+          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+            typeFilter === 'all' ? 'bg-accent text-ink' : 'border border-edge bg-white/5 text-slate-400'
+          }`}
+        >
+          Todo tipo
+        </button>
+        {ASSET_TYPES.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTypeFilter(t.id)}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              typeFilter === t.id ? 'bg-accent text-ink' : 'border border-edge bg-white/5 text-slate-400'
+            }`}
+          >
+            {t.label}
           </button>
         ))}
       </div>

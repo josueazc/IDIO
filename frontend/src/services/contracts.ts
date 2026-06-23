@@ -146,11 +146,20 @@ function mapBids(raw: any[]): SealedBid[] {
   }))
 }
 
+function inferAssetType(asset: string): import('../types').AssetType {
+  const s = asset.toLowerCase()
+  if (s.includes('rwa') || s.includes('hipotec')) return 'rwa'
+  if (s.includes('corporativo') || s.includes('corp')) return 'corporativo'
+  if (s.includes('licitaci')) return 'licitacion'
+  return 'soberano'
+}
+
 function mapAuction(raw: any, bids: SealedBid[]): Auction {
   return {
     id: Number(raw.id),
     issuer: typeof raw.issuer === 'string' ? raw.issuer : raw.issuer?.toString?.() ?? '',
     asset: raw.asset,
+    assetType: inferAssetType(String(raw.asset ?? '')),
     amount: Number(raw.amount),
     minBid: Number(raw.min_bid),
     currency: 'USDC',
