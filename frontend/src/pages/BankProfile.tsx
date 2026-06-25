@@ -1,60 +1,67 @@
-import { useParams, Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
+import { EmptyState, Metric, PageHeader, RuledPanel } from '../components/Primitives'
+import StatusBadge from '../components/StatusBadge'
 import { useAuctions } from '../utils/useAuctions'
-import AuctionCard from '../components/AuctionCard'
 import { fmtUSD } from '../utils/format'
 
-/**
- * Perfil de un banco emisor: todas las subastas que emitió (filtrando por
- * issuer). Solo lectura, accesible a todos los roles. Respeta el invariante
- * de privacidad (los montos solo se ven cuando la subasta está liquidada).
- */
 export default function BankProfile() {
   const { address = '' } = useParams()
   const { auctions } = useAuctions()
-  const mine = auctions.filter((a) => a.issuer === address)
-
-  const open = mine.filter((a) => a.status === 'BiddingOpen').length
-  const settled = mine.filter((a) => a.status === 'Settled').length
-  const volume = mine.reduce((s, a) => s + (a.winningAmount ?? 0), 0)
-  const short = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—'
+  const mine = auctions.filter((auction) => auction.issuer === address)
+  const open = mine.filter((auction) => auction.status === 'BiddingOpen').length
+  const settled = mine.filter((auction) => auction.status === 'Settled').length
+  const volume = mine.reduce((sum, auction) => sum + (auction.winningAmount ?? 0), 0)
+  const short = address ? `${address.slice(0, 8)}...${address.slice(-4)}` : 'unknown'
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-xs uppercase tracking-wide text-slate-500">Perfil de banco emisor</div>
-          <h1 className="text-2xl font-extrabold text-white">🏛️ {short}</h1>
-          <div className="mt-1 break-all font-mono text-[11px] text-slate-600">{address}</div>
-        </div>
-        <Link to="/auctions" className="btn-ghost text-xs">
-          ← Todas las subastas
-        </Link>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Issuer profile"
+        title={short}
+        description="Read-only issuer record with auction history, settlement state and public commitments."
+        actions={<Link className="btn-ghost" to="/auctions">Back to registry</Link>}
+      />
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <Metric label="Subastas emitidas" value={String(mine.length)} accent="text-white" />
-        <Metric label="Abiertas / Liquidadas" value={`${open} / ${settled}`} accent="text-brand-soft" />
-        <Metric label="Volumen liquidado" value={fmtUSD(volume)} accent="text-accent" />
+      <section className="grid gap-4 md:grid-cols-3">
+        <Metric label="Issued auctions" value={String(mine.length)} />
+        <Metric label="Open / settled" value={`${open} / ${settled}`} />
+        <Metric label="Settled volume" value={fmtUSD(volume)} />
       </section>
 
-      {mine.length === 0 ? (
-        <div className="card p-10 text-center text-slate-500">Este banco no tiene subastas.</div>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {mine.map((a) => (
-            <AuctionCard key={a.id} auction={a} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
+      <RuledPanel title="Issuer address">
+        <div className="break-all border border-edge bg-white/[0.02] p-4 font-mono text-sm text-slate-300">{address}</div>
+      </RuledPanel>
 
-function Metric({ label, value, accent }: { label: string; value: string; accent: string }) {
-  return (
-    <div className="card p-5">
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className={`mt-1 text-2xl font-extrabold ${accent}`}>{value}</div>
+      {mine.length === 0 ? (
+        <EmptyState title="No issuer records" description="This address has not issued auctions in the current data source." />
+      ) : (
+        <RuledPanel title="Issuance history">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead>
+                <tr className="border-b border-edge text-left">
+                  <th className="px-3 py-3 micro-label">Record</th>
+                  <th className="px-3 py-3 micro-label">Asset</th>
+                  <th className="px-3 py-3 micro-label">Status</th>
+                  <th className="px-3 py-3 micro-label text-right">Amount</th>
+                  <th className="px-3 py-3 micro-label text-right">Winner</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mine.map((auction) => (
+                  <tr key={auction.id} className="data-row">
+                    <td className="px-3 py-4 font-mono text-xs text-slate-500">#{String(auction.id).padStart(3, '0')}</td>
+                    <td className="px-3 py-4 font-semibold text-white">{auction.asset}</td>
+                    <td className="px-3 py-4"><StatusBadge status={auction.status} /></td>
+                    <td className="px-3 py-4 text-right font-mono text-slate-200">{fmtUSD(auction.amount)}</td>
+                    <td className="px-3 py-4 text-right font-mono text-xs text-slate-500">{auction.winnerName ?? 'sealed'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </RuledPanel>
+      )}
     </div>
   )
 }

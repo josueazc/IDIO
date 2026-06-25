@@ -4,11 +4,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#0a0a12',
-        panel: '#12121f',
-        edge: '#22223a',
-        brand: { DEFAULT: '#7D00FF', soft: '#a855f7' },
-        accent: '#06b6d4',
+        ink: '#030403',
+        panel: '#0b0b0b',
+        raised: '#121212',
+        edge: 'rgba(255,255,255,0.14)',
+        brand: { DEFAULT: '#35e66b', soft: '#72f18f' },
+        accent: '#f4f6f4',
         gold: '#f5c542',
       },
       fontFamily: {
@@ -16,7 +17,7 @@ export default {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       boxShadow: {
-        glow: '0 0 40px -10px rgba(125,0,255,0.45)',
+        glow: '0 0 0 1px rgba(53,230,107,0.34)',
       },
     },
   },

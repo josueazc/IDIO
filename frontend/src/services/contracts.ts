@@ -4,7 +4,7 @@
  * - Lecturas (`total_auctions`, `get_auction`, `is_allowed`): se resuelven
  *   por simulación contra el RPC, sin firmar ni gastar fees.
  * - Escrituras (`create_auction`, `submit_sealed_bid`, `reveal_bid`,
- *   `settle`): se construyen, se preparan, se firman con Freighter y se
+ *   `settle`): se construyen, se preparan, se firman con Stellar Wallets Kit y se
  *   envían a la red.
  */
 import {
@@ -17,9 +17,9 @@ import {
   rpc,
   xdr,
 } from '@stellar/stellar-sdk'
-import { signTransaction } from '@stellar/freighter-api'
 import { config } from '../config'
 import type { Auction, AuctionStatus, SealedBid } from '../types'
+import { signWithWallet } from './wallet'
 
 const server = new rpc.Server(config.rpcUrl, {
   allowHttp: config.rpcUrl.startsWith('http://'),
@@ -69,7 +69,7 @@ async function readContract(contractId: string, method: string, args: xdr.ScVal[
   return scValToNative(retval)
 }
 
-// ---- Escritura firmada con Freighter ----
+// ---- Escritura firmada con Stellar Wallets Kit ----
 
 async function invokeContract(
   contractId: string,
@@ -89,7 +89,7 @@ async function invokeContract(
 
   const prepared = await server.prepareTransaction(built)
 
-  const { signedTxXdr } = await signTransaction(prepared.toXDR(), {
+  const { signedTxXdr } = await signWithWallet(prepared.toXDR(), {
     networkPassphrase: config.networkPassphrase,
     address: signerAddress,
   })

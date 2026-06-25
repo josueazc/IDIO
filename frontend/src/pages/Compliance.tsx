@@ -1,71 +1,122 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { EmptyState, PageHeader, RuledPanel } from '../components/Primitives'
+import StatusBadge from '../components/StatusBadge'
 import { useAuctions } from '../utils/useAuctions'
 
 export default function Compliance() {
   const { auctions } = useAuctions()
-  const [selected, setSelected] = useState<number>(auctions[0]?.id ?? 1)
-  const auction = auctions.find((a) => a.id === selected)
+  const [selected, setSelected] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!selected && auctions[0]) setSelected(auctions[0].id)
+  }, [auctions, selected])
+
+  const auction = auctions.find((item) => item.id === selected) ?? null
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-white">Compliance</h1>
-        <p className="text-sm text-slate-400">
-          El regulador valida participantes contra el ASP (allow-list), OFAC y FATF — sin ver montos.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Compliance desk"
+        title="Participant eligibility without bid exposure."
+        description="Regulators inspect allow-list, AML and jurisdiction state while bid amounts remain sealed."
+      />
 
-      <div>
-        <label className="label">Subasta</label>
-        <select className="input w-72" value={selected} onChange={(e) => setSelected(Number(e.target.value))}>
-          {auctions.map((a) => (
-            <option key={a.id} value={a.id}>
-              #{String(a.id).padStart(3, '0')} — {a.asset}
-            </option>
-          ))}
-        </select>
-      </div>
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
+          <RuledPanel title="Auction scope">
+            <label className="block max-w-lg">
+              <span className="label">Auction</span>
+              <select className="input" value={selected ?? ''} onChange={(event) => setSelected(Number(event.target.value))}>
+                {auctions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    #{String(item.id).padStart(3, '0')} / {item.asset}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </RuledPanel>
 
-      {auction && (
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <div className="card overflow-hidden">
-            <div className="border-b border-edge/60 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Participantes
-            </div>
-            <ul>
-              {auction.bids.map((b, i) => (
-                <li key={i} className="flex items-center justify-between border-b border-edge/40 px-5 py-3.5 last:border-0">
-                  <div>
-                    <div className="font-medium text-slate-200">{b.bidderName}</div>
-                    <div className="font-mono text-[11px] text-slate-600">{b.bidderAddress.slice(0, 14)}…</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="pill bg-emerald-500/15 text-emerald-300">Allow-list ✓</span>
-                    <span className="pill bg-emerald-500/15 text-emerald-300">No OFAC ✓</span>
-                  </div>
-                </li>
-              ))}
-              {auction.bids.length === 0 && (
-                <li className="px-5 py-8 text-center text-slate-500">Aún no hay participantes.</li>
+          {!auction ? (
+            <EmptyState title="No compliance target" description="Create or select an auction to review its participant set." />
+          ) : (
+            <RuledPanel title="Participants">
+              {auction.bids.length === 0 ? (
+                <EmptyState title="No participants yet" description="Compliance checks appear once sealed bids are submitted." />
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[760px] text-sm">
+                    <thead>
+                      <tr className="border-b border-edge text-left">
+                        <th className="px-3 py-3 micro-label">Participant</th>
+                        <th className="px-3 py-3 micro-label">ASP</th>
+                        <th className="px-3 py-3 micro-label">OFAC</th>
+                        <th className="px-3 py-3 micro-label">FATF</th>
+                        <th className="px-3 py-3 micro-label text-right">State</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auction.bids.map((bid, index) => (
+                        <tr key={`${bid.bidderAddress}-${index}`} className="data-row">
+                          <td className="px-3 py-4">
+                            <div className="font-semibold text-white">{bid.bidderName || 'Participant'}</div>
+                            <div className="mt-1 font-mono text-[11px] text-slate-600">
+                              {bid.bidderAddress.slice(0, 12)}...{bid.bidderAddress.slice(-4)}
+                            </div>
+                          </td>
+                          <td className="px-3 py-4"><Check ok={bid.whitelisted} /></td>
+                          <td className="px-3 py-4"><Check ok /></td>
+                          <td className="px-3 py-4"><Check ok /></td>
+                          <td className="px-3 py-4 text-right">
+                            <span className="pill bg-brand/15 text-brand">approved</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
-            </ul>
-          </div>
-
-          <div className="card space-y-3 p-5">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Validaciones</div>
-            {['FATF compliant', 'KYC verificado', 'AML verificado', 'Jurisdicción permitida'].map((v) => (
-              <div key={v} className="flex items-center gap-2 text-sm text-slate-300">
-                <span className="grid h-5 w-5 place-items-center rounded bg-emerald-500/20 text-emerald-300">✓</span>
-                {v}
-              </div>
-            ))}
-            <div className="mt-4 rounded-xl bg-emerald-500/10 p-4 text-center">
-              <div className="text-xs uppercase tracking-wide text-emerald-400/80">Estado</div>
-              <div className="text-2xl font-extrabold text-emerald-300">APROBADO</div>
-            </div>
-          </div>
+            </RuledPanel>
+          )}
         </div>
-      )}
+
+        <RuledPanel title="Regulatory summary">
+          {auction ? (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-xl font-semibold text-white">{auction.asset}</h2>
+                <div className="mt-3"><StatusBadge status={auction.status} /></div>
+              </div>
+              <div className="divide-y divide-edge border-y border-edge">
+                {[
+                  ['Participants', String(auction.bids.length)],
+                  ['Allow-list', 'ASP active'],
+                  ['Bid visibility', 'sealed'],
+                  ['Jurisdiction', 'permitted'],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-4 py-3 text-sm">
+                    <span className="text-slate-500">{label}</span>
+                    <span className="text-right font-mono text-xs uppercase tracking-[0.16em] text-brand">{value}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border border-brand/40 bg-brand/10 p-4">
+                <div className="micro-label text-brand">State</div>
+                <div className="mt-2 text-2xl font-semibold text-brand">Approved</div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm leading-6 text-slate-500">No auction selected.</p>
+          )}
+        </RuledPanel>
+      </section>
     </div>
+  )
+}
+
+function Check({ ok }: { ok: boolean }) {
+  return (
+    <span className={`pill ${ok ? 'bg-brand/15 text-brand' : 'bg-red-500/10 text-red-200'}`}>
+      {ok ? 'clear' : 'blocked'}
+    </span>
   )
 }

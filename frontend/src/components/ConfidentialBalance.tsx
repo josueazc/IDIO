@@ -2,12 +2,8 @@ import { useState } from 'react'
 import { chain } from '../services/contracts'
 import { getMode } from '../services/data'
 import { config } from '../config'
+import { RuledPanel } from './Primitives'
 
-/**
- * Panel de balance confidencial del token: muestra el compromiso Pedersen
- * (no revela el monto) y permite verificar una apertura `(monto, blinding)`
- * vía `token.verify_opening` — el mecanismo de auditabilidad del token.
- */
 export default function ConfidentialBalance() {
   const [addr, setAddr] = useState(config.readSource)
   const [commitment, setCommitment] = useState<string | null>(null)
@@ -24,7 +20,7 @@ export default function ConfidentialBalance() {
     try {
       setCommitment(await chain.tokenCommitment(addr))
     } catch (e) {
-      setCommitment('error: ' + (e as Error).message)
+      setCommitment(`error: ${(e as Error).message}`)
     } finally {
       setBusy(false)
     }
@@ -43,73 +39,72 @@ export default function ConfidentialBalance() {
 
   if (!chainMode) {
     return (
-      <div className="card p-5 text-sm text-slate-400">
-        El balance confidencial (compromiso Pedersen) se consulta en modo <span className="text-brand-soft">Testnet</span>.
-      </div>
+      <RuledPanel title="Confidential balance">
+        <p className="text-sm leading-6 text-slate-400">
+          Pedersen token commitments are available in Testnet mode.
+        </p>
+      </RuledPanel>
     )
   }
 
   return (
-    <div className="card space-y-4 p-5">
-      <div>
-        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Balance confidencial (token Pedersen)
-        </div>
-        <p className="mt-1 text-sm text-slate-400">
-          El balance se guarda como compromiso `C = v·G + r·H`. No revela el monto; el auditor lo
-          verifica con la apertura.
+    <RuledPanel title="Confidential balance">
+      <div className="space-y-5">
+        <p className="text-sm leading-6 text-slate-400">
+          The token balance is stored as a Pedersen commitment. The auditor verifies an opening without
+          exposing the value publicly.
         </p>
-      </div>
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex-1 min-w-[260px]">
-          <label className="label">Cuenta</label>
-          <input className="input font-mono text-xs" value={addr} onChange={(e) => setAddr(e.target.value)} />
+        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+          <label>
+            <span className="label">Account</span>
+            <input className="input font-mono text-xs" value={addr} onChange={(event) => setAddr(event.target.value)} />
+          </label>
+          <button className="btn-ghost" onClick={load} disabled={busy}>
+            Read commitment
+          </button>
         </div>
-        <button className="btn-ghost" onClick={load} disabled={busy}>
-          Leer compromiso
-        </button>
-      </div>
 
-      {commitment && (
-        <div className="rounded-xl bg-ink/50 p-3">
-          <div className="text-[10px] uppercase tracking-wide text-slate-500">Compromiso on-chain (64 bytes)</div>
-          <div className="mt-1 break-all font-mono text-xs text-slate-300">{commitment}</div>
-        </div>
-      )}
-
-      <div className="border-t border-edge/60 pt-4">
-        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Verificar apertura</div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="label">Monto declarado</label>
-            <input
-              type="number"
-              className="input font-mono"
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
-            />
-          </div>
-          <div>
-            <label className="label">Blinding (hex 32 bytes)</label>
-            <input className="input font-mono text-xs" value={blinding} onChange={(e) => setBlinding(e.target.value)} />
-          </div>
-        </div>
-        <button className="btn-primary mt-3" onClick={verify} disabled={busy}>
-          Verificar apertura on-chain
-        </button>
-        {opening !== null && (
-          <div
-            className={`mt-3 rounded-lg px-3 py-2 text-sm ${
-              opening ? 'bg-emerald-500/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300'
-            }`}
-          >
-            {opening
-              ? 'Apertura válida: el compromiso corresponde a (monto, blinding).'
-              : 'Apertura inválida: no corresponde a ese monto/blinding.'}
+        {commitment && (
+          <div className="border border-edge bg-white/[0.02] p-4">
+            <div className="micro-label">On-chain commitment</div>
+            <div className="mt-2 break-all font-mono text-xs text-slate-300">{commitment}</div>
           </div>
         )}
+
+        <div className="border-t border-edge pt-5">
+          <div className="micro-label mb-4">Verify opening</div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label>
+              <span className="label">Declared amount</span>
+              <input
+                type="number"
+                className="input font-mono"
+                value={amount}
+                onChange={(event) => setAmount(Number(event.target.value))}
+              />
+            </label>
+            <label>
+              <span className="label">Blinding hex</span>
+              <input
+                className="input font-mono text-xs"
+                value={blinding}
+                onChange={(event) => setBlinding(event.target.value)}
+              />
+            </label>
+          </div>
+          <button className="btn-primary mt-4" onClick={verify} disabled={busy}>
+            Verify on-chain opening
+          </button>
+          {opening !== null && (
+            <div className={`mt-4 border p-3 text-sm ${opening ? 'border-brand/40 bg-brand/10 text-brand' : 'border-red-400/30 bg-red-500/10 text-red-200'}`}>
+              {opening
+                ? 'Valid opening: commitment matches amount and blinding.'
+                : 'Invalid opening: amount and blinding do not match.'}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </RuledPanel>
   )
 }

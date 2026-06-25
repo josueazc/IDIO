@@ -1,133 +1,130 @@
 import { Link } from 'react-router-dom'
+import { PageHeader, Metric, RuledPanel, EmptyState } from '../components/Primitives'
+import StatusBadge from '../components/StatusBadge'
 import { useAuctions } from '../utils/useAuctions'
 import { useRole } from '../utils/useRole'
 import { ROLES } from '../services/role'
-import { fmtUSD } from '../utils/format'
+import { fmtUSD, timeLeft } from '../utils/format'
 
-const ROLE_CTA: Record<string, { to: string; label: string }> = {
-  emisor: { to: '/create', label: 'Crear subasta' },
-  oferente: { to: '/auctions', label: 'Ver subastas y ofertar' },
-  auditor: { to: '/audit', label: 'Abrir auditoría' },
-  regulador: { to: '/compliance', label: 'Abrir compliance' },
+const ROLE_CTA: Record<string, { to: string; label: string; description: string }> = {
+  emisor: {
+    to: '/create',
+    label: 'Issue auction',
+    description: 'Create a private auction after reserve preflight.',
+  },
+  oferente: {
+    to: '/auctions',
+    label: 'Open registry',
+    description: 'Review auctions and submit sealed bids.',
+  },
+  auditor: {
+    to: '/audit',
+    label: 'Open audit desk',
+    description: 'Reveal evidence with a view key.',
+  },
+  regulador: {
+    to: '/compliance',
+    label: 'Open compliance',
+    description: 'Validate participants without seeing bid amounts.',
+  },
 }
 
 export default function Home() {
   const { auctions } = useAuctions()
   const role = useRole()
-  const roleInfo = ROLES.find((r) => r.id === role)
+  const roleInfo = ROLES.find((item) => item.id === role)
   const cta = role ? ROLE_CTA[role] : null
-  const open = auctions.filter((a) => a.status === 'BiddingOpen')
-  const settled = auctions.filter((a) => a.status === 'Settled')
-  const volume = settled.reduce((s, a) => s + (a.winningAmount ?? 0), 0)
+  const open = auctions.filter((auction) => auction.status === 'BiddingOpen')
+  const settled = auctions.filter((auction) => auction.status === 'Settled')
+  const volume = auctions.reduce((sum, auction) => sum + (auction.winningAmount ?? 0), 0)
 
   return (
-    <div className="space-y-10">
-      <section className="card relative overflow-hidden p-8 md:p-12">
-        <div className="relative z-10 max-w-2xl">
-          <span className="pill bg-brand/15 text-brand-soft">Stellar · Protocol 26 · Zero-Knowledge</span>
-          <h1 className="mt-4 text-4xl font-extrabold leading-tight text-white md:text-5xl">
-            Subastas institucionales{' '}
-            <span className="bg-gradient-to-r from-brand-soft to-accent bg-clip-text text-transparent">
-              privadas y verificables
-            </span>
-          </h1>
-          <p className="mt-4 text-lg text-slate-300">
-            Bancos centrales y gobiernos venden bonos y RWA con ofertas selladas. Privacidad para
-            los participantes, transparencia matemática para los reguladores.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            {cta && (
-              <Link to={cta.to} className="btn-primary">
-                {cta.label}
-              </Link>
-            )}
-            {roleInfo && (
-              <span className="pill bg-white/5 text-slate-300">
-                {roleInfo.icon} {roleInfo.label}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-brand/20 blur-3xl" />
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Protocol overview"
+        title="Operational console for private institutional auctions."
+        description="Monitor auction state, proof status and role-specific next actions from one surface."
+        actions={cta && <Link className="btn-primary" to={cta.to}>{cta.label}</Link>}
+      />
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <Metric label="Active auctions" value={String(open.length)} detail="Bidding window open" />
+        <Metric label="Settled auctions" value={String(settled.length)} detail="Winner selected" />
+        <Metric label="Settled volume" value={fmtUSD(volume)} detail="Demo or Testnet data" />
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <Metric label="Subastas activas" value={String(open.length)} accent="text-emerald-300" />
-        <Metric label="Liquidadas" value={String(settled.length)} accent="text-brand-soft" />
-        <Metric label="Volumen liquidado" value={fmtUSD(volume)} accent="text-accent" />
-      </section>
+      <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
+        <RuledPanel title="Recent auction activity">
+          {auctions.length === 0 ? (
+            <EmptyState
+              title="No auctions yet"
+              description="Create a demo auction or switch to Testnet once your wallet is connected."
+              action={role === 'emisor' && <Link className="btn-primary" to="/create">Issue auction</Link>}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-sm">
+                <thead>
+                  <tr className="border-b border-edge text-left">
+                    <th className="px-3 py-3 micro-label">Record</th>
+                    <th className="px-3 py-3 micro-label">Asset</th>
+                    <th className="px-3 py-3 micro-label">Status</th>
+                    <th className="px-3 py-3 micro-label text-right">Amount</th>
+                    <th className="px-3 py-3 micro-label text-right">Close</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auctions.slice(0, 6).map((auction) => (
+                    <tr key={auction.id} className="data-row">
+                      <td className="px-3 py-4 font-mono text-xs text-slate-500">
+                        #{String(auction.id).padStart(3, '0')}
+                      </td>
+                      <td className="px-3 py-4">
+                        <div className="font-semibold text-white">{auction.asset}</div>
+                        <div className="mt-1 font-mono text-[11px] text-slate-600">
+                          {auction.issuer.slice(0, 8)}...{auction.issuer.slice(-4)}
+                        </div>
+                      </td>
+                      <td className="px-3 py-4"><StatusBadge status={auction.status} /></td>
+                      <td className="px-3 py-4 text-right font-mono text-slate-200">{fmtUSD(auction.amount)}</td>
+                      <td className="px-3 py-4 text-right text-slate-400">
+                        {auction.status === 'BiddingOpen' ? timeLeft(auction.endTime) : 'closed'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </RuledPanel>
 
-      {roleInfo && (
-        <section className="card p-6">
-          <div className="flex items-center gap-3">
-            <div className="text-3xl">{roleInfo.icon}</div>
+        <RuledPanel title="Active authority">
+          <div className="space-y-5">
             <div>
-              <div className="text-lg font-bold text-white">Estás como {roleInfo.label}</div>
-              <div className="text-sm text-slate-400">{roleInfo.desc}</div>
+              <div className="text-xl font-semibold text-white">{roleInfo?.label}</div>
+              <p className="mt-2 text-sm leading-6 text-slate-400">{roleInfo?.desc}</p>
+            </div>
+            {cta && (
+              <div className="border border-edge bg-white/[0.02] p-4">
+                <div className="micro-label">Next action</div>
+                <div className="mt-3 font-semibold text-white">{cta.label}</div>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{cta.description}</p>
+                <Link className="btn-primary mt-4 w-full" to={cta.to}>
+                  {cta.label}
+                </Link>
+              </div>
+            )}
+            <div className="space-y-3 border-t border-edge pt-4">
+              {['Reserve proof available before publish', 'Sealed bids remain private', 'Audit trail stays readable'].map((item) => (
+                <div key={item} className="flex items-center gap-3 text-sm text-slate-300">
+                  <span className="h-2 w-2 rounded-full bg-brand" />
+                  {item}
+                </div>
+              ))}
             </div>
           </div>
-          <ul className="mt-4 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
-            {ROLE_HELP[role!].map((h) => (
-              <li key={h} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-soft" />
-                {h}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section className="card p-6">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
-          Cómo funciona
-        </h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <div key={i} className="rounded-xl bg-ink/40 p-4">
-              <div className="text-xs font-mono text-brand-soft">0{i + 1}</div>
-              <div className="mt-1 font-semibold text-white">{s.t}</div>
-              <div className="mt-1 text-sm text-slate-400">{s.d}</div>
-            </div>
-          ))}
-        </div>
+        </RuledPanel>
       </section>
     </div>
   )
 }
-
-const STEPS = [
-  { t: 'Emisión', d: 'El emisor publica el activo y prueba sus reservas con ZK.' },
-  { t: 'Ofertas selladas', d: 'Cada banco oferta con un compromiso; nadie ve los montos.' },
-  { t: 'Reveal & liquidación', d: 'Al cerrar, el contrato revela, elige al ganador y liquida.' },
-]
-
-const ROLE_HELP: Record<string, string[]> = {
-  emisor: [
-    'Crear subastas con prueba de reservas (Groth16)',
-    'Liquidar la subasta tras el cierre',
-    'No podés ofertar ni auditar desde aquí',
-  ],
-  oferente: [
-    'Ofertar de forma sellada con prueba ZK',
-    'Pagar de forma confidencial si ganás',
-    'No podés crear subastas ni ver compliance',
-  ],
-  auditor: [
-    'Revelar montos con view key y verificar el proceso',
-    'Solo lectura: no podés ofertar ni crear',
-  ],
-  regulador: [
-    'Validar participantes contra el ASP (allow-list)',
-    'Solo compliance: no podés ofertar ni crear',
-  ],
-}
-
-function Metric({ label, value, accent }: { label: string; value: string; accent: string }) {
-  return (
-    <div className="card p-5">
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className={`mt-1 text-3xl font-extrabold ${accent}`}>{value}</div>
-    </div>
-  )
-}
-
