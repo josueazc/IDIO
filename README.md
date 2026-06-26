@@ -144,15 +144,26 @@ stellar contract invoke --id CCSKDZY7NG4ZNPI6LBMT67LAROF6KXVXYIIDK7XAO2CDTMGZHJL
   --source <your-key> --network testnet -- get_bids --auction_id 1
 ```
 
-Tests: ~24 green across all layers (contracts, Groth16 prover, Noir circuits, frontend).
+Tests: ~26 green across all layers — contracts (auction 6, asp 3, token 1, verifier 2), Groth16 prover (3), Noir circuits (7), frontend (11).
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) · [Circuits](docs/CIRCUITS.md) · [Setup](docs/SETUP.md) · [Deployment](docs/DEPLOYMENT.md) · [Demo & video script](docs/DEMO.md)
+- [Architecture](docs/ARCHITECTURE.md) · [Circuits](docs/CIRCUITS.md) · [Setup](docs/SETUP.md) · [Deployment](docs/DEPLOYMENT.md) · [Demo & video script](docs/DEMO.md) · [Frontend guide](docs/FRONTEND_GUIDE.md)
 
-## Known limitation (honest)
+## Status & roadmap (honest)
 
-A fully **sound confidential-solvency proof** for the token (proving `amount ≤ balance` bound to the on-chain Pedersen commitment, revealing nothing) requires in-circuit elliptic-curve arithmetic over a 2-cycle curve (e.g. BN254/Grumpkin). Soroban exposes BN254/BLS natively but not Grumpkin, so this is the remaining hardening step — documented, not faked.
+**Built, tested and on-chain:** sealed-bid core, browser→chain Groth16 bridge (eligibility + reserves), confidential Pedersen token, confidential settlement, Covenant (ZK allow-list), Auspex+ (reserve policy), BEShield (k-of-n consensus), role separation, post-close transparency.
+
+**Available but not the default path yet:**
+- **Covenant** membership is verified by the ASP (`verify_membership`) and tested, but the live bid gate still uses the public allow-list (`is_allowed`). Switching the gate to require the ZK membership proof is the next wiring step.
+- **BEShield** consensus is wired and tested but **off by default** (`threshold = 0`); enabling it needs a real validator set/network.
+
+**Research-grade (documented, not faked):**
+- **Confidential-solvency proof** for the token (`amount ≤ balance` bound to the on-chain Pedersen commitment, revealing nothing) needs in-circuit elliptic-curve arithmetic over a 2-cycle curve (e.g. BN254/Grumpkin). Soroban exposes BN254/BLS natively but not Grumpkin — this is the remaining hardening step.
+
+**Pending (needs accounts/recording):** public deployment (`vercel`/Netlify configs included) and the demo video (`docs/DEMO.md`).
+
+> This is a working hackathon MVP: real, tested, verified on-chain — not an audited production system.
 
 ## License
 
