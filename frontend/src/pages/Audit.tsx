@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react'
 import ConfidentialBalance from '../components/ConfidentialBalance'
+import OpeningVerifier from '../components/OpeningVerifier'
 import { EmptyState, PageHeader, RuledPanel } from '../components/Primitives'
 import StatusBadge from '../components/StatusBadge'
 import { useAuctions } from '../utils/useAuctions'
+import { useRole } from '../utils/useRole'
+import { getStoredWalletAddress } from '../services/wallet'
 import { fmtUSD } from '../utils/format'
 
 export default function Audit() {
-  const { auctions } = useAuctions()
+  const { auctions: all } = useAuctions()
+  const role = useRole()
+  const myAddress = getStoredWalletAddress()
+  // The issuer only audits its own auctions; the auditor sees all.
+  const auctions = role === 'emisor' ? all.filter((a) => a.issuer === myAddress) : all
   const [selected, setSelected] = useState<number | null>(null)
   const [unlocked, setUnlocked] = useState(false)
   const [viewKey, setViewKey] = useState('')
@@ -20,9 +27,13 @@ export default function Audit() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Audit desk"
-        title="Reveal evidence with a controlled view key."
-        description="Auditors can inspect commitments, revealed amounts and final winner logic without changing protocol state."
+        eyebrow={role === 'emisor' ? 'Issuer audit' : 'Audit desk'}
+        title={role === 'emisor' ? 'Audit your own auctions.' : 'Reveal evidence with a controlled view key.'}
+        description={
+          role === 'emisor'
+            ? 'Only your auctions. After close you can review every bid and verify the highest one won.'
+            : 'Auditors can inspect commitments, revealed amounts and final winner logic without changing protocol state.'
+        }
       />
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -102,6 +113,7 @@ export default function Audit() {
             </RuledPanel>
           )}
 
+          <OpeningVerifier />
           <ConfidentialBalance />
         </div>
 

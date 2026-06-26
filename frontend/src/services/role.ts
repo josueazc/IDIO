@@ -11,7 +11,7 @@ export const ROLES: { id: Role; label: string; desc: string; icon: string }[] = 
 ]
 
 export const ROLE_ROUTES: Record<Role, string[]> = {
-  emisor: ['/', '/roles', '/create', '/auctions'],
+  emisor: ['/', '/roles', '/create', '/auctions', '/audit'],
   oferente: ['/', '/roles', '/auctions'],
   auditor: ['/', '/roles', '/audit'],
   regulador: ['/', '/roles', '/compliance'],

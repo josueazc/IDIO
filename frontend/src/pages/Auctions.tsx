@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import BidForm from '../components/BidForm'
+import BidResults from '../components/BidResults'
 import { EmptyState, ErrorNotice, PageHeader, RuledPanel, SkeletonRows } from '../components/Primitives'
 import StatusBadge from '../components/StatusBadge'
 import { settle, revealBid, revealBidManual, getSalt, payWinner, resetDemo, getMode } from '../services/data'
@@ -310,6 +311,12 @@ function InspectionPanel({ auction }: { auction: Auction | null }) {
             </div>
           ))}
         </div>
+        {auction.status === 'Settled' && (
+          <div>
+            <div className="micro-label mb-2">Public results (post-close)</div>
+            <BidResults auction={auction} />
+          </div>
+        )}
         <Link className="btn-ghost w-full" to={`/banco/${auction.issuer}`}>
           View issuer profile
         </Link>
