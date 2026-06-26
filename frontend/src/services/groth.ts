@@ -37,9 +37,23 @@ export async function proveEligibility(
   return split(hex)
 }
 
-/** Prueba de reservas: total ≥ monto subastado (total privado). */
-export async function proveReserves(auctionAmount: number, total: number): Promise<GrothProof> {
+/**
+ * Prueba de reservas (Auspex+): total ≥ monto y liquid/total ≥ pct, sin
+ * revelar total ni liquid. `pct` es la política mínima de liquidez (%).
+ */
+export async function proveReserves(
+  auctionAmount: number,
+  minLiquidityPct: number,
+  total: number,
+  liquid: number
+): Promise<GrothProof> {
   await ensure()
-  const hex = prove_reserves_hex(BigInt(auctionAmount), BigInt(total), seed())
+  const hex = prove_reserves_hex(
+    BigInt(auctionAmount),
+    BigInt(minLiquidityPct),
+    BigInt(total),
+    BigInt(liquid),
+    seed()
+  )
   return split(hex)
 }

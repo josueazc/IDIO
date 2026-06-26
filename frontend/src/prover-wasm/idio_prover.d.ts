@@ -10,14 +10,14 @@ export function prove_eligibility_hex(min_bid: bigint, bid: bigint, balance: big
 /**
  * Prueba de reservas. Devuelve `a‖b‖c` en hex (256 bytes).
  */
-export function prove_reserves_hex(auction_amount: bigint, total: bigint, seed: bigint): string;
+export function prove_reserves_hex(auction_amount: bigint, min_liquidity_pct: bigint, total: bigint, liquid: bigint, seed: bigint): string;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly prove_eligibility_hex: (a: bigint, b: bigint, c: bigint, d: bigint) => [number, number];
-    readonly prove_reserves_hex: (a: bigint, b: bigint, c: bigint) => [number, number];
+    readonly prove_reserves_hex: (a: bigint, b: bigint, c: bigint, d: bigint, e: bigint) => [number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_start: () => void;

@@ -41,6 +41,6 @@ headers COOP/COEP en `netlify.toml`.
 
 ```bash
 # Subasta real on-chain (el monto de la oferta NO aparece)
-stellar contract invoke --id CCVBKMZ5ECSTK7QMICWIPIXVFPZN2DHNW7UQNK3ZAJ3VLWFEWFY2TS7R \
+stellar contract invoke --id CC4KK45XGTJJZRCDWAVU45TSQAURWR5IY3W2TNQOJADRP7CWDQ7DHJ4N \
   --source idio --network testnet -- get_bids --auction_id 1
 ```

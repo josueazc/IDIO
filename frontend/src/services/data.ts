@@ -77,8 +77,9 @@ export interface CreateInput {
 export async function createAuction(input: CreateInput, wallet: string): Promise<void> {
   if (getMode() === 'chain') {
     const { commitment } = await generateReservesProof(input.amount)
-    // Prueba Groth16 de reservas (total ≥ monto), verificada on-chain.
-    const proof = await proveReserves(input.amount, input.amount)
+    // Prueba Groth16 de reservas (Auspex+): total ≥ monto y liquidez ≥ 30%,
+    // verificada on-chain. liquid = total (100% líquido) satisface el ratio.
+    const proof = await proveReserves(input.amount, 30, input.amount, input.amount)
     await chain.createAuction(
       wallet,
       input.asset,

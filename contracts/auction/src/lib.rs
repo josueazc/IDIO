@@ -25,6 +25,9 @@ use soroban_sdk::{
     String, Vec,
 };
 
+/// Política mínima de liquidez (%) que el emisor debe probar en reservas.
+const MIN_LIQUIDITY_PCT: i128 = 30;
+
 /// Interfaz del contrato ASP para la llamada cross-contract de gating.
 /// Genera `AspClient`, usado por la subasta para validar participantes.
 #[contractclient(name = "AspClient")]
@@ -173,10 +176,13 @@ impl AuctionContract {
     ) -> u64 {
         issuer.require_auth();
 
-        // Verifica la prueba de reservas: entrada pública = monto subastado.
+        // Verifica la prueba de reservas (Auspex+): entradas públicas =
+        // [monto subastado, política mínima de liquidez %]. El emisor prueba
+        // total ≥ monto y liquid/total ≥ pct sin revelar los números.
         let vk: Groth16Vk = env.storage().instance().get(&DataKey::ReservesVk).unwrap();
         let mut inputs: Vec<BytesN<32>> = Vec::new(&env);
         inputs.push_back(Self::i128_to_fr_bytes(&env, amount));
+        inputs.push_back(Self::i128_to_fr_bytes(&env, MIN_LIQUIDITY_PCT));
         if !Self::verifier(&env).verify_groth16(&vk, &reserves_proof, &inputs) {
             panic(&env, AuctionError::InvalidReservesProof);
         }
@@ -549,7 +555,8 @@ mod test {
     }
 
     fn reserves_proof(env: &Env, z: &Env_, amount: u64, total: u64) -> Groth16Proof {
-        to_proof(env, &prove_reserves(&z.reserves_pk, amount, total, 7))
+        // pct=30 política; liquid = total (100% líquido, satisface el ratio).
+        to_proof(env, &prove_reserves(&z.reserves_pk, amount, 30, total, total, 7))
     }
 
     fn elig_proof(env: &Env, z: &Env_, min: u64, bid: u64, balance: u64) -> Groth16Proof {

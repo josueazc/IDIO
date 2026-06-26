@@ -1,6 +1,6 @@
 //! Genera pruebas Groth16 en JSON para pasar a la CLI de Stellar.
 //! Uso:
-//!   proof reserves <amount> <total>
+//!   proof reserves <amount> <pct> <total> <liquid>
 //!   proof eligibility <min> <bid> <balance>
 
 use idio_prover::{proof_to_hex, prove_eligibility, prove_reserves, setup_eligibility, setup_reserves};
@@ -15,9 +15,11 @@ fn main() {
     match args.get(1).map(|s| s.as_str()) {
         Some("reserves") => {
             let amount: u64 = args[2].parse().unwrap();
-            let total: u64 = args[3].parse().unwrap();
+            let pct: u64 = args[3].parse().unwrap();
+            let total: u64 = args[4].parse().unwrap();
+            let liquid: u64 = args[5].parse().unwrap();
             let (pk, _) = setup_reserves();
-            let (a, b, c) = proof_to_hex(&prove_reserves(&pk, amount, total, seed));
+            let (a, b, c) = proof_to_hex(&prove_reserves(&pk, amount, pct, total, liquid, seed));
             println!("{}", json(&a, &b, &c));
         }
         Some("eligibility") => {

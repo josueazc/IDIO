@@ -25,15 +25,17 @@ export function prove_eligibility_hex(min_bid, bid, balance, seed) {
 /**
  * Prueba de reservas. Devuelve `a‖b‖c` en hex (256 bytes).
  * @param {bigint} auction_amount
+ * @param {bigint} min_liquidity_pct
  * @param {bigint} total
+ * @param {bigint} liquid
  * @param {bigint} seed
  * @returns {string}
  */
-export function prove_reserves_hex(auction_amount, total, seed) {
+export function prove_reserves_hex(auction_amount, min_liquidity_pct, total, liquid, seed) {
     let deferred1_0;
     let deferred1_1;
     try {
-        const ret = wasm.prove_reserves_hex(auction_amount, total, seed);
+        const ret = wasm.prove_reserves_hex(auction_amount, min_liquidity_pct, total, liquid, seed);
         deferred1_0 = ret[0];
         deferred1_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);

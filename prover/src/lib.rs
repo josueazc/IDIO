@@ -46,20 +46,45 @@ impl ConstraintSynthesizer<Fr> for EligibilityCircuit {
     }
 }
 
-/// `total ≥ auction_amount`. `auction_amount` público; `total` privado.
+/// Auspex+: política de reservas/solvencia probada en ZK.
+/// Públicos: `auction_amount`, `min_liquidity_pct` (p. ej. 30).
+/// Privados: `total` (reservas) y `liquid` (parte líquida).
+/// Prueba, sin revelar los números:
+///   1. `total ≥ auction_amount`            (respaldo del activo)
+///   2. `liquid ≤ total`                     (consistencia)
+///   3. `liquid·100 ≥ min_liquidity_pct·total` (ratio de liquidez)
 #[derive(Clone)]
 pub struct ReservesCircuit {
     pub auction_amount: Option<Fr>,
+    pub min_liquidity_pct: Option<Fr>,
     pub total: Option<Fr>,
+    pub liquid: Option<Fr>,
 }
 
 impl ConstraintSynthesizer<Fr> for ReservesCircuit {
     fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
         let amount =
             FpVar::new_input(cs.clone(), || self.auction_amount.ok_or(SynthesisError::AssignmentMissing))?;
+        let pct = FpVar::new_input(cs.clone(), || {
+            self.min_liquidity_pct.ok_or(SynthesisError::AssignmentMissing)
+        })?;
         let total = FpVar::new_witness(cs.clone(), || self.total.ok_or(SynthesisError::AssignmentMissing))?;
+        let liquid = FpVar::new_witness(cs.clone(), || self.liquid.ok_or(SynthesisError::AssignmentMissing))?;
+
+        // 1. total >= amount
         total
             .is_cmp(&amount, core::cmp::Ordering::Greater, true)?
+            .enforce_equal(&ark_r1cs_std::boolean::Boolean::TRUE)?;
+        // 2. liquid <= total
+        liquid
+            .is_cmp(&total, core::cmp::Ordering::Less, true)?
+            .enforce_equal(&ark_r1cs_std::boolean::Boolean::TRUE)?;
+        // 3. liquid*100 >= pct*total
+        let hundred = FpVar::new_constant(cs.clone(), Fr::from(100u64))?;
+        let liquid_100 = &liquid * &hundred;
+        let pct_total = &pct * &total;
+        liquid_100
+            .is_cmp(&pct_total, core::cmp::Ordering::Greater, true)?
             .enforce_equal(&ark_r1cs_std::boolean::Boolean::TRUE)?;
         Ok(())
     }
@@ -81,7 +106,7 @@ pub fn setup_eligibility() -> (ProvingKey<Bn254>, VerifyingKey<Bn254>) {
 
 pub fn setup_reserves() -> (ProvingKey<Bn254>, VerifyingKey<Bn254>) {
     let mut rng = StdRng::seed_from_u64(SEED ^ 0xABCD);
-    let c = ReservesCircuit { auction_amount: None, total: None };
+    let c = ReservesCircuit { auction_amount: None, min_liquidity_pct: None, total: None, liquid: None };
     Groth16::<Bn254>::circuit_specific_setup(c, &mut rng).unwrap()
 }
 
@@ -104,13 +129,17 @@ pub fn prove_eligibility(
 pub fn prove_reserves(
     pk: &ProvingKey<Bn254>,
     auction_amount: u64,
+    min_liquidity_pct: u64,
     total: u64,
+    liquid: u64,
     seed: u64,
 ) -> ark_groth16::Proof<Bn254> {
     let mut rng = StdRng::seed_from_u64(seed);
     let c = ReservesCircuit {
         auction_amount: Some(Fr::from(auction_amount)),
+        min_liquidity_pct: Some(Fr::from(min_liquidity_pct)),
         total: Some(Fr::from(total)),
+        liquid: Some(Fr::from(liquid)),
     };
     Groth16::<Bn254>::prove(pk, c, &mut rng).unwrap()
 }
@@ -237,8 +266,14 @@ mod wasm {
 
     /// Prueba de reservas. Devuelve `a‖b‖c` en hex (256 bytes).
     #[wasm_bindgen]
-    pub fn prove_reserves_hex(auction_amount: u64, total: u64, seed: u64) -> String {
-        let p = prove_reserves(reserves_pk(), auction_amount, total, seed);
+    pub fn prove_reserves_hex(
+        auction_amount: u64,
+        min_liquidity_pct: u64,
+        total: u64,
+        liquid: u64,
+        seed: u64,
+    ) -> String {
+        let p = prove_reserves(reserves_pk(), auction_amount, min_liquidity_pct, total, liquid, seed);
         let (a, b, c) = proof_bytes(&p);
         ark_std::format!("{}{}{}", hex(&a), hex(&b), hex(&c))
     }
@@ -259,8 +294,14 @@ mod tests {
     #[test]
     fn reserves_proves_and_verifies() {
         let (pk, vk) = setup_reserves();
-        let proof = prove_reserves(&pk, 500_000_000, 500_000_000, 42);
+        // amount=500M, pct=30; total=600M, liquid=300M (ratio 50% ≥ 30%).
+        let proof = prove_reserves(&pk, 500_000_000, 30, 600_000_000, 300_000_000, 42);
         let pvk = Groth16::<Bn254>::process_vk(&vk).unwrap();
-        assert!(Groth16::<Bn254>::verify_with_processed_vk(&pvk, &[Fr::from(500_000_000u64)], &proof).unwrap());
+        assert!(Groth16::<Bn254>::verify_with_processed_vk(
+            &pvk,
+            &[Fr::from(500_000_000u64), Fr::from(30u64)],
+            &proof
+        )
+        .unwrap());
     }
 }

@@ -47,7 +47,7 @@ All four contracts are deployed, initialized and verified on Testnet (`soroban-s
 
 | Contract | ID |
 |----------|----|
-| Auction | [`CCVBKMZ5ECSTK7QMICWIPIXVFPZN2DHNW7UQNK3ZAJ3VLWFEWFY2TS7R`](https://stellar.expert/explorer/testnet/contract/CCVBKMZ5ECSTK7QMICWIPIXVFPZN2DHNW7UQNK3ZAJ3VLWFEWFY2TS7R) |
+| Auction | [`CC4KK45XGTJJZRCDWAVU45TSQAURWR5IY3W2TNQOJADRP7CWDQ7DHJ4N`](https://stellar.expert/explorer/testnet/contract/CC4KK45XGTJJZRCDWAVU45TSQAURWR5IY3W2TNQOJADRP7CWDQ7DHJ4N) |
 | Verifier | [`CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6`](https://stellar.expert/explorer/testnet/contract/CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6) |
 | Token | [`CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH`](https://stellar.expert/explorer/testnet/contract/CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH) |
 | ASP | [`CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY`](https://stellar.expert/explorer/testnet/contract/CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY) |
@@ -60,7 +60,9 @@ All four contracts are deployed, initialized and verified on Testnet (`soroban-s
 - **Browser → chain ZK bridge (Groth16 / BN254)** — when a bank bids, the browser generates a Groth16 eligibility proof (`balance ≥ bid ≥ minimum`) with an arkworks prover compiled to **WASM** (~1.3 s). The contract **requires and verifies it on-chain** via a cross-contract call `auction → verifier` (native `pairing_check`). Creating an auction requires a reserves proof (`total ≥ amount`).
 - **Confidential token** — balances are **Pedersen commitments** `v·G + r·H` over BN254; transfers are homomorphic; the amount is never in clear.
 - **Confidential settlement** — the winner pays the issuer via `settle_payment` (cross-contract `auction → token`), amount hidden inside a commitment.
-- **Compliance gating** — only banks on the ASP allow-list can bid (cross-contract `auction → asp`).
+- **Private allow-list (Covenant)** — the ASP can verify a **ZK Merkle-membership proof + nullifier**: a bank proves it is approved without revealing *which* member it is, and the one-time nullifier blocks reuse (`asp.verify_membership`).
+- **Reserve policy (Auspex+)** — creating an auction proves not just `total ≥ amount` but also a **liquidity ratio** (`liquid/total ≥ 30%`) in ZK, without revealing the balance sheet.
+- **Compliance gating** — only allow-listed banks can bid (cross-contract `auction → asp`).
 - **Real auditability** — anyone holding the opening `(amount, salt)` / `(amount, blinding)` can verify a commitment via `verify_opening`; the public, who only sees the hash, cannot.
 - **Post-close transparency** — once settled, all bids and amounts become public and auditable.
 - **Role separation** — Issuer / Bidder / Auditor / Regulator; each role only sees and does its own thing.
@@ -137,7 +139,7 @@ cd circuits && nargo test         # Noir circuits
 
 ```bash
 # A sealed bid on-chain — the amount is NOT present:
-stellar contract invoke --id CCVBKMZ5ECSTK7QMICWIPIXVFPZN2DHNW7UQNK3ZAJ3VLWFEWFY2TS7R \
+stellar contract invoke --id CC4KK45XGTJJZRCDWAVU45TSQAURWR5IY3W2TNQOJADRP7CWDQ7DHJ4N \
   --source <your-key> --network testnet -- get_bids --auction_id 1
 ```
 
