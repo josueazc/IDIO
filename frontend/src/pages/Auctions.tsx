@@ -1,34 +1,46 @@
-import { useState } from 'react'
-import { useAuctions } from '../utils/useAuctions'
-import AuctionCard from '../components/AuctionCard'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import BidForm from '../components/BidForm'
+import { EmptyState, ErrorNotice, PageHeader, RuledPanel, SkeletonRows } from '../components/Primitives'
+import StatusBadge from '../components/StatusBadge'
 import { settle, revealBid, revealBidManual, getSalt, payWinner, resetDemo, getMode } from '../services/data'
-import { useRole } from '../utils/useRole'
 import { can } from '../services/role'
-import { ASSET_TYPES, type Auction, type AssetType } from '../types'
+import { useAuctions } from '../utils/useAuctions'
+import { useRole } from '../utils/useRole'
+import { fmtUSD, timeLeft } from '../utils/format'
+import { ASSET_TYPES, type AssetType, type Auction } from '../types'
 
 interface Props {
   address: string | null
 }
 
+type StatusFilter = 'all' | 'open' | 'settled'
+
 export default function Auctions({ address }: Props) {
   const { auctions, loading, error } = useAuctions()
   const role = useRole()
   const [bidding, setBidding] = useState<Auction | null>(null)
-  const [filter, setFilter] = useState<'all' | 'open' | 'settled'>('all')
+  const [filter, setFilter] = useState<StatusFilter>('all')
   const [typeFilter, setTypeFilter] = useState<'all' | AssetType>('all')
   const [busy, setBusy] = useState<number | null>(null)
+  const [selectedId, setSelectedId] = useState<number | null>(null)
 
-  const filtered = auctions
-    .filter((a) =>
-      filter === 'all' ? true : filter === 'open' ? a.status === 'BiddingOpen' : a.status === 'Settled'
-    )
-    .filter((a) => (typeFilter === 'all' ? true : a.assetType === typeFilter))
+  const filtered = useMemo(
+    () =>
+      auctions
+        .filter((auction) =>
+          filter === 'all' ? true : filter === 'open' ? auction.status === 'BiddingOpen' : auction.status === 'Settled'
+        )
+        .filter((auction) => (typeFilter === 'all' ? true : auction.assetType === typeFilter)),
+    [auctions, filter, typeFilter]
+  )
 
-  async function onPay(au: Auction) {
-    setBusy(au.id)
+  const selected = filtered.find((auction) => auction.id === selectedId) ?? filtered[0] ?? null
+
+  async function onPay(auction: Auction) {
+    setBusy(auction.id)
     try {
-      await payWinner(au.id, au.winner ?? address ?? '', au.winningAmount ?? 0)
+      await payWinner(auction.id, auction.winner ?? address ?? '', auction.winningAmount ?? 0)
     } catch (e) {
       alert((e as Error).message)
     } finally {
@@ -36,32 +48,23 @@ export default function Auctions({ address }: Props) {
     }
   }
 
-  async function onSettle(au: Auction) {
-    setBusy(au.id)
+  async function onSettle(auction: Auction) {
+    setBusy(auction.id)
     try {
-      // En testnet, primero revelamos la oferta propia (con el salt local)
-      // y luego liquidamos. Si ya estaba revelada o no es nuestra, seguimos.
       if (getMode() === 'chain' && address) {
-        if (getSalt(au.id, address)) {
+        if (getSalt(auction.id, address)) {
           try {
-            await revealBid(au.id, address)
+            await revealBid(auction.id, address)
           } catch {
-            /* ya revelada */
+            /* already revealed or not owned by caller */
           }
         } else {
-          // Sin salt local (p. ej. otro dispositivo): pedir los datos.
-          const amountStr = window.prompt('Monto de tu oferta a revelar (ej. 15000000):')
-          const salt = amountStr ? window.prompt('Salt (hex) de tu oferta:') : null
-          if (amountStr && salt) {
-            try {
-              await revealBidManual(au.id, address, Number(amountStr), salt.trim())
-            } catch (e) {
-              alert((e as Error).message)
-            }
-          }
+          const amountStr = window.prompt('Bid amount to reveal, for example 15000000:')
+          const salt = amountStr ? window.prompt('Bid salt in hex:') : null
+          if (amountStr && salt) await revealBidManual(auction.id, address, Number(amountStr), salt.trim())
         }
       }
-      await settle(au.id, address ?? '')
+      await settle(auction.id, address ?? '')
     } catch (e) {
       alert((e as Error).message)
     } finally {
@@ -70,78 +73,150 @@ export default function Auctions({ address }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold text-white">Subastas</h1>
-          <p className="text-sm text-slate-400">Ofertas selladas — los montos son privados hasta el reveal.</p>
-        </div>
-        {getMode() === 'demo' && (
-          <button className="btn-ghost text-xs" onClick={resetDemo} title="Restaurar datos de demo">
-            Reset demo
-          </button>
-        )}
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Auction registry"
+        title="Records, commitments and settlement status."
+        description="Inspect active and settled auctions. Bid amounts remain private until reveal."
+        actions={
+          getMode() === 'demo' && (
+            <button className="btn-ghost" onClick={resetDemo}>
+              Reset demo
+            </button>
+          )
+        }
+      />
 
       <div className="flex flex-wrap gap-2">
-        {(['all', 'open', 'settled'] as const).map((f) => (
+        {(['all', 'open', 'settled'] as const).map((item) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-              filter === f ? 'bg-brand text-white' : 'border border-edge bg-white/5 text-slate-400'
+            key={item}
+            onClick={() => setFilter(item)}
+            className={`min-h-10 border px-3 text-sm font-semibold transition ${
+              filter === item ? 'border-brand bg-brand text-ink' : 'border-edge bg-white/[0.02] text-slate-400 hover:text-white'
             }`}
           >
-            {f === 'all' ? 'Todas' : f === 'open' ? 'Abiertas' : 'Liquidadas'}
+            {item === 'all' ? 'All records' : item === 'open' ? 'Open' : 'Settled'}
           </button>
         ))}
-        <span className="mx-1 self-center text-edge">·</span>
         <button
           onClick={() => setTypeFilter('all')}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-            typeFilter === 'all' ? 'bg-accent text-ink' : 'border border-edge bg-white/5 text-slate-400'
+          className={`min-h-10 border px-3 text-sm font-semibold transition ${
+            typeFilter === 'all' ? 'border-white/50 bg-white text-ink' : 'border-edge bg-white/[0.02] text-slate-400 hover:text-white'
           }`}
         >
-          Todo tipo
+          All classes
         </button>
-        {ASSET_TYPES.map((t) => (
+        {ASSET_TYPES.map((type) => (
           <button
-            key={t.id}
-            onClick={() => setTypeFilter(t.id)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-              typeFilter === t.id ? 'bg-accent text-ink' : 'border border-edge bg-white/5 text-slate-400'
+            key={type.id}
+            onClick={() => setTypeFilter(type.id)}
+            className={`min-h-10 border px-3 text-sm font-semibold transition ${
+              typeFilter === type.id ? 'border-white/50 bg-white text-ink' : 'border-edge bg-white/[0.02] text-slate-400 hover:text-white'
             }`}
           >
-            {t.label}
+            {type.label}
           </button>
         ))}
       </div>
 
-      {error && (
-        <div className="rounded-lg bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
-          Error al leer de la cadena: {error}
-        </div>
-      )}
+      {error && <ErrorNotice message={`Chain read failed: ${error}`} />}
 
-      {loading ? (
-        <div className="card p-10 text-center text-slate-500">Cargando subastas…</div>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((a) => (
-            <AuctionCard
-              key={a.id}
-              auction={a}
-              onBid={can(role, 'bid') ? setBidding : undefined}
-              onSettle={can(role, 'settle') && busy !== a.id ? onSettle : undefined}
-              onPay={can(role, 'pay') && busy !== a.id ? onPay : undefined}
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div>
+          {loading ? (
+            <SkeletonRows rows={6} />
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              title="No records in this view"
+              description="Adjust filters or issue a demo auction from the issuer desk."
+              action={role === 'emisor' && <Link className="btn-primary" to="/create">Issue auction</Link>}
             />
-          ))}
-        </div>
-      )}
+          ) : (
+            <>
+              <div className="hidden overflow-x-auto border border-edge bg-panel md:block">
+                <table className="w-full min-w-[860px] text-sm">
+                  <thead>
+                    <tr className="border-b border-edge text-left">
+                      <th className="px-4 py-3 micro-label">Record</th>
+                      <th className="px-4 py-3 micro-label">Asset</th>
+                      <th className="px-4 py-3 micro-label">Status</th>
+                      <th className="px-4 py-3 micro-label text-right">Issue amount</th>
+                      <th className="px-4 py-3 micro-label text-right">Min bid</th>
+                      <th className="px-4 py-3 micro-label text-right">Bids</th>
+                      <th className="px-4 py-3 micro-label text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((auction) => (
+                      <tr
+                        key={auction.id}
+                        className={`data-row ${selected?.id === auction.id ? 'data-row-active' : ''}`}
+                        onClick={() => setSelectedId(auction.id)}
+                      >
+                        <td className="px-4 py-4 font-mono text-xs text-slate-500">
+                          #{String(auction.id).padStart(3, '0')}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="font-semibold text-white">{auction.asset}</div>
+                          <div className="mt-1 text-xs text-slate-500">{auction.currency} / {auction.assetType}</div>
+                        </td>
+                        <td className="px-4 py-4"><StatusBadge status={auction.status} /></td>
+                        <td className="px-4 py-4 text-right font-mono text-slate-200">{fmtUSD(auction.amount)}</td>
+                        <td className="px-4 py-4 text-right font-mono text-slate-400">{fmtUSD(auction.minBid)}</td>
+                        <td className="px-4 py-4 text-right font-mono text-slate-400">{auction.bids.length}</td>
+                        <td className="px-4 py-4 text-right">
+                          <AuctionAction
+                            auction={auction}
+                            role={role}
+                            busy={busy === auction.id}
+                            onBid={setBidding}
+                            onSettle={onSettle}
+                            onPay={onPay}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-      {!loading && filtered.length === 0 && (
-        <div className="card p-10 text-center text-slate-500">No hay subastas en esta vista.</div>
-      )}
+              <div className="space-y-3 md:hidden">
+                {filtered.map((auction) => (
+                  <div
+                    key={auction.id}
+                    onClick={() => setSelectedId(auction.id)}
+                    className={`w-full border p-4 text-left ${
+                      selected?.id === auction.id ? 'border-brand bg-brand/10' : 'border-edge bg-panel'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-mono text-xs text-brand">#{String(auction.id).padStart(3, '0')}</div>
+                        <div className="mt-2 font-semibold text-white">{auction.asset}</div>
+                        <div className="mt-1 text-sm text-slate-500">{fmtUSD(auction.amount)} / {auction.bids.length} bids</div>
+                      </div>
+                      <StatusBadge status={auction.status} />
+                    </div>
+                    <div className="mt-4">
+                      <AuctionAction
+                        auction={auction}
+                        role={role}
+                        busy={busy === auction.id}
+                        onBid={setBidding}
+                        onSettle={onSettle}
+                        onPay={onPay}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <InspectionPanel auction={selected} />
+      </section>
 
       {bidding && (
         <BidForm
@@ -152,5 +227,93 @@ export default function Auctions({ address }: Props) {
         />
       )}
     </div>
+  )
+}
+
+function AuctionAction({
+  auction,
+  role,
+  busy,
+  onBid,
+  onSettle,
+  onPay,
+}: {
+  auction: Auction
+  role: ReturnType<typeof useRole>
+  busy: boolean
+  onBid: (auction: Auction) => void
+  onSettle: (auction: Auction) => void
+  onPay: (auction: Auction) => void
+}) {
+  const open = auction.status === 'BiddingOpen'
+  const closed = open && auction.endTime <= Date.now()
+
+  if (auction.status === 'Settled') {
+    if (auction.paid) return <span className="pill bg-brand/15 text-brand">Paid</span>
+    if (can(role, 'pay')) {
+      return <button className="btn-primary min-h-9 px-3 py-1 text-xs" disabled={busy} onClick={(event) => {
+        event.stopPropagation()
+        onPay(auction)
+      }}>Pay confidential</button>
+    }
+    return <span className="text-xs text-slate-500">Settled</span>
+  }
+
+  if (closed) {
+    if (can(role, 'settle')) {
+      return <button className="btn-ghost min-h-9 px-3 py-1 text-xs" disabled={busy} onClick={(event) => {
+        event.stopPropagation()
+        onSettle(auction)
+      }}>Reveal and settle</button>
+    }
+    return <span className="text-xs text-slate-500">Awaiting settlement</span>
+  }
+
+  if (can(role, 'bid')) {
+    return <button className="btn-primary min-h-9 px-3 py-1 text-xs" onClick={(event) => {
+      event.stopPropagation()
+      onBid(auction)
+    }}>Submit bid</button>
+  }
+
+  return <span className="text-xs text-slate-500">{timeLeft(auction.endTime)}</span>
+}
+
+function InspectionPanel({ auction }: { auction: Auction | null }) {
+  if (!auction) {
+    return (
+      <RuledPanel title="Inspection">
+        <p className="text-sm leading-6 text-slate-500">Select an auction record to inspect proof, issuer and bid state.</p>
+      </RuledPanel>
+    )
+  }
+
+  return (
+    <RuledPanel title="Inspection">
+      <div className="space-y-5">
+        <div>
+          <div className="font-mono text-xs text-brand">#{String(auction.id).padStart(3, '0')}</div>
+          <h2 className="mt-2 text-xl font-semibold text-white">{auction.asset}</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">{auction.description}</p>
+        </div>
+        <div className="divide-y divide-edge border-y border-edge">
+          {[
+            ['Issuer', `${auction.issuer.slice(0, 8)}...${auction.issuer.slice(-4)}`],
+            ['Reserve commitment', auction.reservesCommitment],
+            ['Minimum bid', fmtUSD(auction.minBid)],
+            ['Closes in', auction.status === 'BiddingOpen' ? timeLeft(auction.endTime) : 'closed'],
+            ['Sealed bids', String(auction.bids.length)],
+          ].map(([label, value]) => (
+            <div key={label} className="flex justify-between gap-4 py-3 text-sm">
+              <span className="text-slate-500">{label}</span>
+              <span className="text-right font-mono text-xs text-slate-200">{value}</span>
+            </div>
+          ))}
+        </div>
+        <Link className="btn-ghost w-full" to={`/banco/${auction.issuer}`}>
+          View issuer profile
+        </Link>
+      </div>
+    </RuledPanel>
   )
 }

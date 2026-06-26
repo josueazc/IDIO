@@ -10,11 +10,11 @@ interface Props {
   onDone: () => void
 }
 
-const BALANCE = 50_000_000 // saldo simulado del bidder
+const BALANCE = 50_000_000
 
 export default function BidForm({ auction, bidderAddress, onClose, onDone }: Props) {
   const [amount, setAmount] = useState<number>(auction.minBid)
-  const [name, setName] = useState('Mi Banco')
+  const [name, setName] = useState('Institutional bidder')
   const [phase, setPhase] = useState<'form' | 'proving' | 'done'>('form')
   const [error, setError] = useState<string | null>(null)
   const [proofInfo, setProofInfo] = useState<string | null>(null)
@@ -35,15 +35,15 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
       if (lastProof) {
         setProofInfo(
           lastProof.proofOk
-            ? `Prueba ZK generada (${Math.round(lastProof.ms)} ms)`
-            : `Circuito ejecutado y restricciones verificadas (${Math.round(lastProof.ms)} ms)`
+            ? `ZK proof generated in ${Math.round(lastProof.ms)} ms`
+            : `Circuit constraints checked in ${Math.round(lastProof.ms)} ms`
         )
       }
       setPhase('done')
       setTimeout(() => {
         onDone()
         onClose()
-      }, 1600)
+      }, 1800)
     } catch (e) {
       setError((e as Error).message)
       setPhase('form')
@@ -51,79 +51,88 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="card w-full max-w-md p-6 shadow-glow" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-1 text-xs font-mono text-slate-500">#{String(auction.id).padStart(3, '0')}</div>
-        <h2 className="text-xl font-bold text-white">{auction.asset}</h2>
-        <p className="mt-1 text-sm text-slate-400">Oferta sellada — el monto permanece privado on-chain.</p>
-
-        <div className="mt-5 flex items-center justify-between rounded-xl bg-ink/50 px-4 py-3 text-sm">
-          <span className="text-slate-400">Mi balance</span>
-          <span className="font-semibold text-slate-100">{fmtUSD(BALANCE)} USDC</span>
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4" onClick={onClose}>
+      <div className="w-full max-w-lg border border-edge bg-[#080a08]" onClick={(event) => event.stopPropagation()}>
+        <div className="border-b border-edge p-5">
+          <div className="font-mono text-xs text-brand">#{String(auction.id).padStart(3, '0')}</div>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">{auction.asset}</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Submit a sealed commitment. The amount remains private until reveal.
+          </p>
         </div>
 
-        <div className="mt-4">
-          <label className="label">Nombre (visible solo con view key)</label>
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
+        <div className="space-y-5 p-5">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="border border-edge bg-white/[0.02] p-3">
+              <div className="micro-label">Simulated balance</div>
+              <div className="mt-2 font-mono text-sm text-white">{fmtUSD(BALANCE)} USDC</div>
+            </div>
+            <div className="border border-edge bg-white/[0.02] p-3">
+              <div className="micro-label">Minimum bid</div>
+              <div className="mt-2 font-mono text-sm text-white">{fmtUSD(auction.minBid)}</div>
+            </div>
+          </div>
 
-        <div className="mt-3">
-          <label className="label">Mi oferta · mínimo {fmtUSD(auction.minBid)}</label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+          <label className="block">
+            <span className="label">Bidder label</span>
+            <input className="input" value={name} onChange={(event) => setName(event.target.value)} />
+          </label>
+
+          <label className="block">
+            <span className="label">Bid amount</span>
             <input
               type="number"
-              className="input pl-7 font-mono"
+              className="input font-mono"
               value={amount}
               min={auction.minBid}
               step={1_000_000}
-              onChange={(e) => setAmount(Number(e.target.value))}
+              onChange={(event) => setAmount(Number(event.target.value))}
             />
+          </label>
+
+          <div className="grid gap-2 border-y border-edge py-4">
+            <Check ok={checks.balance} label={`Balance >= ${fmtUSD(amount)}`} />
+            <Check ok={checks.min} label="Amount clears minimum bid" />
+            <Check ok={checks.credential} label="Institutional credential accepted" />
+            <Check ok={checks.whitelist} label="Participant is allow-listed" />
           </div>
-        </div>
 
-        <div className="mt-4 space-y-2">
-          <Check ok={checks.balance} label={`Balance ≥ ${fmtUSD(amount)}`} />
-          <Check ok={checks.min} label="Supera el mínimo" />
-          <Check ok={checks.credential} label="Credencial institucional válida" />
-          <Check ok={checks.whitelist} label="Banco en allow-list (ASP)" />
-        </div>
+          {error && <div className="border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
 
-        {error && <div className="mt-3 rounded-lg bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{error}</div>}
-
-        {phase === 'proving' && (
-          <div className="mt-4">
-            <div className="mb-1.5 text-xs text-slate-400">
-              {getMode() === 'chain'
-                ? 'Generando prueba y firmando transacción (Freighter)…'
-                : 'Generando prueba ZK…'}
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-ink">
-              <div className="h-full w-2/3 animate-pulse rounded-full bg-gradient-to-r from-brand to-accent" />
-            </div>
-          </div>
-        )}
-
-        {phase === 'done' && (
-          <div className="mt-4 rounded-lg bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-300">
-            Oferta sellada registrada. Nadie puede ver tu monto.
-            {proofInfo && <div className="mt-1 text-xs text-emerald-400/80">{proofInfo}</div>}
-            {getMode() === 'chain' && lastBidSecret && (
-              <div className="mt-2 rounded bg-ink/50 p-2 text-[11px] text-slate-300">
-                Guardá esto para revelar luego (incluso en otro dispositivo):
-                <div className="mt-1 font-mono break-all">monto={lastBidSecret.amount}</div>
-                <div className="font-mono break-all">salt={lastBidSecret.salt}</div>
+          {phase === 'proving' && (
+            <div className="border border-edge bg-white/[0.02] p-4">
+              <div className="text-sm text-slate-300">
+                {getMode() === 'chain'
+                  ? 'Generating proof and requesting wallet signature through Stellar Wallets Kit.'
+                  : 'Generating local demo proof.'}
               </div>
-            )}
-          </div>
-        )}
+              <div className="mt-3 h-1 overflow-hidden bg-white/10">
+                <div className="h-full w-2/3 animate-pulse bg-brand" />
+              </div>
+            </div>
+          )}
 
-        <div className="mt-6 flex gap-3">
+          {phase === 'done' && (
+            <div className="border border-brand/40 bg-brand/10 p-4 text-sm text-brand">
+              Sealed bid registered.
+              {proofInfo && <div className="mt-1 text-xs text-brand-soft">{proofInfo}</div>}
+              {getMode() === 'chain' && lastBidSecret && (
+                <div className="mt-3 border border-edge bg-black/30 p-3 text-xs text-slate-300">
+                  Save this to reveal from another device:
+                  <div className="mt-1 break-all font-mono">amount={lastBidSecret.amount}</div>
+                  <div className="break-all font-mono">salt={lastBidSecret.salt}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-3 border-t border-edge p-5">
           <button className="btn-ghost flex-1" onClick={onClose} disabled={phase === 'proving'}>
-            Cancelar
+            Cancel
           </button>
           <button className="btn-primary flex-1" onClick={submit} disabled={!ready || phase !== 'form'}>
-            Confirmar oferta
+            Confirm sealed bid
           </button>
         </div>
       </div>
@@ -133,15 +142,9 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
 
 function Check({ ok, label }: { ok: boolean; label: string }) {
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <span
-        className={`grid h-4 w-4 place-items-center rounded ${
-          ok ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-500'
-        }`}
-      >
-        {ok ? '✓' : '·'}
-      </span>
-      <span className={ok ? 'text-slate-300' : 'text-slate-500'}>{label}</span>
+    <div className="flex items-center gap-3 text-sm">
+      <span className={`h-2 w-2 rounded-full ${ok ? 'bg-brand' : 'bg-slate-600'}`} />
+      <span className={ok ? 'text-slate-300' : 'text-slate-600'}>{label}</span>
     </div>
   )
 }

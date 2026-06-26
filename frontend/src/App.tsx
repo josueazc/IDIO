@@ -8,11 +8,13 @@ import CreateAuction from './pages/CreateAuction'
 import Audit from './pages/Audit'
 import Compliance from './pages/Compliance'
 import BankProfile from './pages/BankProfile'
+import RoleSwitch from './pages/RoleSwitch'
 import { useRole } from './utils/useRole'
 import { ROLE_ROUTES } from './services/role'
+import { getStoredWalletAddress } from './services/wallet'
 
 export default function App() {
-  const [address, setAddress] = useState<string | null>(null)
+  const [address, setAddress] = useState<string | null>(() => getStoredWalletAddress())
   const [demo, setDemo] = useState(false)
   const role = useRole()
   const location = useLocation()
@@ -22,13 +24,14 @@ export default function App() {
     setDemo(d)
   }
 
+  function onDisconnect() {
+    setAddress(null)
+    setDemo(false)
+  }
+
   // Sin rol: solo el selector de rol.
   if (!role) {
-    return (
-      <Layout address={address} demo={demo} onConnect={onConnect}>
-        <RolePicker />
-      </Layout>
-    )
+    return <RolePicker address={address} demo={demo} onConnect={onConnect} onDisconnect={onDisconnect} />
   }
 
   // Guarda: si la ruta no pertenece al rol, vuelve al inicio del rol.
@@ -40,9 +43,10 @@ export default function App() {
   }
 
   return (
-    <Layout address={address} demo={demo} onConnect={onConnect}>
+    <Layout address={address} demo={demo} onConnect={onConnect} onDisconnect={onDisconnect}>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/roles" element={<RoleSwitch />} />
         <Route path="/auctions" element={<Auctions address={address} />} />
         <Route path="/create" element={<CreateAuction address={address} />} />
         <Route path="/audit" element={<Audit />} />

@@ -1,118 +1,139 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import ConfidentialBalance from '../components/ConfidentialBalance'
+import { EmptyState, PageHeader, RuledPanel } from '../components/Primitives'
+import StatusBadge from '../components/StatusBadge'
 import { useAuctions } from '../utils/useAuctions'
 import { fmtUSD } from '../utils/format'
-import ConfidentialBalance from '../components/ConfidentialBalance'
 
 export default function Audit() {
   const { auctions } = useAuctions()
-  const [selected, setSelected] = useState<number>(auctions[0]?.id ?? 1)
+  const [selected, setSelected] = useState<number | null>(null)
   const [unlocked, setUnlocked] = useState(false)
   const [viewKey, setViewKey] = useState('')
 
-  const auction = auctions.find((a) => a.id === selected)
+  useEffect(() => {
+    if (!selected && auctions[0]) setSelected(auctions[0].id)
+  }, [auctions, selected])
+
+  const auction = auctions.find((item) => item.id === selected) ?? null
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-white">Auditoría</h1>
-        <p className="text-sm text-slate-400">
-          Con una <span className="text-brand-soft">view key</span> autorizada, el auditor revela los
-          montos para verificar que el proceso fue justo. El público no ve nada.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Audit desk"
+        title="Reveal evidence with a controlled view key."
+        description="Auditors can inspect commitments, revealed amounts and final winner logic without changing protocol state."
+      />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className="label">Subasta</label>
-          <select
-            className="input w-64"
-            value={selected}
-            onChange={(e) => {
-              setSelected(Number(e.target.value))
-              setUnlocked(false)
-            }}
-          >
-            {auctions.map((a) => (
-              <option key={a.id} value={a.id}>
-                #{String(a.id).padStart(3, '0')} — {a.asset}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex-1 min-w-[220px]">
-          <label className="label">View key</label>
-          <input
-            className="input font-mono"
-            placeholder="vk_..."
-            value={viewKey}
-            onChange={(e) => setViewKey(e.target.value)}
-          />
-        </div>
-        <button className="btn-primary" onClick={() => setUnlocked(true)} disabled={viewKey.length < 3}>
-          Desbloquear
-        </button>
-      </div>
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
+          <RuledPanel title="View key gate">
+            <div className="grid gap-4 md:grid-cols-[260px_1fr_auto] md:items-end">
+              <label>
+                <span className="label">Auction</span>
+                <select
+                  className="input"
+                  value={selected ?? ''}
+                  onChange={(event) => {
+                    setSelected(Number(event.target.value))
+                    setUnlocked(false)
+                  }}
+                >
+                  {auctions.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      #{String(item.id).padStart(3, '0')} / {item.asset}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className="label">View key</span>
+                <input
+                  className="input font-mono"
+                  placeholder="vk_..."
+                  value={viewKey}
+                  onChange={(event) => setViewKey(event.target.value)}
+                />
+              </label>
+              <button className="btn-primary" onClick={() => setUnlocked(true)} disabled={viewKey.length < 3}>
+                Unlock
+              </button>
+            </div>
+          </RuledPanel>
 
-      {!auction ? null : !unlocked ? (
-        <div className="card grid place-items-center p-12 text-center">
-          <div className="text-4xl">🔒</div>
-          <p className="mt-3 max-w-sm text-slate-400">
-            Las ofertas están selladas. Introduce una view key válida para revelar los montos de{' '}
-            <span className="text-slate-200">{auction.asset}</span>.
-          </p>
+          {!auction ? (
+            <EmptyState title="No auction selected" description="Create or select an auction to audit its evidence." />
+          ) : !unlocked ? (
+            <EmptyState
+              title="Evidence locked"
+              description={`Enter a view key to inspect sealed bids for ${auction.asset}. Public users only see commitments.`}
+            />
+          ) : (
+            <RuledPanel title="Revealed bid evidence">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-sm">
+                  <thead>
+                    <tr className="border-b border-edge text-left">
+                      <th className="px-3 py-3 micro-label">Participant</th>
+                      <th className="px-3 py-3 micro-label">Commitment</th>
+                      <th className="px-3 py-3 micro-label text-right">Amount</th>
+                      <th className="px-3 py-3 micro-label text-right">Result</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...auction.bids].sort((a, b) => b.amount - a.amount).map((bid, index) => (
+                      <tr key={`${bid.bidderAddress}-${index}`} className="data-row">
+                        <td className="px-3 py-4">
+                          <div className="font-semibold text-white">{bid.bidderName || 'Bidder'}</div>
+                          <div className="mt-1 font-mono text-[11px] text-slate-600">
+                            {bid.bidderAddress.slice(0, 10)}...{bid.bidderAddress.slice(-4)}
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 font-mono text-xs text-slate-500">{bid.commitment}</td>
+                        <td className="px-3 py-4 text-right font-mono text-slate-100">{fmtUSD(bid.amount)}</td>
+                        <td className="px-3 py-4 text-right">
+                          {index === 0 ? <span className="pill bg-brand/15 text-brand">winner</span> : <span className="text-slate-600">cleared</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </RuledPanel>
+          )}
+
+          <ConfidentialBalance />
         </div>
-      ) : (
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-ink/50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-5 py-3">Participante</th>
-                <th className="px-5 py-3">Compromiso</th>
-                <th className="px-5 py-3 text-right">Oferta</th>
-                <th className="px-5 py-3 text-center">Resultado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...auction.bids]
-                .sort((a, b) => b.amount - a.amount)
-                .map((b, i) => (
-                  <tr key={i} className="border-t border-edge/50">
-                    <td className="px-5 py-3 font-medium text-slate-200">{b.bidderName}</td>
-                    <td className="px-5 py-3 font-mono text-xs text-slate-500">{b.commitment}</td>
-                    <td className="px-5 py-3 text-right font-mono font-semibold text-slate-100">
-                      {fmtUSD(b.amount)}
-                    </td>
-                    <td className="px-5 py-3 text-center">
-                      {i === 0 ? (
-                        <span className="pill bg-gold/15 text-gold">⭐ Ganador</span>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
-                    </td>
-                  </tr>
+
+        <RuledPanel title="Audit verdict">
+          {auction ? (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-xl font-semibold text-white">{auction.asset}</h2>
+                <div className="mt-3"><StatusBadge status={auction.status} /></div>
+              </div>
+              <div className="divide-y divide-edge border-y border-edge">
+                {[
+                  ['Commitment set', `${auction.bids.length} sealed bids`],
+                  ['Reserve proof', auction.reservesCommitment],
+                  ['Winner rule', 'Highest revealed bid'],
+                  ['Report state', unlocked ? 'Ready' : 'Locked'],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-4 py-3 text-sm">
+                    <span className="text-slate-500">{label}</span>
+                    <span className="text-right font-mono text-xs text-slate-200">{value}</span>
+                  </div>
                 ))}
-            </tbody>
-          </table>
-
-          <div className="space-y-2 border-t border-edge/60 p-5">
-            <Verdict label="Proceso justo — mayor oferta gana" />
-            <Verdict label="Sin manipulación de compromisos" />
-            <Verdict label="Verificado matemáticamente (compromisos SHA-256 / Groth16)" />
-            <button className="btn-primary mt-3">Generar reporte firmado</button>
-          </div>
-        </div>
-      )}
-
-      <ConfidentialBalance />
-    </div>
-  )
-}
-
-function Verdict({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2 text-sm text-slate-300">
-      <span className="grid h-5 w-5 place-items-center rounded bg-emerald-500/20 text-emerald-300">✓</span>
-      {label}
+              </div>
+              <button className="btn-primary w-full" disabled={!unlocked}>
+                Generate signed report
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm leading-6 text-slate-500">No audit target available.</p>
+          )}
+        </RuledPanel>
+      </section>
     </div>
   )
 }
