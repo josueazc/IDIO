@@ -47,7 +47,7 @@ All four contracts are deployed, initialized and verified on Testnet (`soroban-s
 
 | Contract | ID |
 |----------|----|
-| Auction | [`CC4KK45XGTJJZRCDWAVU45TSQAURWR5IY3W2TNQOJADRP7CWDQ7DHJ4N`](https://stellar.expert/explorer/testnet/contract/CC4KK45XGTJJZRCDWAVU45TSQAURWR5IY3W2TNQOJADRP7CWDQ7DHJ4N) |
+| Auction | [`CCSKDZY7NG4ZNPI6LBMT67LAROF6KXVXYIIDK7XAO2CDTMGZHJLJ4L65`](https://stellar.expert/explorer/testnet/contract/CCSKDZY7NG4ZNPI6LBMT67LAROF6KXVXYIIDK7XAO2CDTMGZHJLJ4L65) |
 | Verifier | [`CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6`](https://stellar.expert/explorer/testnet/contract/CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6) |
 | Token | [`CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH`](https://stellar.expert/explorer/testnet/contract/CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH) |
 | ASP | [`CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY`](https://stellar.expert/explorer/testnet/contract/CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY) |
@@ -64,6 +64,7 @@ All four contracts are deployed, initialized and verified on Testnet (`soroban-s
 - **Reserve policy (Auspex+)** — creating an auction proves not just `total ≥ amount` but also a **liquidity ratio** (`liquid/total ≥ 30%`) in ZK, without revealing the balance sheet.
 - **Compliance gating** — only allow-listed banks can bid (cross-contract `auction → asp`).
 - **Real auditability** — anyone holding the opening `(amount, salt)` / `(amount, blinding)` can verify a commitment via `verify_opening`; the public, who only sees the hash, cannot.
+- **Threshold settlement consensus (BEShield)** — settlement can require **k-of-n validator approvals**, where each validator approves with a **ZK membership proof + unique nullifier**: they stay anonymous, can't double-vote, and `settle` is gated until `k` distinct approvals are gathered (`auction.set_consensus` / `approve_settlement`).
 - **Post-close transparency** — once settled, all bids and amounts become public and auditable.
 - **Role separation** — Issuer / Bidder / Auditor / Regulator; each role only sees and does its own thing.
 - **Demo / Testnet toggle** — Demo runs fully offline; Testnet reads via simulation and signs with a Stellar wallet.
@@ -139,7 +140,7 @@ cd circuits && nargo test         # Noir circuits
 
 ```bash
 # A sealed bid on-chain — the amount is NOT present:
-stellar contract invoke --id CC4KK45XGTJJZRCDWAVU45TSQAURWR5IY3W2TNQOJADRP7CWDQ7DHJ4N \
+stellar contract invoke --id CCSKDZY7NG4ZNPI6LBMT67LAROF6KXVXYIIDK7XAO2CDTMGZHJLJ4L65 \
   --source <your-key> --network testnet -- get_bids --auction_id 1
 ```
 

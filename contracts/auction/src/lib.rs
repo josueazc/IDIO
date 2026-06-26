@@ -74,6 +74,10 @@ pub enum AuctionError {
     AlreadyPaid = 14,
     InvalidEligibilityProof = 15,
     InvalidReservesProof = 16,
+    InvalidApprovalProof = 17,
+    ApprovalAlreadyCast = 18,
+    NotEnoughApprovals = 19,
+    ConsensusNotConfigured = 20,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -131,6 +135,16 @@ enum DataKey {
     Counter,
     Auction(u64),
     Bids(u64),
+    /// BEShield: raíz Merkle del conjunto de validadores.
+    ValidatorRoot,
+    /// VK del circuito de pertenencia (validadores).
+    ValidatorVk,
+    /// Umbral de consenso (k de n). 0 = consenso desactivado.
+    ConsensusThreshold,
+    /// Nullifier de aprobación ya usado para una subasta.
+    Approval(u64, BytesN<32>),
+    /// Conteo de aprobaciones distintas por subasta.
+    ApprovalCount(u64),
 }
 
 #[contract]
@@ -339,7 +353,75 @@ impl AuctionContract {
         env.storage().persistent().set(&DataKey::Bids(auction_id), &bids);
     }
 
+    /// BEShield: configura el consenso de liquidación — raíz Merkle del set de
+    /// validadores, VK de pertenencia y umbral `k`. Solo el admin. `threshold=0`
+    /// desactiva el consenso (la liquidación no requiere aprobaciones).
+    pub fn set_consensus(env: Env, root: BytesN<32>, vk: Groth16Vk, threshold: u32) {
+        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::ValidatorRoot, &root);
+        env.storage().instance().set(&DataKey::ValidatorVk, &vk);
+        env.storage().instance().set(&DataKey::ConsensusThreshold, &threshold);
+    }
+
+    /// BEShield: un validador aprueba la liquidación de una subasta probando
+    /// (en ZK) que pertenece al set de validadores, sin revelar cuál es. El
+    /// nullifier (único por validador) cuenta como un voto y no se puede repetir.
+    /// Reúne `k` votos distintos para habilitar `settle`.
+    pub fn approve_settlement(
+        env: Env,
+        auction_id: u64,
+        proof: Groth16Proof,
+        nullifier: BytesN<32>,
+    ) {
+        let root: BytesN<32> = env
+            .storage()
+            .instance()
+            .get(&DataKey::ValidatorRoot)
+            .unwrap_or_else(|| panic(&env, AuctionError::ConsensusNotConfigured));
+        let vk: Groth16Vk = env.storage().instance().get(&DataKey::ValidatorVk).unwrap();
+
+        if env
+            .storage()
+            .persistent()
+            .get::<_, bool>(&DataKey::Approval(auction_id, nullifier.clone()))
+            .unwrap_or(false)
+        {
+            panic(&env, AuctionError::ApprovalAlreadyCast);
+        }
+
+        let mut inputs: Vec<BytesN<32>> = Vec::new(&env);
+        inputs.push_back(root);
+        inputs.push_back(nullifier.clone());
+        if !Self::verifier(&env).verify_groth16(&vk, &proof, &inputs) {
+            panic(&env, AuctionError::InvalidApprovalProof);
+        }
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Approval(auction_id, nullifier), &true);
+        let count: u32 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::ApprovalCount(auction_id))
+            .unwrap_or(0)
+            + 1;
+        env.storage()
+            .persistent()
+            .set(&DataKey::ApprovalCount(auction_id), &count);
+    }
+
+    /// Aprobaciones de consenso reunidas para una subasta.
+    pub fn approvals(env: Env, auction_id: u64) -> u32 {
+        env.storage()
+            .persistent()
+            .get(&DataKey::ApprovalCount(auction_id))
+            .unwrap_or(0)
+    }
+
     /// Liquida la subasta: recorre las ofertas reveladas y elige la mayor.
+    /// Si hay consenso configurado (umbral > 0), exige `k` aprobaciones de
+    /// validadores antes de liquidar (BEShield).
     pub fn settle(env: Env, auction_id: u64) -> Option<Address> {
         let mut auction = Self::get(&env, auction_id);
         if auction.status == AuctionStatus::Settled {
@@ -347,6 +429,15 @@ impl AuctionContract {
         }
         if env.ledger().timestamp() <= auction.end_time {
             panic(&env, AuctionError::BiddingStillOpen);
+        }
+
+        let threshold: u32 = env
+            .storage()
+            .instance()
+            .get(&DataKey::ConsensusThreshold)
+            .unwrap_or(0);
+        if threshold > 0 && Self::approvals(env.clone(), auction_id) < threshold {
+            panic(&env, AuctionError::NotEnoughApprovals);
         }
 
         let bids: Vec<SealedBid> = env
@@ -501,6 +592,8 @@ mod test {
     use ark_groth16::{Proof, ProvingKey, VerifyingKey};
     use idio_asp::{Asp, AspClient as RealAspClient};
     use idio_prover::{
+        fr_be,
+        membership::{prove_membership, setup_membership},
         prove_eligibility, prove_reserves, proof_bytes, setup_eligibility, setup_reserves, vk_bytes,
     };
     use idio_token::{ConfidentialToken, ConfidentialTokenClient};
@@ -820,5 +913,66 @@ mod test {
         let auction = client.get_auction(&auction_id);
         assert!(auction.paid);
         assert_eq!(token.commitment(&issuer), value_commitment);
+    }
+
+    #[test]
+    fn beshield_consensus_gates_settlement() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let id = env.register(AuctionContract, ());
+        let client = AuctionContractClient::new(&env, &id);
+
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let bank = Address::generate(&env);
+        let asp = setup_asp(&env, &admin, &[&bank]);
+        let token = setup_token(&env, &admin);
+        let z = setup_zk(&env);
+        client.initialize(&admin, &asp, &token, &z.verifier, &z.elig_vk, &z.reserves_vk);
+
+        // BEShield: set de validadores (secretos 1..=5) y umbral 2 de 5.
+        let (vpk, vvk) = setup_membership();
+        let validators = [
+            ark_bn254::Fr::from(1u64),
+            ark_bn254::Fr::from(2u64),
+            ark_bn254::Fr::from(3u64),
+            ark_bn254::Fr::from(4u64),
+            ark_bn254::Fr::from(5u64),
+        ];
+        let (_, vroot, _) = prove_membership(&vpk, &validators, 0, 1);
+        client.set_consensus(&BytesN::from_array(&env, &fr_be(&vroot)), &to_vk(&env, &vvk), &2u32);
+
+        let reserves = BytesN::random(&env);
+        let auction_id = client.create_auction(
+            &issuer,
+            &String::from_str(&env, "Bonos"),
+            &500_000_000,
+            &10_000_000,
+            &100,
+            &reserves,
+            &reserves_proof(&env, &z, 500_000_000, 600_000_000),
+        );
+        let salt = BytesN::random(&env);
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, 15_000_000, &salt),
+            &elig_proof(&env, &z, 10_000_000, 15_000_000, 50_000_000),
+        );
+        env.ledger().with_mut(|l| l.timestamp += 200);
+        client.reveal_bid(&auction_id, &bank, &15_000_000i128, &salt);
+
+        // Sin aprobaciones suficientes, settle debe fallar.
+        assert_eq!(client.try_settle(&auction_id).is_err(), true);
+
+        // Dos validadores distintos aprueban (membership ZK + nullifier).
+        let (p0, _, n0) = prove_membership(&vpk, &validators, 0, 11);
+        let (p2, _, n2) = prove_membership(&vpk, &validators, 2, 22);
+        client.approve_settlement(&auction_id, &to_proof(&env, &p0), &BytesN::from_array(&env, &fr_be(&n0)));
+        client.approve_settlement(&auction_id, &to_proof(&env, &p2), &BytesN::from_array(&env, &fr_be(&n2)));
+        assert_eq!(client.approvals(&auction_id), 2);
+
+        // Ahora sí liquida.
+        assert_eq!(client.settle(&auction_id), Some(bank));
     }
 }
