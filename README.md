@@ -1,171 +1,162 @@
 <div align="center">
 
-# 🏛️ IDIO
+# IDIO
 
 ### Institutional Decentralized Issuance & Offerings
 
-**Subastas privadas institucionales sobre Stellar, con privacidad verificable mediante Zero-Knowledge Proofs.**
+**Private, verifiable sealed-bid auctions for institutions — on Stellar, with on-chain Zero-Knowledge proofs.**
 
 [![Stellar](https://img.shields.io/badge/Stellar-Protocol_26-7D00FF?style=for-the-badge&logo=stellar&logoColor=white)](https://stellar.org)
-[![Soroban](https://img.shields.io/badge/Soroban-Smart_Contracts-000000?style=for-the-badge&logo=rust&logoColor=white)](https://soroban.stellar.org)
-[![Noir](https://img.shields.io/badge/Noir-ZK_Circuits-1E1E1E?style=for-the-badge&logo=data:image/svg+xml;base64,&logoColor=white)](https://noir-lang.org)
+[![Soroban](https://img.shields.io/badge/Soroban-SDK_26-000000?style=for-the-badge&logo=rust&logoColor=white)](https://soroban.stellar.org)
+[![Groth16](https://img.shields.io/badge/Groth16-BN254_on--chain-1E1E1E?style=for-the-badge)](https://en.wikipedia.org/wiki/Non-interactive_zero-knowledge_proof)
+[![Noir](https://img.shields.io/badge/Noir-UltraHonk-2D2D2D?style=for-the-badge)](https://noir-lang.org)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
-[![Rust](https://img.shields.io/badge/Rust-Soroban_SDK-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org)
+
+*Private for participants. Transparent for regulators. Trustless for everyone.*
 
 </div>
 
 ---
 
-## 🎯 El problema
+## The problem
 
-Las subastas institucionales de activos —bonos soberanos, RWA, emisiones de deuda— enfrentan un dilema:
+Institutional debt auctions — sovereign bonds, RWAs, deuda emissions — are stuck in a dilemma:
 
-- 🔓 **Si son públicas**, cada banco revela su estrategia y precio máximo. Los competidores se coordinan, los precios se distorsionan.
-- 🕶️ **Si son opacas**, no hay forma de probar que el proceso fue justo. Confías o no confías.
+- **If they're public**, every bank sees the others' offers. They coordinate, hide their true price, and bid low. The issuer raises less, and each participant leaks its strategy.
+- **If they're opaque**, no one outside the organizer can prove the process was fair. You either trust the auctioneer or you don't.
 
-No existe un punto medio donde **la oferta sea privada** *y* **el proceso sea verificable**.
+Today you choose **privacy** *or* **transparency**. There is no infrastructure that delivers both at once.
 
-## 💡 La solución
+## The solution
 
-IDIO combina **privacidad** y **verificación matemática** en una sola plataforma sobre Stellar:
+IDIO is a **private, verifiable sealed-bid auction** platform built on Stellar. It uses **Zero-Knowledge proofs** to give you both:
 
-- ✅ **Sealed-bid auctions** — las ofertas se envían selladas; nadie ve los montos.
-- ✅ **Zero-Knowledge Proofs** — cada participante prueba que tiene fondos suficientes *sin revelar cuánto*.
-- ✅ **Liquidación confidencial** — el monto ganador se transfiere oculto en cadena.
-- ✅ **Auditoría con view keys** — un auditor autorizado verifica que todo fue justo.
-- ✅ **Compliance integrado** — listas ASP (allow/deny) y validación FATF/OFAC.
+- Each bank bids **in secret** — only a cryptographic commitment is stored on-chain, never the amount.
+- Before accepting a bid, the contract **mathematically verifies** the bank has the funds and meets the rules — **without learning how much** it holds or bids.
+- When the auction closes, the winner pays with the **amount hidden**; the result becomes **publicly auditable**.
 
-> Privacidad para los participantes. Transparencia para los reguladores. Confianza para todos.
+> Blind while the auction runs. Public and provable once it closes.
 
 ---
 
-## Estado: en vivo en Stellar Testnet
+## Live on Stellar Testnet
 
-Los cuatro contratos están desplegados, inicializados y verificados en testnet.
+All four contracts are deployed, initialized and verified on Testnet (`soroban-sdk 26`, Protocol 26 with native BN254).
 
-| Contrato | ID |
+| Contract | ID |
 |----------|----|
 | Auction | [`CCVBKMZ5ECSTK7QMICWIPIXVFPZN2DHNW7UQNK3ZAJ3VLWFEWFY2TS7R`](https://stellar.expert/explorer/testnet/contract/CCVBKMZ5ECSTK7QMICWIPIXVFPZN2DHNW7UQNK3ZAJ3VLWFEWFY2TS7R) |
-| ASP | [`CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY`](https://stellar.expert/explorer/testnet/contract/CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY) |
-| Token | [`CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH`](https://stellar.expert/explorer/testnet/contract/CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH) |
 | Verifier | [`CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6`](https://stellar.expert/explorer/testnet/contract/CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6) |
-
-**Lo que funciona de verdad, hoy:**
-
-- Subastas, ofertas selladas y gating de compliance **on-chain** (cross-contract real auction → ASP).
-- **Puente ZK navegador → cadena (Groth16 BN254):** al ofertar, el navegador genera una prueba Groth16 de elegibilidad (`balance ≥ oferta ≥ mínimo`) con un prover arkworks compilado a **WASM** (~1.3 s); el contrato la **exige y la verifica on-chain** vía cross-contract `auction → verifier` (`pairing_check` nativo). Al crear una subasta exige una prueba de reservas (`total ≥ monto`). Verificado en testnet.
-- **Token confidencial real**: balances como compromisos Pedersen `v·G + r·H` sobre BN254, transferencias homomórficas, monto nunca en claro.
-- **Pago/liquidación confidencial**: el ganador paga al emisor vía `settle_payment` (cross-contract auction → token), con el monto oculto en un compromiso.
-- **Pruebas Noir UltraHonk en el navegador** (modo demo): el circuito `sealed_bid` se ejecuta y se prueba con `@aztec/bb.js`, sin revelar el monto.
-- Compromiso `SHA-256(be16(monto) ‖ salt)` **idéntico byte a byte** en las tres capas — vector verificado `d772f954…123825`.
-- **Separación por rol**: Emisor / Oferente / Auditor / Regulador; cada rol ve y puede hacer solo lo suyo.
-- Toggle **Demo / Testnet**: Demo funciona offline; Testnet lee por simulación y escribe firmando con Freighter.
+| Token | [`CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH`](https://stellar.expert/explorer/testnet/contract/CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH) |
+| ASP | [`CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY`](https://stellar.expert/explorer/testnet/contract/CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY) |
 
 ---
 
-## 🏗️ Arquitectura
+## What actually works today
+
+- **Sealed bids on-chain** — only the commitment is stored; the amount never appears until reveal.
+- **Browser → chain ZK bridge (Groth16 / BN254)** — when a bank bids, the browser generates a Groth16 eligibility proof (`balance ≥ bid ≥ minimum`) with an arkworks prover compiled to **WASM** (~1.3 s). The contract **requires and verifies it on-chain** via a cross-contract call `auction → verifier` (native `pairing_check`). Creating an auction requires a reserves proof (`total ≥ amount`).
+- **Confidential token** — balances are **Pedersen commitments** `v·G + r·H` over BN254; transfers are homomorphic; the amount is never in clear.
+- **Confidential settlement** — the winner pays the issuer via `settle_payment` (cross-contract `auction → token`), amount hidden inside a commitment.
+- **Compliance gating** — only banks on the ASP allow-list can bid (cross-contract `auction → asp`).
+- **Real auditability** — anyone holding the opening `(amount, salt)` / `(amount, blinding)` can verify a commitment via `verify_opening`; the public, who only sees the hash, cannot.
+- **Post-close transparency** — once settled, all bids and amounts become public and auditable.
+- **Role separation** — Issuer / Bidder / Auditor / Regulator; each role only sees and does its own thing.
+- **Demo / Testnet toggle** — Demo runs fully offline; Testnet reads via simulation and signs with a Stellar wallet.
+
+> **How do you know the ZK is real?** Submit a tampered proof to the live contract and it is **rejected on-chain** with `Error(Crypto, InvalidInput)` from `verify_groth16`. If it merely stored data, it would accept anything.
+
+---
+
+## How it works
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│   USUARIOS  ·  Bancos · Gobiernos · Auditores · Reguladores│
-└───────────────────────────┬──────────────────────────────┘
-                            │
-┌───────────────────────────▼──────────────────────────────┐
-│   FRONTEND (React + Tailwind)                             │
-│   Dashboard · Subastas · Bid Form · Auditoría · Compliance│
-│   Wallet (Freighter) · Generación de pruebas ZK (WASM)    │
-└───────────────────────────┬──────────────────────────────┘
-                            │
-┌───────────────────────────▼──────────────────────────────┐
-│   SMART CONTRACTS (Soroban / Rust)                        │
-│   auction.rs · token.rs · asp.rs · verifier.rs            │
-└───────────────────────────┬──────────────────────────────┘
-                            │
-┌───────────────────────────▼──────────────────────────────┐
-│   ZK CIRCUITS (Noir)                                      │
-│   sealed_bid.nr · proof_of_reserves.nr                    │
-└───────────────────────────┬──────────────────────────────┘
-                            │
-┌───────────────────────────▼──────────────────────────────┐
-│   STELLAR  ·  Protocol 26 · BN254 · Poseidon2 · Soroban   │
-└──────────────────────────────────────────────────────────┘
+Issuer ──create_auction (+reserves proof)──▶ Auction ──verify_groth16──▶ Verifier (BN254)
+Bidder ──submit_sealed_bid (+eligibility proof)──▶ Auction ──is_allowed──▶ ASP
+                                                  │
+                              close ─ reveal ─ settle ─ settle_payment ──▶ Token (Pedersen)
+                                                  │
+Auditor ──verify_opening / opening──▶ Token / commitments   (post-close: public results)
 ```
 
-## 🔄 Cómo funciona
-
-| Paso | Actor | Acción |
+| Step | Actor | Action |
 |------|-------|--------|
-| 1️⃣ | **Emisor** (Banco Central) | Crea la subasta y genera *proof-of-reserves* del activo |
-| 2️⃣ | **Bidders** (Bancos) | Envían ofertas selladas con ZK proof de fondos |
-| 3️⃣ | **Smart Contract** | Al cerrar el plazo, revela y determina al ganador |
-| 4️⃣ | **Ganador** | Paga de forma confidencial (monto oculto en cadena) |
-| 5️⃣ | **On-chain** | Liquidación RWA ↔ USDC verificable |
-| 6️⃣ | **Auditor** | Verifica el proceso con su *view key* |
-| 7️⃣ | **Regulador** | Confirma compliance (ASP / FATF / OFAC) |
+| 1 | **Issuer** | Creates the auction; browser proves reserves (`total ≥ amount`), verified on-chain |
+| 2 | **Bidder** | Submits a sealed bid; browser proves eligibility (`balance ≥ bid ≥ min`), verified on-chain |
+| 3 | **ASP** | Only allow-listed banks may bid (cross-contract) |
+| 4 | **Bidder** | May replace its own bid before close (still blind) |
+| 5 | **Contract** | After close: reveal `(amount, salt)`, recompute the hash, pick the highest valid bid |
+| 6 | **Winner** | Pays the issuer confidentially (Pedersen commitment) |
+| 7 | **Everyone / Auditor** | Post-close results are public; the auditor verifies openings |
+
+The commitment `SHA-256(be16(amount) ‖ salt)` is **byte-for-byte identical** across the three layers (frontend, contract, Noir circuit) — verified vector `d772f954…123825`.
 
 ---
 
-## 🧰 Stack tecnológico
+## Tech stack
 
-<div align="center">
+| Layer | Tech |
+|-------|------|
+| **Smart contracts** | Rust · Soroban SDK 26 · 4 contracts (`auction`, `verifier`, `token`, `asp`) |
+| **On-chain ZK** | Groth16 over **BN254** with native host functions (`g1_mul`, `g1_add`, `pairing_check`) |
+| **Browser prover** | arkworks (Groth16/BN254) compiled to **WASM** (wasm-pack) |
+| **Noir circuits** | `sealed_bid`, `proof_of_reserves` — UltraHonk via `@aztec/bb.js` |
+| **Confidential token** | Pedersen commitments `v·G + r·H` over BN254 |
+| **Frontend** | React 18 · TypeScript · Vite · Tailwind · Stellar Wallets Kit |
 
-| Capa | Tecnología |
-|------|-----------|
-| **Frontend** | ![React](https://img.shields.io/badge/-React_18-61DAFB?logo=react&logoColor=black) ![TS](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white) ![Tailwind](https://img.shields.io/badge/-Tailwind-06B6D4?logo=tailwindcss&logoColor=white) ![Vite](https://img.shields.io/badge/-Vite-646CFF?logo=vite&logoColor=white) |
-| **Contratos** | ![Rust](https://img.shields.io/badge/-Rust-000000?logo=rust&logoColor=white) ![Soroban](https://img.shields.io/badge/-Soroban_SDK-7D00FF?logo=stellar&logoColor=white) |
-| **ZK** | ![Noir](https://img.shields.io/badge/-Noir-1E1E1E) Poseidon2 · BN254 |
-| **Blockchain** | ![Stellar](https://img.shields.io/badge/-Stellar_P26-7D00FF?logo=stellar&logoColor=white) |
-
-</div>
-
-## 📁 Estructura del repo
+## Repository layout
 
 ```
 idio/
-├── contracts/        Smart contracts Soroban (Rust)
-│   └── src/          auction · token · asp · verifier
-├── circuits/         Circuitos ZK (Noir)
-├── frontend/         Aplicación React + Tailwind
-│   └── src/          components · services · pages · utils
-├── docs/             Arquitectura, setup, deployment
-└── scripts/          Deploy, test, setup de testnet
+├── contracts/    Soroban workspace (Rust): auction · verifier · token · asp
+├── prover/       Groth16 circuits (arkworks) → WASM prover for the browser
+├── circuits/     Noir circuits: sealed_bid · proof_of_reserves
+├── frontend/     React + Vite + Tailwind app (Demo / Testnet)
+├── docs/         ARCHITECTURE · CIRCUITS · SETUP · DEPLOYMENT · DEMO
+└── deployments.testnet.json
 ```
 
-## 🚀 Quick start
+## Quick start
 
 ```bash
-# Frontend
-cd frontend
-npm install
-npm run dev
+# Frontend (Demo mode works with no wallet, fully offline)
+cd frontend && npm install && npm run dev
 
-# Contratos
-cd contracts
-cargo build --target wasm32-unknown-unknown --release
+# Contracts
+cd contracts && cargo test
+cargo build --target wasm32v1-none --release
 
-# Circuitos
-cd circuits
-nargo build
+# ZK
+cd prover  && cargo test          # Groth16 circuits
+cd circuits && nargo test         # Noir circuits
 ```
 
-Requisitos: Node 18+, Rust + target `wasm32-unknown-unknown`, [Stellar CLI](https://developers.stellar.org/docs/tools/cli), [Nargo (Noir)](https://noir-lang.org).
+## Verify it yourself
 
-## 📚 Documentación
+```bash
+# A sealed bid on-chain — the amount is NOT present:
+stellar contract invoke --id CCVBKMZ5ECSTK7QMICWIPIXVFPZN2DHNW7UQNK3ZAJ3VLWFEWFY2TS7R \
+  --source <your-key> --network testnet -- get_bids --auction_id 1
+```
 
-- [Arquitectura](docs/ARCHITECTURE.md)
-- [Setup](docs/SETUP.md)
-- [Circuitos ZK](docs/CIRCUITS.md)
-- [Deployment](docs/DEPLOYMENT.md)
+Tests: ~24 green across all layers (contracts, Groth16 prover, Noir circuits, frontend).
 
-## 📄 Licencia
+## Documentation
 
-MIT — ver [LICENSE](LICENSE).
+- [Architecture](docs/ARCHITECTURE.md) · [Circuits](docs/CIRCUITS.md) · [Setup](docs/SETUP.md) · [Deployment](docs/DEPLOYMENT.md) · [Demo & video script](docs/DEMO.md)
+
+## Known limitation (honest)
+
+A fully **sound confidential-solvency proof** for the token (proving `amount ≤ balance` bound to the on-chain Pedersen commitment, revealing nothing) requires in-circuit elliptic-curve arithmetic over a 2-cycle curve (e.g. BN254/Grumpkin). Soroban exposes BN254/BLS natively but not Grumpkin, so this is the remaining hardening step — documented, not faked.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
 <div align="center">
 
-**Construido sobre Stellar 🚀**
+**Built on Stellar.**
 
 </div>
