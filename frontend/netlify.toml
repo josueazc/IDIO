@@ -1,0 +1,18 @@
+# Deploy del frontend de IDIO en Netlify.
+# Base = frontend (este directorio). Replica los headers COOP/COEP que necesita
+# el prover WASM (bb.js / arkworks) y el redirect SPA para react-router.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "require-corp"
