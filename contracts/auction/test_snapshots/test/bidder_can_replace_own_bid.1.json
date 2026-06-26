@@ -224,7 +224,7 @@
                   "u64": "100"
                 },
                 {
-                  "bytes": "cb968c3af343a13fcec5f6fc7d5c45b8ce46de867a0704dfb1b8892f5e50d4fa"
+                  "bytes": "e9b2920217b4697466af8f74a501d0084ee7617791c28eb87facca3ed8c96325"
                 },
                 {
                   "map": [
@@ -277,7 +277,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "bytes": "54bd71f3ef2429d73e6c28663bc9cc071ad1989fc46bbfee5279e09a234c2de3"
+                  "bytes": "aa7f7f027a5880f90fac0061b5f3c66017881b4119c44e009f3c43ec6ff78428"
                 },
                 {
                   "map": [
@@ -330,7 +330,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "bytes": "03af2240f06fec429bd9b0b28b4f89932cfd897062ebca0208f3082c1e824236"
+                  "bytes": "a5ddf4c0fd544ea32987d62f2f406c7b7f2487ebf3a0192d4b7bae6244240da5"
                 },
                 {
                   "map": [
@@ -387,7 +387,7 @@
                   "i128": "18000000"
                 },
                 {
-                  "bytes": "81c5e07cfe260b6e8f6766fb8f821df56b6d3f619b08494b4a3f125d823940ab"
+                  "bytes": "92308cc670394f9ddfcea4852f4b6fb10eee80b370d3e7fcb72cb99193941422"
                 }
               ]
             }
@@ -490,7 +490,7 @@
                       "symbol": "reserves_commitment"
                     },
                     "val": {
-                      "bytes": "cb968c3af343a13fcec5f6fc7d5c45b8ce46de867a0704dfb1b8892f5e50d4fa"
+                      "bytes": "e9b2920217b4697466af8f74a501d0084ee7617791c28eb87facca3ed8c96325"
                     }
                   },
                   {
@@ -564,7 +564,7 @@
                           "symbol": "commitment"
                         },
                         "val": {
-                          "bytes": "03af2240f06fec429bd9b0b28b4f89932cfd897062ebca0208f3082c1e824236"
+                          "bytes": "a5ddf4c0fd544ea32987d62f2f406c7b7f2487ebf3a0192d4b7bae6244240da5"
                         }
                       },
                       {
