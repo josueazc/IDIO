@@ -10,6 +10,8 @@
 //! de modo que la verifying key y la prueba se verifican on-chain con
 //! `idio-verifier::verify_groth16`.
 
+pub mod membership;
+
 use ark_bn254::{Bn254, Fq, Fq2, Fr, G1Affine, G2Affine};
 use ark_ff::{BigInteger, PrimeField};
 use ark_groth16::{Groth16, ProvingKey, VerifyingKey};
