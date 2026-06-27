@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import BidForm from '../components/BidForm'
 import BidResults from '../components/BidResults'
-import { EmptyState, ErrorNotice, PageHeader, RuledPanel, SkeletonRows } from '../components/Primitives'
+import { EmptyState, ErrorNotice, PageHeader, RuledPanel, SkeletonRows, Toast } from '../components/Primitives'
 import StatusBadge from '../components/StatusBadge'
 import { settle, revealBid, revealBidManual, getSalt, payWinner, resetDemo, getMode } from '../services/data'
 import { can } from '../services/role'
@@ -25,6 +25,16 @@ export default function Auctions({ address }: Props) {
   const [typeFilter, setTypeFilter] = useState<'all' | AssetType>('all')
   const [busy, setBusy] = useState<number | null>(null)
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null)
+
+  // En testnet, las escrituras requieren wallet conectada.
+  function requireWallet(): boolean {
+    if (getMode() === 'chain' && !address) {
+      setNotice({ type: 'info', message: 'Conecta tu wallet Stellar para operar en Testnet.' })
+      return false
+    }
+    return true
+  }
 
   const filtered = useMemo(
     () =>
@@ -38,19 +48,29 @@ export default function Auctions({ address }: Props) {
 
   const selected = filtered.find((auction) => auction.id === selectedId) ?? filtered[0] ?? null
 
+  function openBid(auction: Auction) {
+    if (!requireWallet()) return
+    setBidding(auction)
+  }
+
   async function onPay(auction: Auction) {
+    if (!requireWallet()) return
     setBusy(auction.id)
+    setNotice(null)
     try {
       await payWinner(auction.id, auction.winner ?? address ?? '', auction.winningAmount ?? 0)
+      setNotice({ type: 'success', message: 'Pago confidencial enviado: el monto queda oculto on-chain.' })
     } catch (e) {
-      alert((e as Error).message)
+      setNotice({ type: 'error', message: (e as Error).message })
     } finally {
       setBusy(null)
     }
   }
 
   async function onSettle(auction: Auction) {
+    if (!requireWallet()) return
     setBusy(auction.id)
+    setNotice(null)
     try {
       if (getMode() === 'chain' && address) {
         if (getSalt(auction.id, address)) {
@@ -66,8 +86,9 @@ export default function Auctions({ address }: Props) {
         }
       }
       await settle(auction.id, address ?? '')
+      setNotice({ type: 'success', message: 'Subasta liquidada. Los resultados ya son públicos.' })
     } catch (e) {
-      alert((e as Error).message)
+      setNotice({ type: 'error', message: (e as Error).message })
     } finally {
       setBusy(null)
     }
@@ -122,6 +143,7 @@ export default function Auctions({ address }: Props) {
       </div>
 
       {error && <ErrorNotice message={`Chain read failed: ${error}`} />}
+      <Toast notice={notice} onClose={() => setNotice(null)} />
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div>
@@ -171,7 +193,7 @@ export default function Auctions({ address }: Props) {
                             auction={auction}
                             role={role}
                             busy={busy === auction.id}
-                            onBid={setBidding}
+                            onBid={openBid}
                             onSettle={onSettle}
                             onPay={onPay}
                           />
@@ -204,7 +226,7 @@ export default function Auctions({ address }: Props) {
                         auction={auction}
                         role={role}
                         busy={busy === auction.id}
-                        onBid={setBidding}
+                        onBid={openBid}
                         onSettle={onSettle}
                         onPay={onPay}
                       />

@@ -80,6 +80,31 @@ export function ErrorNotice({ message }: { message: string }) {
   )
 }
 
+/** Aviso inline (éxito/error/info) descartable, para acciones de usuario. */
+export function Toast({
+  notice,
+  onClose,
+}: {
+  notice: { type: 'success' | 'error' | 'info'; message: string } | null
+  onClose: () => void
+}) {
+  if (!notice) return null
+  const styles =
+    notice.type === 'success'
+      ? 'border-brand/40 bg-brand/10 text-brand'
+      : notice.type === 'error'
+        ? 'border-red-400/30 bg-red-500/10 text-red-200'
+        : 'border-edge bg-white/[0.03] text-slate-300'
+  return (
+    <div className={`flex items-start justify-between gap-4 border px-4 py-3 text-sm ${styles}`}>
+      <span>{notice.message}</span>
+      <button onClick={onClose} className="text-xs opacity-70 hover:opacity-100" aria-label="Cerrar">
+        ✕
+      </button>
+    </div>
+  )
+}
+
 export function SkeletonRows({ rows = 5 }: { rows?: number }) {
   return (
     <div className="border border-edge bg-panel">
