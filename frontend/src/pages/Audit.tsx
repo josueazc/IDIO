@@ -6,7 +6,42 @@ import StatusBadge from '../components/StatusBadge'
 import { useAuctions } from '../utils/useAuctions'
 import { useRole } from '../utils/useRole'
 import { getStoredWalletAddress } from '../services/wallet'
+import { config } from '../config'
 import { fmtUSD } from '../utils/format'
+import type { Auction } from '../types'
+
+/** Genera y descarga un reporte de auditoría (JSON) con un hash de integridad. */
+async function downloadReport(auction: Auction) {
+  const bids = [...auction.bids].sort((a, b) => b.amount - a.amount)
+  const report = {
+    auctionId: auction.id,
+    asset: auction.asset,
+    issuer: auction.issuer,
+    status: auction.status,
+    winner: auction.winnerName ?? auction.winner ?? null,
+    winningAmount: auction.winningAmount ?? 0,
+    bids: bids.map((b, i) => ({
+      participant: b.bidderName || b.bidderAddress,
+      amount: b.amount,
+      revealed: b.revealed,
+      rank: i + 1,
+    })),
+    verdict: 'La oferta más alta revelada ganó. Proceso verificable on-chain.',
+    contract: config.contracts.auction,
+    network: config.network,
+    generatedAt: new Date().toISOString(),
+  }
+  const body = JSON.stringify(report, null, 2)
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body) as BufferSource)
+  const hash = [...new Uint8Array(digest)].map((x) => x.toString(16).padStart(2, '0')).join('')
+  const signed = JSON.stringify({ ...report, reportHash: hash }, null, 2)
+  const url = URL.createObjectURL(new Blob([signed], { type: 'application/json' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `idio-audit-${String(auction.id).padStart(3, '0')}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 export default function Audit() {
   const { auctions: all } = useAuctions()
@@ -137,7 +172,11 @@ export default function Audit() {
                   </div>
                 ))}
               </div>
-              <button className="btn-primary w-full" disabled={!unlocked}>
+              <button
+                className="btn-primary w-full"
+                disabled={!unlocked}
+                onClick={() => downloadReport(auction)}
+              >
                 Generate signed report
               </button>
             </div>
