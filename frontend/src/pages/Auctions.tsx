@@ -56,6 +56,7 @@ export default function Auctions({ address }: Props) {
 
   async function onPay(auction: Auction) {
     if (!requireWallet()) return
+    if (!window.confirm(`Pagar al emisor de #${String(auction.id).padStart(3, '0')} de forma confidencial. El monto queda oculto on-chain. ¿Confirmás?`)) return
     setBusy(auction.id)
     setNotice(null)
     try {
@@ -70,6 +71,7 @@ export default function Auctions({ address }: Props) {
 
   async function onSettle(auction: Auction) {
     if (!requireWallet()) return
+    if (!window.confirm(`Liquidar la subasta #${String(auction.id).padStart(3, '0')}: se revelan las ofertas y se elige al ganador. Es irreversible. ¿Confirmás?`)) return
     setBusy(auction.id)
     setNotice(null)
     try {
