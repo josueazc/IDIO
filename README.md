@@ -148,7 +148,7 @@ Tests: ~26 green across all layers — contracts (auction 6, asp 3, token 1, ver
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) · [Circuits](docs/CIRCUITS.md) · [Setup](docs/SETUP.md) · [Deployment](docs/DEPLOYMENT.md) · [Demo & video script](docs/DEMO.md) · [Frontend guide](docs/FRONTEND_GUIDE.md)
+- [Architecture](docs/ARCHITECTURE.md) · [Circuits](docs/CIRCUITS.md) · [Setup](docs/SETUP.md) · [Deployment](docs/DEPLOYMENT.md) · [Demo & video script](docs/DEMO.md) · [Frontend guide](docs/FRONTEND_GUIDE.md) · [Roadmap](docs/ROADMAP.md)
 
 ## Status & roadmap (honest)
 
