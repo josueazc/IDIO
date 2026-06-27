@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import BidForm from '../components/BidForm'
 import BidResults from '../components/BidResults'
 import PrivacyPanel from '../components/PrivacyPanel'
+import Countdown from '../components/Countdown'
 import { EmptyState, ErrorNotice, PageHeader, RuledPanel, SkeletonRows, Toast } from '../components/Primitives'
 import StatusBadge from '../components/StatusBadge'
 import { settle, revealBid, revealBidManual, getSalt, payWinner, resetDemo, getMode } from '../services/data'
@@ -352,11 +353,16 @@ function InspectionPanel({
         )}
         <PrivacyPanel auction={auction} />
         <div className="divide-y divide-edge border-y border-edge">
+          <div className="flex justify-between gap-4 py-3 text-sm">
+            <span className="text-slate-500">Closes in</span>
+            <span className="text-right font-mono text-xs">
+              {auction.status === 'BiddingOpen' ? <Countdown endTime={auction.endTime} /> : 'closed'}
+            </span>
+          </div>
           {[
             ['Issuer', `${auction.issuer.slice(0, 8)}...${auction.issuer.slice(-4)}`],
             ['Reserve commitment', auction.reservesCommitment],
             ['Minimum bid', fmtUSD(auction.minBid)],
-            ['Closes in', auction.status === 'BiddingOpen' ? timeLeft(auction.endTime) : 'closed'],
             ['Sealed bids', String(auction.bids.length)],
           ].map(([label, value]) => (
             <div key={label} className="flex justify-between gap-4 py-3 text-sm">
