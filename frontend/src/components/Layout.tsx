@@ -22,6 +22,7 @@ const LABELS: Record<string, string> = {
   '/create': 'Issue auction',
   '/audit': 'Audit desk',
   '/compliance': 'Compliance desk',
+  '/activity': 'My activity',
 }
 
 export default function Layout({ children, address, demo, onConnect, onDisconnect }: Props) {

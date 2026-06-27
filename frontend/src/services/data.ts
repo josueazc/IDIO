@@ -55,6 +55,23 @@ export function getSalt(auctionId: number, address: string): { amount: number; s
   return all[`${auctionId}:${address}`] ?? null
 }
 
+/** Aperturas guardadas localmente (para revelar): [{auctionId, address, amount, salt}]. */
+export function getMyOpenings(
+  address: string | null
+): { auctionId: number; amount: number; salt: string }[] {
+  const all = JSON.parse(localStorage.getItem(SALT_KEY) || '{}') as Record<
+    string,
+    { amount: number; salt: string }
+  >
+  return Object.entries(all)
+    .map(([key, v]) => {
+      const [auctionId, addr] = key.split(':')
+      return { auctionId: Number(auctionId), addr, ...v }
+    })
+    .filter((o) => !address || o.addr === address)
+    .map(({ auctionId, amount, salt }) => ({ auctionId, amount, salt }))
+}
+
 // ---- Lectura ----
 
 export async function loadAuctions(): Promise<Auction[]> {

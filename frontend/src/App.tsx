@@ -6,6 +6,7 @@ import Home from './pages/Home'
 import Auctions from './pages/Auctions'
 import CreateAuction from './pages/CreateAuction'
 import Audit from './pages/Audit'
+import Activity from './pages/Activity'
 import Compliance from './pages/Compliance'
 import BankProfile from './pages/BankProfile'
 import RoleSwitch from './pages/RoleSwitch'
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/create" element={<CreateAuction address={address} />} />
         <Route path="/audit" element={<Audit />} />
         <Route path="/compliance" element={<Compliance />} />
+        <Route path="/activity" element={<Activity address={address} />} />
         <Route path="/banco/:address" element={<BankProfile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

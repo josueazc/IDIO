@@ -196,6 +196,7 @@ export default function Auctions({ address }: Props) {
                             auction={auction}
                             role={role}
                             busy={busy === auction.id}
+                            address={address}
                             onBid={openBid}
                             onSettle={onSettle}
                             onPay={onPay}
@@ -229,6 +230,7 @@ export default function Auctions({ address }: Props) {
                         auction={auction}
                         role={role}
                         busy={busy === auction.id}
+                            address={address}
                         onBid={openBid}
                         onSettle={onSettle}
                         onPay={onPay}
@@ -260,6 +262,7 @@ function AuctionAction({
   auction,
   role,
   busy,
+  address,
   onBid,
   onSettle,
   onPay,
@@ -267,12 +270,14 @@ function AuctionAction({
   auction: Auction
   role: ReturnType<typeof useRole>
   busy: boolean
+  address: string | null
   onBid: (auction: Auction) => void
   onSettle: (auction: Auction) => void
   onPay: (auction: Auction) => void
 }) {
   const open = auction.status === 'BiddingOpen'
   const closed = open && auction.endTime <= Date.now()
+  const alreadyBid = !!address && auction.bids.some((b) => b.bidderAddress === address)
 
   if (auction.status === 'Settled') {
     if (auction.paid) return <span className="pill bg-brand/15 text-brand">Paid</span>
@@ -299,7 +304,7 @@ function AuctionAction({
     return <button className="btn-primary min-h-9 px-3 py-1 text-xs" onClick={(event) => {
       event.stopPropagation()
       onBid(auction)
-    }}>Submit bid</button>
+    }}>{alreadyBid ? 'Update bid' : 'Submit bid'}</button>
   }
 
   return <span className="text-xs text-slate-500">{timeLeft(auction.endTime)}</span>
