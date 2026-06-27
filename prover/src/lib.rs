@@ -304,4 +304,37 @@ mod tests {
         )
         .unwrap());
     }
+
+    #[test]
+    #[should_panic]
+    fn reserves_with_insufficient_liquidity_cannot_be_generated() {
+        // Auspex+ negativo: total=600M pero liquid=100M (ratio 16.7% < 30%).
+        // El circuito no se satisface, así que la prueba NO verifica.
+        let (pk, vk) = setup_reserves();
+        let proof = prove_reserves(&pk, 500_000_000, 30, 600_000_000, 100_000_000, 42);
+        let pvk = Groth16::<Bn254>::process_vk(&vk).unwrap();
+        let ok = Groth16::<Bn254>::verify_with_processed_vk(
+            &pvk,
+            &[Fr::from(500_000_000u64), Fr::from(30u64)],
+            &proof,
+        )
+        .unwrap_or(false);
+        assert!(!ok, "una prueba con liquidez insuficiente no debe verificar");
+    }
+
+    #[test]
+    #[should_panic]
+    fn reserves_undercollateralized_cannot_be_generated() {
+        // total=400M < monto=500M: no respalda el activo.
+        let (pk, vk) = setup_reserves();
+        let proof = prove_reserves(&pk, 500_000_000, 30, 400_000_000, 400_000_000, 42);
+        let pvk = Groth16::<Bn254>::process_vk(&vk).unwrap();
+        let ok = Groth16::<Bn254>::verify_with_processed_vk(
+            &pvk,
+            &[Fr::from(500_000_000u64), Fr::from(30u64)],
+            &proof,
+        )
+        .unwrap_or(false);
+        assert!(!ok, "una prueba sin respaldo suficiente no debe verificar");
+    }
 }
