@@ -13,3 +13,34 @@ export function timeLeft(endTime: number): string {
   if (h > 0) return `${h}h ${m}m`
   return `${m}m`
 }
+
+import type { Auction } from '../types'
+import type { Role } from '../services/role'
+
+/** Aviso de estado contextual por subasta y rol (banner/badge). */
+export function statusHint(
+  auction: Auction,
+  role: Role | null,
+  address?: string | null
+): { tone: 'info' | 'warn' | 'success'; text: string } | null {
+  const open = auction.status === 'BiddingOpen'
+  const closed = open && auction.endTime <= Date.now()
+
+  if (auction.status === 'Settled') {
+    const youWon = !!address && auction.winner === address
+    if (auction.paid) return { tone: 'success', text: 'Liquidada y pagada.' }
+    if (youWon && role === 'oferente') return { tone: 'warn', text: 'Ganaste — te toca pagar.' }
+    return { tone: 'success', text: 'Liquidada — resultados públicos.' }
+  }
+  if (closed) {
+    if (role === 'oferente') return { tone: 'warn', text: 'Cerró — revelá tu oferta.' }
+    if (role === 'emisor') return { tone: 'warn', text: 'Cerró — podés liquidar.' }
+    return { tone: 'info', text: 'Cerró — esperando liquidación.' }
+  }
+  if (open) {
+    const ms = auction.endTime - Date.now()
+    const soon = ms < 2 * 3_600_000
+    return { tone: soon ? 'warn' : 'info', text: `Abierta — cierra en ${timeLeft(auction.endTime)}` }
+  }
+  return null
+}

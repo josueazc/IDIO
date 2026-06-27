@@ -2,13 +2,14 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import BidForm from '../components/BidForm'
 import BidResults from '../components/BidResults'
+import PrivacyPanel from '../components/PrivacyPanel'
 import { EmptyState, ErrorNotice, PageHeader, RuledPanel, SkeletonRows, Toast } from '../components/Primitives'
 import StatusBadge from '../components/StatusBadge'
 import { settle, revealBid, revealBidManual, getSalt, payWinner, resetDemo, getMode } from '../services/data'
 import { can } from '../services/role'
 import { useAuctions } from '../utils/useAuctions'
 import { useRole } from '../utils/useRole'
-import { fmtUSD, timeLeft } from '../utils/format'
+import { fmtUSD, timeLeft, statusHint } from '../utils/format'
 import { ASSET_TYPES, type AssetType, type Auction } from '../types'
 
 interface Props {
@@ -238,7 +239,7 @@ export default function Auctions({ address }: Props) {
           )}
         </div>
 
-        <InspectionPanel auction={selected} />
+        <InspectionPanel auction={selected} role={role} address={address} />
       </section>
 
       {bidding && (
@@ -302,7 +303,15 @@ function AuctionAction({
   return <span className="text-xs text-slate-500">{timeLeft(auction.endTime)}</span>
 }
 
-function InspectionPanel({ auction }: { auction: Auction | null }) {
+function InspectionPanel({
+  auction,
+  role,
+  address,
+}: {
+  auction: Auction | null
+  role: ReturnType<typeof useRole>
+  address: string | null
+}) {
   if (!auction) {
     return (
       <RuledPanel title="Inspection">
@@ -310,6 +319,8 @@ function InspectionPanel({ auction }: { auction: Auction | null }) {
       </RuledPanel>
     )
   }
+
+  const hint = statusHint(auction, role, address)
 
   return (
     <RuledPanel title="Inspection">
@@ -319,6 +330,20 @@ function InspectionPanel({ auction }: { auction: Auction | null }) {
           <h2 className="mt-2 text-xl font-semibold text-white">{auction.asset}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-400">{auction.description}</p>
         </div>
+        {hint && (
+          <div
+            className={`border px-3 py-2 text-sm ${
+              hint.tone === 'success'
+                ? 'border-brand/40 bg-brand/10 text-brand'
+                : hint.tone === 'warn'
+                  ? 'border-amber-400/30 bg-amber-500/10 text-amber-200'
+                  : 'border-edge bg-white/[0.03] text-slate-300'
+            }`}
+          >
+            {hint.text}
+          </div>
+        )}
+        <PrivacyPanel auction={auction} />
         <div className="divide-y divide-edge border-y border-edge">
           {[
             ['Issuer', `${auction.issuer.slice(0, 8)}...${auction.issuer.slice(-4)}`],
