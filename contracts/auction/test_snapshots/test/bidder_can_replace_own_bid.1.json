@@ -135,6 +135,9 @@
                           },
                           {
                             "bytes": "304af33c13c6ea9b431940c3289f544991043bb8642387c1b5029b4289b6b0b221acc6a7837c5ba262d13b83724983bfd80b6b1f5be537c91a31a626e76eabfc"
+                          },
+                          {
+                            "bytes": "1cfb1200887e279f73d355776976d412307fcec097a2587cf0fd51dbf4cf17d229be7e75c6261d57a332a8b1a952e521cb53d0f266617a99e84069315c3e1112"
                           }
                         ]
                       }
@@ -227,7 +230,7 @@
                   "u64": "100"
                 },
                 {
-                  "bytes": "010c846c48d99d3a33f906475a5ee11d648be78dbb9ff1790f5c34f7b8b04c6b"
+                  "bytes": "c4df829721a2709b6f3d55fb695c2135fe80641e077f4ed9a7c2b8bdf64e7cd8"
                 },
                 {
                   "map": [
@@ -266,6 +269,28 @@
     ],
     [
       [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "function_name": "set_capacity",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                },
+                {
+                  "i128": "50000000"
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
         {
           "function": {
@@ -280,7 +305,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "bytes": "a660c65d273cd974ea50032145fe4c966741229a714e6ef79c28bdc7c7d8c4c2"
+                  "bytes": "bf0f7296e7981613e254288bc8250cf15afee53a354f3420ae67b10bba1dcfa1"
                 },
                 {
                   "map": [
@@ -289,7 +314,7 @@
                         "symbol": "a"
                       },
                       "val": {
-                        "bytes": "14b3c962f23df9eec850149a96bbe892db28336f6708a8f45dfd0b7236ee0af60065a894ea9afddfbe1753b64cc71126ed74fb16c98a48fdb452998e666e1629"
+                        "bytes": "2f4bb1d6dde647ef6905cdd28a77e7e5171387d4a1405787bbdd3172d5826b6e06e21989a8a16447521898ba37c2044fff898f6aed41160f3ca3cb6a5591f04c"
                       }
                     },
                     {
@@ -305,7 +330,7 @@
                         "symbol": "c"
                       },
                       "val": {
-                        "bytes": "08d3af55c2a34df258c3d0ef4f746b6b57dd406f2369093fcd343d9bcfda2b7e0920ce9bc623bcb252c53c2280a3282ed3b2e4c340305f1644b118ee4b48f5ec"
+                        "bytes": "11b1781b85292089c99897fa816fa1f481983740b9c4d06c7ffced4982522d4f0d9f840de750f97c030d79f33f654bb3ad30a04ee7019e845766f3df12e43b4d"
                       }
                     }
                   ]
@@ -333,7 +358,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "bytes": "dfbbd0ec3336ca519aba5b4987aff78e9b55325906ff4fb3e6d18d8caf165c7d"
+                  "bytes": "6b0913f1ae8a61b78fa0415f8d49132d72031ad1a6429074084a47da9e124140"
                 },
                 {
                   "map": [
@@ -342,7 +367,7 @@
                         "symbol": "a"
                       },
                       "val": {
-                        "bytes": "1fe5382f4e101d0224e4de4e9e1f456f639ebfc03d5c91772f6a7eab8f8e18cc2e02948d934f319600f666e3f875af2765a117d7ad23792f7a081f8d06d57e04"
+                        "bytes": "1eb5c96cd68a79d1b4727d31899db6f61146ecd7dfa427935262c69cf04e6e7e285c9f921e1111f225474550ec4d895819640b84d4f3ef1739a7f696e3ce63bb"
                       }
                     },
                     {
@@ -358,7 +383,7 @@
                         "symbol": "c"
                       },
                       "val": {
-                        "bytes": "28136e11f84df2d09ea138607b5158ff9bb5b4aa5358a8b43f16e0798227b547245b377a4a92c1018e12616df60423194d167d6e8d99e2e354f58a33f402ccc3"
+                        "bytes": "243935db0d03cd42d6aaf7e10c8857c820d608a31eb299149c32992a8fc49723159011f32c2844f324d2ddf715cb1bb7a3b08edc56b63dceacb5f2859d28769f"
                       }
                     }
                   ]
@@ -390,7 +415,7 @@
                   "i128": "18000000"
                 },
                 {
-                  "bytes": "73c1424870233565a82fac977c279d3465ef754715352fe977bf74e7d57ea988"
+                  "bytes": "ee4513d8c06d9fca331a9c19e88493a9cc6f42a3cd058637634d6eb8846da789"
                 }
               ]
             }
@@ -493,7 +518,7 @@
                       "symbol": "reserves_commitment"
                     },
                     "val": {
-                      "bytes": "010c846c48d99d3a33f906475a5ee11d648be78dbb9ff1790f5c34f7b8b04c6b"
+                      "bytes": "c4df829721a2709b6f3d55fb695c2135fe80641e077f4ed9a7c2b8bdf64e7cd8"
                     }
                   },
                   {
@@ -567,7 +592,7 @@
                           "symbol": "commitment"
                         },
                         "val": {
-                          "bytes": "dfbbd0ec3336ca519aba5b4987aff78e9b55325906ff4fb3e6d18d8caf165c7d"
+                          "bytes": "6b0913f1ae8a61b78fa0415f8d49132d72031ad1a6429074084a47da9e124140"
                         }
                       },
                       {
@@ -597,6 +622,33 @@
                     ]
                   }
                 ]
+              }
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 4095
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "key": {
+                "vec": [
+                  {
+                    "symbol": "Capacity"
+                  },
+                  {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                  }
+                ]
+              },
+              "durability": "persistent",
+              "val": {
+                "i128": "50000000"
               }
             }
           },
@@ -708,6 +760,9 @@
                                 },
                                 {
                                   "bytes": "304af33c13c6ea9b431940c3289f544991043bb8642387c1b5029b4289b6b0b221acc6a7837c5ba262d13b83724983bfd80b6b1f5be537c91a31a626e76eabfc"
+                                },
+                                {
+                                  "bytes": "1cfb1200887e279f73d355776976d412307fcec097a2587cf0fd51dbf4cf17d229be7e75c6261d57a332a8b1a952e521cb53d0f266617a99e84069315c3e1112"
                                 }
                               ]
                             }
@@ -860,6 +915,26 @@
               "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
               "key": {
                 "ledger_key_nonce": {
+                  "nonce": "4270020994084947596"
+                }
+              },
+              "durability": "temporary",
+              "val": "void"
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 6311999
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+              "key": {
+                "ledger_key_nonce": {
                   "nonce": "4837995959683129791"
                 }
               },
@@ -920,7 +995,7 @@
               "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
               "key": {
                 "ledger_key_nonce": {
-                  "nonce": "4270020994084947596"
+                  "nonce": "5806905060045992000"
                 }
               },
               "durability": "temporary",

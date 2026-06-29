@@ -145,6 +145,8 @@ enum DataKey {
     Approval(u64, BytesN<32>),
     /// Conteo de aprobaciones distintas por subasta.
     ApprovalCount(u64),
+    /// Capacidad registrada (cupo máximo de oferta) de un banco.
+    Capacity(Address),
 }
 
 #[contract]
@@ -253,10 +255,15 @@ impl AuctionContract {
             panic(&env, AuctionError::BiddingClosed);
         }
 
-        // Verifica la prueba de elegibilidad: entrada pública = mínimo de la subasta.
+        // Verifica la prueba de elegibilidad (binding anti-trampa): entradas
+        // públicas = [mínimo de la subasta, capacidad registrada del banco].
+        // La capacidad la provee el contrato desde su registro, así el banco no
+        // puede ofertar por encima de su cupo ni declarar fondos falsos.
+        let capacity = Self::capacity(&env, &bidder);
         let vk: Groth16Vk = env.storage().instance().get(&DataKey::EligVk).unwrap();
         let mut inputs: Vec<BytesN<32>> = Vec::new(&env);
         inputs.push_back(Self::i128_to_fr_bytes(&env, auction.min_bid));
+        inputs.push_back(Self::i128_to_fr_bytes(&env, capacity));
         if !Self::verifier(&env).verify_groth16(&vk, &eligibility_proof, &inputs) {
             panic(&env, AuctionError::InvalidEligibilityProof);
         }
@@ -550,6 +557,25 @@ impl AuctionContract {
     /// Gating de compliance: consulta el contrato ASP vía cross-contract call
     /// y exige que el participante esté en la allow-list. Aborta con
     /// `NotAllowed` si no lo está.
+    /// Registra la capacidad (cupo máximo de oferta) de un banco. Solo admin.
+    pub fn set_capacity(env: Env, who: Address, capacity: i128) {
+        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+        admin.require_auth();
+        env.storage().persistent().set(&DataKey::Capacity(who), &capacity);
+    }
+
+    /// Capacidad registrada de un banco (0 si no tiene cupo asignado).
+    pub fn get_capacity(env: Env, who: Address) -> i128 {
+        Self::capacity(&env, &who)
+    }
+
+    fn capacity(env: &Env, who: &Address) -> i128 {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Capacity(who.clone()))
+            .unwrap_or(0)
+    }
+
     /// Cliente del verificador Groth16.
     fn verifier(env: &Env) -> VerifierClient {
         let id: Address = env
@@ -652,8 +678,8 @@ mod test {
         to_proof(env, &prove_reserves(&z.reserves_pk, amount, 30, total, total, 7))
     }
 
-    fn elig_proof(env: &Env, z: &Env_, min: u64, bid: u64, balance: u64) -> Groth16Proof {
-        to_proof(env, &prove_eligibility(&z.elig_pk, min, bid, balance, 7))
+    fn elig_proof(env: &Env, z: &Env_, min: u64, capacity: u64, bid: u64) -> Groth16Proof {
+        to_proof(env, &prove_eligibility(&z.elig_pk, min, capacity, bid, 7))
     }
 
     fn setup_token(env: &Env, admin: &Address) -> Address {
@@ -713,22 +739,25 @@ mod test {
         );
         assert_eq!(auction_id, 1);
 
+        // Capacidad registrada de cada banco (cupo máximo de oferta).
+        client.set_capacity(&bank_a, &50_000_000);
+        client.set_capacity(&bank_b, &50_000_000);
         let salt_a = BytesN::random(&env);
         let salt_b = BytesN::random(&env);
         let bid_a = 12_000_000i128;
         let bid_b = 15_000_000i128;
-        // Pruebas de elegibilidad reales: balance >= oferta >= mínimo (10M).
+        // Pruebas de elegibilidad reales: capacidad >= oferta >= mínimo (10M).
         client.submit_sealed_bid(
             &auction_id,
             &bank_a,
             &commit(&env, bid_a, &salt_a),
-            &elig_proof(&env, &z, 10_000_000, 12_000_000, 50_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000),
         );
         client.submit_sealed_bid(
             &auction_id,
             &bank_b,
             &commit(&env, bid_b, &salt_b),
-            &elig_proof(&env, &z, 10_000_000, 15_000_000, 50_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
         );
 
         env.ledger().with_mut(|l| l.timestamp += 200);
@@ -768,19 +797,20 @@ mod test {
         );
 
         // Primera oferta (12M), luego la reemplaza por una mayor (18M).
+        client.set_capacity(&bank, &50_000_000);
         let salt1 = BytesN::random(&env);
         let salt2 = BytesN::random(&env);
         client.submit_sealed_bid(
             &auction_id,
             &bank,
             &commit(&env, 12_000_000, &salt1),
-            &elig_proof(&env, &z, 10_000_000, 12_000_000, 50_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000),
         );
         client.submit_sealed_bid(
             &auction_id,
             &bank,
             &commit(&env, 18_000_000, &salt2),
-            &elig_proof(&env, &z, 10_000_000, 18_000_000, 50_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 18_000_000),
         );
 
         // Una sola oferta (reemplazada, no duplicada).
@@ -827,7 +857,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 12_000_000, &salt),
-            &elig_proof(&env, &z, 5_000_000, 12_000_000, 50_000_000),
+            &elig_proof(&env, &z, 5_000_000, 50_000_000, 12_000_000),
         );
     }
 
@@ -862,7 +892,7 @@ mod test {
             &auction_id,
             &outsider,
             &commit(&env, 12_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 12_000_000, 50_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000),
         );
     }
 
@@ -893,13 +923,14 @@ mod test {
             &reserves_proof(&env, &z, 500_000_000, 600_000_000),
         );
 
+        client.set_capacity(&winner, &50_000_000);
         let salt = BytesN::random(&env);
         let bid = 15_000_000i128;
         client.submit_sealed_bid(
             &auction_id,
             &winner,
             &commit(&env, bid, &salt),
-            &elig_proof(&env, &z, 10_000_000, 15_000_000, 50_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
         );
         env.ledger().with_mut(|l| l.timestamp += 200);
         client.reveal_bid(&auction_id, &winner, &bid, &salt);
@@ -952,12 +983,13 @@ mod test {
             &reserves,
             &reserves_proof(&env, &z, 500_000_000, 600_000_000),
         );
+        client.set_capacity(&bank, &50_000_000);
         let salt = BytesN::random(&env);
         client.submit_sealed_bid(
             &auction_id,
             &bank,
             &commit(&env, 15_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 15_000_000, 50_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
         );
         env.ledger().with_mut(|l| l.timestamp += 200);
         client.reveal_bid(&auction_id, &bank, &15_000_000i128, &salt);

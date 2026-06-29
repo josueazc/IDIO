@@ -24,23 +24,27 @@ use ark_std::rand::{rngs::StdRng, SeedableRng};
 // Circuitos
 // ---------------------------------------------------------------------------
 
-/// `balance ≥ bid ≥ min_bid`. `min_bid` público; `bid`, `balance` privados.
+/// Elegibilidad con **binding anti-trampa**: `capacity ≥ bid ≥ min_bid`.
+/// `min_bid` y `capacity` son PÚBLICOS (la `capacity` la provee el contrato
+/// desde su registro, no el que prueba), y `bid` es PRIVADO. Así el banco no
+/// puede ofertar por encima de su capacidad registrada ni declarar fondos
+/// falsos — la oferta permanece oculta.
 #[derive(Clone)]
 pub struct EligibilityCircuit {
     pub min_bid: Option<Fr>,
+    pub capacity: Option<Fr>,
     pub bid: Option<Fr>,
-    pub balance: Option<Fr>,
 }
 
 impl ConstraintSynthesizer<Fr> for EligibilityCircuit {
     fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
         let min = FpVar::new_input(cs.clone(), || self.min_bid.ok_or(SynthesisError::AssignmentMissing))?;
+        let cap = FpVar::new_input(cs.clone(), || self.capacity.ok_or(SynthesisError::AssignmentMissing))?;
         let bid = FpVar::new_witness(cs.clone(), || self.bid.ok_or(SynthesisError::AssignmentMissing))?;
-        let bal = FpVar::new_witness(cs.clone(), || self.balance.ok_or(SynthesisError::AssignmentMissing))?;
-        // bid >= min  y  balance >= bid
+        // bid >= min  y  capacity >= bid
         bid.is_cmp(&min, core::cmp::Ordering::Greater, true)?
             .enforce_equal(&ark_r1cs_std::boolean::Boolean::TRUE)?;
-        bal.is_cmp(&bid, core::cmp::Ordering::Greater, true)?
+        cap.is_cmp(&bid, core::cmp::Ordering::Greater, true)?
             .enforce_equal(&ark_r1cs_std::boolean::Boolean::TRUE)?;
         Ok(())
     }
@@ -100,7 +104,7 @@ const SEED: u64 = 0x1D10_2026;
 
 pub fn setup_eligibility() -> (ProvingKey<Bn254>, VerifyingKey<Bn254>) {
     let mut rng = StdRng::seed_from_u64(SEED);
-    let c = EligibilityCircuit { min_bid: None, bid: None, balance: None };
+    let c = EligibilityCircuit { min_bid: None, capacity: None, bid: None };
     Groth16::<Bn254>::circuit_specific_setup(c, &mut rng).unwrap()
 }
 
@@ -113,15 +117,15 @@ pub fn setup_reserves() -> (ProvingKey<Bn254>, VerifyingKey<Bn254>) {
 pub fn prove_eligibility(
     pk: &ProvingKey<Bn254>,
     min_bid: u64,
+    capacity: u64,
     bid: u64,
-    balance: u64,
     seed: u64,
 ) -> ark_groth16::Proof<Bn254> {
     let mut rng = StdRng::seed_from_u64(seed);
     let c = EligibilityCircuit {
         min_bid: Some(Fr::from(min_bid)),
+        capacity: Some(Fr::from(capacity)),
         bid: Some(Fr::from(bid)),
-        balance: Some(Fr::from(balance)),
     };
     Groth16::<Bn254>::prove(pk, c, &mut rng).unwrap()
 }
@@ -258,8 +262,8 @@ mod wasm {
     /// Prueba de elegibilidad. Devuelve la prueba como hex de 256 bytes
     /// (`a‖b‖c`) lista para construir el `Groth16Proof` del contrato.
     #[wasm_bindgen]
-    pub fn prove_eligibility_hex(min_bid: u64, bid: u64, balance: u64, seed: u64) -> String {
-        let p = prove_eligibility(elig_pk(), min_bid, bid, balance, seed);
+    pub fn prove_eligibility_hex(min_bid: u64, capacity: u64, bid: u64, seed: u64) -> String {
+        let p = prove_eligibility(elig_pk(), min_bid, capacity, bid, seed);
         let (a, b, c) = proof_bytes(&p);
         ark_std::format!("{}{}{}", hex(&a), hex(&b), hex(&c))
     }
@@ -285,10 +289,24 @@ mod tests {
 
     #[test]
     fn eligibility_proves_and_verifies() {
+        // min=10M, capacity=50M (públicos), bid=15M (privado): 50M ≥ 15M ≥ 10M.
         let (pk, vk) = setup_eligibility();
-        let proof = prove_eligibility(&pk, 10_000_000, 15_000_000, 50_000_000, 42);
+        let proof = prove_eligibility(&pk, 10_000_000, 50_000_000, 15_000_000, 42);
         let pvk = Groth16::<Bn254>::process_vk(&vk).unwrap();
-        assert!(Groth16::<Bn254>::verify_with_processed_vk(&pvk, &[Fr::from(10_000_000u64)], &proof).unwrap());
+        assert!(Groth16::<Bn254>::verify_with_processed_vk(
+            &pvk,
+            &[Fr::from(10_000_000u64), Fr::from(50_000_000u64)],
+            &proof
+        )
+        .unwrap());
+    }
+
+    #[test]
+    #[should_panic]
+    fn eligibility_bid_above_capacity_cannot_be_generated() {
+        // bid=60M > capacity=50M: no se puede generar la prueba.
+        let (pk, _) = setup_eligibility();
+        let _ = prove_eligibility(&pk, 10_000_000, 50_000_000, 60_000_000, 42);
     }
 
     #[test]
