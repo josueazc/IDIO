@@ -11,6 +11,7 @@ export default function BankProfile() {
   const open = mine.filter((auction) => auction.status === 'BiddingOpen').length
   const settled = mine.filter((auction) => auction.status === 'Settled').length
   const volume = mine.reduce((sum, auction) => sum + (auction.winningAmount ?? 0), 0)
+  const demand = mine.reduce((sum, auction) => sum + auction.bids.length, 0)
   const short = address ? `${address.slice(0, 8)}...${address.slice(-4)}` : 'unknown'
 
   return (
@@ -22,10 +23,11 @@ export default function BankProfile() {
         actions={<Link className="btn-ghost" to="/auctions">Back to registry</Link>}
       />
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-4">
         <Metric label="Issued auctions" value={String(mine.length)} />
         <Metric label="Open / settled" value={`${open} / ${settled}`} />
         <Metric label="Settled volume" value={fmtUSD(volume)} />
+        <Metric label="Total demand (bids)" value={String(demand)} />
       </section>
 
       <RuledPanel title="Issuer address">

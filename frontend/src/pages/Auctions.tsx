@@ -25,6 +25,8 @@ export default function Auctions({ address }: Props) {
   const [bidding, setBidding] = useState<Auction | null>(null)
   const [filter, setFilter] = useState<StatusFilter>('all')
   const [typeFilter, setTypeFilter] = useState<'all' | AssetType>('all')
+  const [query, setQuery] = useState('')
+  const [sortBy, setSortBy] = useState<'closing' | 'amount' | 'bids'>('closing')
   const [busy, setBusy] = useState<number | null>(null)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null)
@@ -38,15 +40,20 @@ export default function Auctions({ address }: Props) {
     return true
   }
 
-  const filtered = useMemo(
-    () =>
-      auctions
-        .filter((auction) =>
-          filter === 'all' ? true : filter === 'open' ? auction.status === 'BiddingOpen' : auction.status === 'Settled'
-        )
-        .filter((auction) => (typeFilter === 'all' ? true : auction.assetType === typeFilter)),
-    [auctions, filter, typeFilter]
-  )
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const list = auctions
+      .filter((auction) =>
+        filter === 'all' ? true : filter === 'open' ? auction.status === 'BiddingOpen' : auction.status === 'Settled'
+      )
+      .filter((auction) => (typeFilter === 'all' ? true : auction.assetType === typeFilter))
+      .filter((auction) => (q === '' ? true : auction.asset.toLowerCase().includes(q) || auction.issuer.toLowerCase().includes(q)))
+    const sorted = [...list]
+    if (sortBy === 'amount') sorted.sort((a, b) => b.amount - a.amount)
+    else if (sortBy === 'bids') sorted.sort((a, b) => b.bids.length - a.bids.length)
+    else sorted.sort((a, b) => a.endTime - b.endTime) // closing soonest first
+    return sorted
+  }, [auctions, filter, typeFilter, query, sortBy])
 
   const selected = filtered.find((auction) => auction.id === selectedId) ?? filtered[0] ?? null
 
@@ -144,6 +151,24 @@ export default function Auctions({ address }: Props) {
             {type.label}
           </button>
         ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          className="input max-w-xs"
+          placeholder="Buscar por activo o emisor…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <label className="flex items-center gap-2 text-sm text-slate-400">
+          Ordenar:
+          <select className="input w-auto" value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
+            <option value="closing">Cierre (más pronto)</option>
+            <option value="amount">Monto (mayor)</option>
+            <option value="bids">Ofertas (más)</option>
+          </select>
+        </label>
+        <span className="text-xs text-slate-500">{filtered.length} resultado(s)</span>
       </div>
 
       {error && <ErrorNotice message={`Chain read failed: ${error}`} />}

@@ -21,6 +21,15 @@ export default function CreateAuction({ address }: Props) {
   const [phase, setPhase] = useState<'form' | 'proving'>('form')
   const [error, setError] = useState<string | null>(null)
 
+  function applyTemplate(t: (typeof TEMPLATES)[number]) {
+    setAsset(t.asset)
+    setAssetType(t.assetType)
+    setAmount(t.amount)
+    setMinBid(t.minBid)
+    setDuration(t.duration)
+    setDescription(t.description)
+  }
+
   const mode = getMode()
   const checks = useMemo(
     () => [
@@ -68,6 +77,15 @@ export default function CreateAuction({ address }: Props) {
         title="Issue a private auction."
         description="A proof of reserves is generated before this record is published to the protocol."
       />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="micro-label">Plantillas:</span>
+        {TEMPLATES.map((t) => (
+          <button key={t.label} className="btn-ghost min-h-9 px-3 py-1 text-xs" onClick={() => applyTemplate(t)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-8">
@@ -176,3 +194,42 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     </label>
   )
 }
+
+const TEMPLATES = [
+  {
+    label: 'Bono soberano',
+    asset: 'Sovereign Notes 10Y',
+    assetType: 'soberano' as AssetType,
+    amount: 500_000_000,
+    minBid: 10_000_000,
+    duration: 48,
+    description: 'Sovereign bond, 10Y tenor, 5.25% coupon.',
+  },
+  {
+    label: 'RWA tokenizado',
+    asset: 'Tokenized Mortgage Pool',
+    assetType: 'rwa' as AssetType,
+    amount: 300_000_000,
+    minBid: 8_000_000,
+    duration: 72,
+    description: 'Tokenized real-world asset (mortgage pool).',
+  },
+  {
+    label: 'Bono corporativo',
+    asset: 'Corporate Bond 7Y',
+    assetType: 'corporativo' as AssetType,
+    amount: 250_000_000,
+    minBid: 5_000_000,
+    duration: 36,
+    description: 'Corporate bond, 7Y tenor.',
+  },
+  {
+    label: 'Licitación',
+    asset: 'Public Tender Lot',
+    assetType: 'licitacion' as AssetType,
+    amount: 120_000_000,
+    minBid: 2_000_000,
+    duration: 96,
+    description: 'Public procurement tender.',
+  },
+]
