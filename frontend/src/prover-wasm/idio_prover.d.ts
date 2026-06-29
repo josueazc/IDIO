@@ -5,7 +5,7 @@
  * Prueba de elegibilidad. Devuelve la prueba como hex de 256 bytes
  * (`a‖b‖c`) lista para construir el `Groth16Proof` del contrato.
  */
-export function prove_eligibility_hex(min_bid: bigint, bid: bigint, balance: bigint, seed: bigint): string;
+export function prove_eligibility_hex(min_bid: bigint, capacity: bigint, bid: bigint, seed: bigint): string;
 
 /**
  * Prueba de reservas. Devuelve `a‖b‖c` en hex (256 bytes).

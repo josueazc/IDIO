@@ -18,10 +18,11 @@ Leyenda: ✅ hecho · 🟦 buildable (puedo hacerlo) · 🟣 research-grade (inc
 - ✅ Auspex+: política de reservas (solvencia + ratio de liquidez) — activo
 - ✅ BEShield: consenso k-de-n con ZK — cableado, testeado
 - ✅ Separación por rol, filtros por tipo, perfil de banco, reemplazo de oferta, transparencia post-cierre, verificador de apertura
+- ✅ **Binding elegibilidad ↔ cupo registrado**: la prueba demuestra `capacidad ≥ oferta ≥ mínimo` con la `capacity` registrada on-chain por el admin como entrada pública. Una oferta por encima del cupo no puede generar prueba válida (antes el `balance` era autodeclarado y no verificado).
 - ✅ ~26 tests verdes en las 4 capas
 
 ## 1. Solidez criptográfica (anti-trampa) — lo más importante
-- 🟣 **Binding elegibilidad ↔ saldo real**: hoy el `balance` es declarado por el banco; falta atarlo a fondos verificables on-chain. Requiere EC in-circuit (curva 2-ciclo BN254/Grumpkin).
+- 🟣 **Binding elegibilidad ↔ saldo confidencial**: el cupo (`capacity`) ya está atado on-chain, pero es público. Atarlo a un *saldo confidencial* (sin revelar el cupo) requiere EC in-circuit sobre una curva 2-ciclo (BN254/Grumpkin); Soroban expone BN254/BLS pero no Grumpkin — paso de endurecimiento restante.
 - 🟣 **Solvencia confidencial del token** (`monto ≤ balance` ligado al compromiso Pedersen). Mismo problema 2-ciclo.
 - 🟣 **Reservas atadas a activos reales** (oráculo/prueba de custodia), no a números declarados.
 - 🟦 **Unificar Noir↔Groth16** en un solo sistema de prueba.

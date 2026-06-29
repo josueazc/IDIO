@@ -125,9 +125,18 @@ export async function submitBid(
   const commitment = await commitBid(amount, salt)
 
   if (getMode() === 'chain') {
-    // Prueba Groth16 de elegibilidad (balance ≥ oferta ≥ mínimo), verificada
+    // Prueba Groth16 de elegibilidad (capacidad ≥ oferta ≥ mínimo), verificada
     // on-chain por el contrato vía cross-contract al verifier (puente real).
-    const proof = await proveEligibility(minBid, amount, balance)
+    // La capacidad es el cupo registrado on-chain para este banco: es entrada
+    // pública, así una oferta por encima del cupo no genera prueba válida.
+    const capacity = await chain.getCapacity(address)
+    if (capacity <= 0) {
+      throw new Error('Este banco no tiene cupo (capacity) registrado on-chain por el emisor/admin.')
+    }
+    if (amount > capacity) {
+      throw new Error(`La oferta excede el cupo registrado (${capacity}).`)
+    }
+    const proof = await proveEligibility(minBid, capacity, amount)
     lastProof = { proofHex: proof.a, witnessOk: true, proofOk: true, ms: 0 }
     await chain.submitSealedBid(auctionId, address, commitment, proof)
     saveSalt(auctionId, address, amount, salt)

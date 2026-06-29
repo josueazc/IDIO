@@ -210,6 +210,11 @@ export const chain = {
     return Boolean(await readContract(config.contracts.asp, 'is_allowed', [addr(who)]))
   },
 
+  /** Cupo (capacidad) registrado on-chain para un banco. 0 si no tiene. */
+  async getCapacity(who: string): Promise<number> {
+    return Number((await readContract(config.contracts.auction, 'get_capacity', [addr(who)])) ?? 0)
+  },
+
   async createAuction(
     issuer: string,
     asset: string,

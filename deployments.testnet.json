@@ -5,11 +5,11 @@
   "deployer": "GCTXTCGN5W3QG6GARAVOIQ6WV5QBFSAVHZ6J2SJENHFKQHMU36FJAK6R",
   "sdk": "soroban-sdk 26.1.0 (Protocol 26, BN254 nativo)",
   "pedersenH": "0000000000000000000000000000000000000000000000000000000000007a691d98d781d9e01f0772f9c737e6c25cfd0167d663db7eec32db8003c0e70f3f87",
-  "zk": "Groth16 BN254 verificado on-chain; pruebas de elegibilidad (oferta) y reservas (emisión) exigidas por el contrato",
+  "zk": "Groth16 BN254 verificado on-chain; elegibilidad ata la oferta a la capacidad registrada (capacidad>=oferta>=minimo) y reservas exige respaldo de la emision",
   "contracts": {
     "asp": "CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY",
     "token": "CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH",
     "verifier": "CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6",
-    "auction": "CCSKDZY7NG4ZNPI6LBMT67LAROF6KXVXYIIDK7XAO2CDTMGZHJLJ4L65"
+    "auction": "CDBVGKAIM5S5RMPI3LJ2UCRO5T2BORYDNLDP2HDLFD7UNQ4T5R36VO3N"
   }
 }

@@ -26,14 +26,19 @@ function seed(): bigint {
   return BigInt(Math.floor(Math.random() * 2 ** 31))
 }
 
-/** Prueba de elegibilidad: balance ≥ oferta ≥ mínimo (oferta/balance privados). */
+/**
+ * Prueba de elegibilidad: capacidad ≥ oferta ≥ mínimo (oferta privada).
+ * `capacity` es el cupo registrado on-chain por el admin para ese banco y es
+ * entrada pública: el contrato la usa al verificar, así una oferta por encima
+ * del cupo no puede generar una prueba válida.
+ */
 export async function proveEligibility(
   minBid: number,
-  bid: number,
-  balance: number
+  capacity: number,
+  bid: number
 ): Promise<GrothProof> {
   await ensure()
-  const hex = prove_eligibility_hex(BigInt(minBid), BigInt(bid), BigInt(balance), seed())
+  const hex = prove_eligibility_hex(BigInt(minBid), BigInt(capacity), BigInt(bid), seed())
   return split(hex)
 }
 

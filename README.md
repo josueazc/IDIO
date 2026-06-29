@@ -57,7 +57,7 @@ All four contracts are deployed, initialized and verified on Testnet (`soroban-s
 ## What actually works today
 
 - **Sealed bids on-chain** — only the commitment is stored; the amount never appears until reveal.
-- **Browser → chain ZK bridge (Groth16 / BN254)** — when a bank bids, the browser generates a Groth16 eligibility proof (`balance ≥ bid ≥ minimum`) with an arkworks prover compiled to **WASM** (~1.3 s). The contract **requires and verifies it on-chain** via a cross-contract call `auction → verifier` (native `pairing_check`). Creating an auction requires a reserves proof (`total ≥ amount`).
+- **Browser → chain ZK bridge (Groth16 / BN254)** — when a bank bids, the browser generates a Groth16 eligibility proof (`capacity ≥ bid ≥ minimum`) with an arkworks prover compiled to **WASM** (~1.3 s). The `capacity` is the bank's quota registered on-chain by the admin and is a **public input**, so a bid above the quota cannot produce a valid proof. The contract **requires and verifies the proof on-chain** via a cross-contract call `auction → verifier` (native `pairing_check`). Creating an auction requires a reserves proof (`total ≥ amount`).
 - **Confidential token** — balances are **Pedersen commitments** `v·G + r·H` over BN254; transfers are homomorphic; the amount is never in clear.
 - **Confidential settlement** — the winner pays the issuer via `settle_payment` (cross-contract `auction → token`), amount hidden inside a commitment.
 - **Private allow-list (Covenant)** — the ASP can verify a **ZK Merkle-membership proof + nullifier**: a bank proves it is approved without revealing *which* member it is, and the one-time nullifier blocks reuse (`asp.verify_membership`).
@@ -87,7 +87,7 @@ Auditor ──verify_opening / opening──▶ Token / commitments   (post-clos
 | Step | Actor | Action |
 |------|-------|--------|
 | 1 | **Issuer** | Creates the auction; browser proves reserves (`total ≥ amount`), verified on-chain |
-| 2 | **Bidder** | Submits a sealed bid; browser proves eligibility (`balance ≥ bid ≥ min`), verified on-chain |
+| 2 | **Bidder** | Submits a sealed bid; browser proves eligibility (`capacity ≥ bid ≥ min`, capacity registered on-chain), verified on-chain |
 | 3 | **ASP** | Only allow-listed banks may bid (cross-contract) |
 | 4 | **Bidder** | May replace its own bid before close (still blind) |
 | 5 | **Contract** | After close: reveal `(amount, salt)`, recompute the hash, pick the highest valid bid |
@@ -159,7 +159,7 @@ Tests: ~26 green across all layers — contracts (auction 6, asp 3, token 1, ver
 - **BEShield** consensus is wired and tested but **off by default** (`threshold = 0`); enabling it needs a real validator set/network.
 
 **Research-grade (documented, not faked):**
-- **Confidential-solvency proof** for the token (`amount ≤ balance` bound to the on-chain Pedersen commitment, revealing nothing) needs in-circuit elliptic-curve arithmetic over a 2-cycle curve (e.g. BN254/Grumpkin). Soroban exposes BN254/BLS natively but not Grumpkin — this is the remaining hardening step.
+- **Eligibility binding** is now sound against the *registered quota*: the proof ties the bid to an on-chain `capacity` (public input), so a bid above quota cannot produce a valid proof. Making that bound a **confidential** balance (without revealing the quota) needs in-circuit elliptic-curve arithmetic over a 2-cycle curve (e.g. BN254/Grumpkin). Soroban exposes BN254/BLS natively but not Grumpkin — this is the remaining hardening step (also applies to the token's `amount ≤ balance` solvency proof bound to its Pedersen commitment).
 
 **Pending (needs accounts/recording):** public deployment (`vercel`/Netlify configs included) and the demo video (`docs/DEMO.md`).
 

@@ -4,16 +4,16 @@
  * Prueba de elegibilidad. Devuelve la prueba como hex de 256 bytes
  * (`a‖b‖c`) lista para construir el `Groth16Proof` del contrato.
  * @param {bigint} min_bid
+ * @param {bigint} capacity
  * @param {bigint} bid
- * @param {bigint} balance
  * @param {bigint} seed
  * @returns {string}
  */
-export function prove_eligibility_hex(min_bid, bid, balance, seed) {
+export function prove_eligibility_hex(min_bid, capacity, bid, seed) {
     let deferred1_0;
     let deferred1_1;
     try {
-        const ret = wasm.prove_eligibility_hex(min_bid, bid, balance, seed);
+        const ret = wasm.prove_eligibility_hex(min_bid, capacity, bid, seed);
         deferred1_0 = ret[0];
         deferred1_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);
