@@ -233,7 +233,7 @@
                   "u64": "100"
                 },
                 {
-                  "bytes": "a0d88f0155c9e9d0a8e7183844063a21056f4b694c0ac1a06da2857d943f9905"
+                  "bytes": "6192a4bc448e47717a49b57963a51739e3a4cb800881f4ed56eabfc7c2116c3f"
                 },
                 {
                   "map": [
@@ -308,7 +308,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
                 },
                 {
-                  "bytes": "1408c91a1426b0d13106dfdf90b43dfae371f071aab0eac394d0739596e31eae"
+                  "bytes": "127ea9194c1943c8b5a0a78b5c8605290ff3474042035a6d0d07f5077e157a2a"
                 },
                 {
                   "map": [
@@ -317,7 +317,7 @@
                         "symbol": "a"
                       },
                       "val": {
-                        "bytes": "27c2ac1b5ebe40a0e32dcdc9cf985308a08d7f76ec3eb86dd6c18ef97ca302b10f3ab76ca4d4ebbf69a203bbbd94d52655e8097ba26aea90a97872423abd674d"
+                        "bytes": "17af98918203f32f1a8ea7bba1d8ba73338e05bab2dadf44333982954ecbc30b2cc5f0c2a36e73d3b64a0f33ab67c634bfee07c296ad8e28b73699688cf120c6"
                       }
                     },
                     {
@@ -325,7 +325,7 @@
                         "symbol": "b"
                       },
                       "val": {
-                        "bytes": "01e417cd19e0a6d7ccb183470a5bb626aea1b44e7509297fa84b329e7133d8b70578ce495902345eaaea0eb1b561b414bab3aeda0b928ff11dffacb747b78a6708ec6187cecbf50b2d4e64feffc0d362ada84e3611d8cb210ccb8b61ce0ff74c0c6b735af6f2042e080656d7283ed481481d39f8c0a2fb233cc5fdeabd11664b"
+                        "bytes": "005783fa7ad2e4843b5c4b52a487ab8535f2a88413ca331621a639a48ff0cfac1d2326f0bef57155cc2b4743e526e1d097cfe24f58c428d0521b8256d2d2e4561653393b38f9cc6234d633b81d2cf00ff2ee26e702a2082fe4e5a71eb0918ad90e4fda77c999d8d74896fe9463bd8a1aa51bc41dd7ad716ee589a5aaa62ed350"
                       }
                     },
                     {
@@ -333,7 +333,7 @@
                         "symbol": "c"
                       },
                       "val": {
-                        "bytes": "2f67259cfb64e7a713bd4dc4033ed976176f7de8b05be9207169e4786db9f68821b0899004fe28a2fbf9634dce95d4ba9d2abfc8e8d618faea35ca119dd589fd"
+                        "bytes": "2a68c0a4ea1693054d22a1f95c1cdc4f67d48e31ebc8bc469a983d7b87663c4422ce49975fd5e1677eceee1f64f41b084bc29b08e91c617370ec279d634ef8fa"
                       }
                     }
                   ]
@@ -364,7 +364,7 @@
                   "i128": "15000000"
                 },
                 {
-                  "bytes": "cad1e26dc1cd14c04f1c7fa4efb9c9ffc88b75cbe39578e4502d1ec0722e1f0e"
+                  "bytes": "7f9d76b2a2b6f49828da222bd272731bb95de21260f3f3eaf4b0f0161b035cd3"
                 }
               ]
             }
@@ -536,7 +536,7 @@
                       "symbol": "reserves_commitment"
                     },
                     "val": {
-                      "bytes": "a0d88f0155c9e9d0a8e7183844063a21056f4b694c0ac1a06da2857d943f9905"
+                      "bytes": "6192a4bc448e47717a49b57963a51739e3a4cb800881f4ed56eabfc7c2116c3f"
                     }
                   },
                   {
@@ -618,7 +618,7 @@
                           "symbol": "commitment"
                         },
                         "val": {
-                          "bytes": "1408c91a1426b0d13106dfdf90b43dfae371f071aab0eac394d0739596e31eae"
+                          "bytes": "127ea9194c1943c8b5a0a78b5c8605290ff3474042035a6d0d07f5077e157a2a"
                         }
                       },
                       {

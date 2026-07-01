@@ -252,7 +252,7 @@
                   "u64": "100"
                 },
                 {
-                  "bytes": "8fd9053a7974847f13eac6643778ff721239a77f6002ddf641ff75b4499f359f"
+                  "bytes": "b79dd68cbf8ba9afb3bcc7ff111251fb041c9163f55ddbb90849b930be61f540"
                 },
                 {
                   "map": [
@@ -333,12 +333,175 @@
         }
       ]
     ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "function_name": "submit_sealed_bid",
+              "args": [
+                {
+                  "u64": "1"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                },
+                {
+                  "bytes": "3b5cca105f4ddbb1e0034c082d6d3837abc6e1c12b89833961d426360a095651"
+                },
+                {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "a"
+                      },
+                      "val": {
+                        "bytes": "10d519dc57f3010bdda7137188fdb4ef2779f8a45592f52509cdee45f1f11701199c7c23416305228eb32574c88e242562d6a16d324e9b8d25dca29c33c3984e"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "b"
+                      },
+                      "val": {
+                        "bytes": "22787a07bd2e3c162f2a493f75bbabfa78d4fd3ca8a885e8107eee00caf50c8a142e8b1488b509b9eb06b0f0038065c81280abbc5a1a7a00b8d14f68ea86048d1cc2da6f55475fa916ee7c4cc58d0c03f1ee498bf7ae6c3a69864e0cb8e0420e2a083e8fb4ab7371168aa1130020bbe23071ae5b0166c96723d79346e8f1a8fa"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "c"
+                      },
+                      "val": {
+                        "bytes": "039cf49c87bc56b7fd18bc5aefe32cf2e32f9626daca4d7f3a724ce4aed2b26e1205c85ad8ee8888755c37117b8a841e883b6b5757c53e1a3abfe16347525833"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "function_name": "submit_sealed_bid",
+              "args": [
+                {
+                  "u64": "1"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                },
+                {
+                  "bytes": "af2cbdd919c0d47464e0c3545a16ddeb511f1145a193200a496fcd270e724434"
+                },
+                {
+                  "map": [
+                    {
+                      "key": {
+                        "symbol": "a"
+                      },
+                      "val": {
+                        "bytes": "2dfc00856b1da0d86470c51db7db3cd2fc7c8a3c987f46dbf716ec1e936301f423aebf2abd5f475e4d5b3ca0671f1983414e3b72d0b494449083ff0b25dd4500"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "b"
+                      },
+                      "val": {
+                        "bytes": "100f82a9987f19dbdd18d78a2193e723bf3714b5cb602f99009ade0b390fed6e19334acd5ed29292870201e51453f8d13e691ab7dc47fe3360c90dc5e7e7f45010dea6a0411b9e1abc32b2c43b070814bbd43228222bbc18d49448b0cd14e68103acc75c51b0350df13483a9e7f7a1d52f4958abdec3d2ad85a411593b23948b"
+                      }
+                    },
+                    {
+                      "key": {
+                        "symbol": "c"
+                      },
+                      "val": {
+                        "bytes": "0e058453693c64bb07ace7c67f0ee68122b44c018e954af73f186d91140a9c6d060f2d7f784a20349cbdfec98f0767263089c91e55691665616266d15a5a1578"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "function_name": "reveal_bid",
+              "args": [
+                {
+                  "u64": "1"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                },
+                {
+                  "i128": "12000000"
+                },
+                {
+                  "bytes": "e30a09eddf167030ca16bc064d62ad3d356def8ec7d4a0fa4b362f322a4d87cb"
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "function_name": "reveal_bid",
+              "args": [
+                {
+                  "u64": "1"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                },
+                {
+                  "i128": "15000000"
+                },
+                {
+                  "bytes": "d10efd771cbbd7bbb13987cb729fea430e15d7dd3c04b3f59df3f674914dc454"
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [],
     []
   ],
   "ledger": {
     "protocol_version": 26,
     "sequence_number": 0,
-    "timestamp": 0,
+    "timestamp": 200,
     "network_id": "0000000000000000000000000000000000000000000000000000000000000000",
     "base_reserve": 0,
     "min_persistent_entry_ttl": 4096,
@@ -426,7 +589,7 @@
                       "symbol": "payment_deadline"
                     },
                     "val": {
-                      "u64": "0"
+                      "u64": "86600"
                     }
                   },
                   {
@@ -434,7 +597,7 @@
                       "symbol": "reserves_commitment"
                     },
                     "val": {
-                      "bytes": "8fd9053a7974847f13eac6643778ff721239a77f6002ddf641ff75b4499f359f"
+                      "bytes": "b79dd68cbf8ba9afb3bcc7ff111251fb041c9163f55ddbb90849b930be61f540"
                     }
                   },
                   {
@@ -452,7 +615,7 @@
                     "val": {
                       "vec": [
                         {
-                          "symbol": "BiddingOpen"
+                          "symbol": "Settled"
                         }
                       ]
                     }
@@ -461,14 +624,16 @@
                     "key": {
                       "symbol": "winner"
                     },
-                    "val": "void"
+                    "val": {
+                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                    }
                   },
                   {
                     "key": {
                       "symbol": "winning_amount"
                     },
                     "val": {
-                      "i128": "0"
+                      "i128": "15000000"
                     }
                   }
                 ]
@@ -498,7 +663,128 @@
               },
               "durability": "persistent",
               "val": {
-                "vec": []
+                "vec": [
+                  {
+                    "map": [
+                      {
+                        "key": {
+                          "symbol": "bidder"
+                        },
+                        "val": {
+                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "commitment"
+                        },
+                        "val": {
+                          "bytes": "3b5cca105f4ddbb1e0034c082d6d3837abc6e1c12b89833961d426360a095651"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "deposit"
+                        },
+                        "val": {
+                          "i128": "500000"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "deposit_settled"
+                        },
+                        "val": {
+                          "bool": false
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "revealed"
+                        },
+                        "val": {
+                          "bool": true
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "revealed_amount"
+                        },
+                        "val": {
+                          "i128": "12000000"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "timestamp"
+                        },
+                        "val": {
+                          "u64": "0"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "map": [
+                      {
+                        "key": {
+                          "symbol": "bidder"
+                        },
+                        "val": {
+                          "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "commitment"
+                        },
+                        "val": {
+                          "bytes": "af2cbdd919c0d47464e0c3545a16ddeb511f1145a193200a496fcd270e724434"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "deposit"
+                        },
+                        "val": {
+                          "i128": "500000"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "deposit_settled"
+                        },
+                        "val": {
+                          "bool": false
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "revealed"
+                        },
+                        "val": {
+                          "bool": true
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "revealed_amount"
+                        },
+                        "val": {
+                          "i128": "15000000"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "timestamp"
+                        },
+                        "val": {
+                          "u64": "0"
+                        }
+                      }
+                    ]
+                  }
+                ]
               }
             }
           },
@@ -923,6 +1209,86 @@
               "key": {
                 "ledger_key_nonce": {
                   "nonce": "4270020994084947596"
+                }
+              },
+              "durability": "temporary",
+              "val": "void"
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 6311999
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+              "key": {
+                "ledger_key_nonce": {
+                  "nonce": "115220454072064130"
+                }
+              },
+              "durability": "temporary",
+              "val": "void"
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 6311999
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4",
+              "key": {
+                "ledger_key_nonce": {
+                  "nonce": "5806905060045992000"
+                }
+              },
+              "durability": "temporary",
+              "val": "void"
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 6311999
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "key": {
+                "ledger_key_nonce": {
+                  "nonce": "1194852393571756375"
+                }
+              },
+              "durability": "temporary",
+              "val": "void"
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 6311999
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "key": {
+                "ledger_key_nonce": {
+                  "nonce": "3126073502131104533"
                 }
               },
               "durability": "temporary",
