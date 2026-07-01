@@ -4,6 +4,13 @@
 > [`deployments.testnet.json`](../deployments.testnet.json) y en el README.
 > El frontend apunta a esos contratos por defecto (`frontend/src/config.ts`).
 
+## Frontend en producción (Vercel)
+
+- **URL:** [https://idio-josueazcs-projects.vercel.app](https://idio-josueazcs-projects.vercel.app)
+- **Proyecto Vercel:** `josueazcs-projects/idio` (`projectName`: `idio` en `frontend/.vercel/project.json`)
+- **Root Directory:** `frontend` (ver `frontend/vercel.json`)
+- El alias corto `idio.vercel.app` **no** está disponible; usar la URL de producción anterior.
+
 ## Redespliegue tras cambio del circuito de elegibilidad
 
 El circuito `EligibilityCircuit` ahora incluye **3 entradas públicas**:

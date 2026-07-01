@@ -134,6 +134,6 @@ Documento para el teammate que mejora el frontend. Estado base: React 18 + Vite 
 | Auction | `CAY7Z6TRRXDRGVYWBNSYVGXMRLW47XF2BGM4YBN2NWJNPU6R66UVOKRR` |
 | Admin (`idio`) | `GCTXTCGN5W3QG6GARAVOIQ6WV5QBFSAVHZ6J2SJENHFKQHMU36FJAK6R` |
 | ZK elegibilidad | Groth16: `capacity ≥ bid ≥ min` + commitment `SHA-256(be16(bid)‖salt)` — **no** saldo de wallet aún |
-| Deploy | Root `frontend/`, config `frontend/vercel.json` |
+| Deploy / demo | [https://idio-josueazcs-projects.vercel.app](https://idio-josueazcs-projects.vercel.app) — root `frontend/`, `frontend/vercel.json` (`idio.vercel.app` N/A) |
 
 Docs relacionados: [FRONTEND_GUIDE](./FRONTEND_GUIDE.md) · [FRONTEND_STYLE_GUIDE](./FRONTEND_STYLE_GUIDE.md) · [DEPLOYMENT](./DEPLOYMENT.md) · [DEMO](./DEMO.md) · [ROADMAP general](./ROADMAP.md)

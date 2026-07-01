@@ -45,6 +45,8 @@ IDIO is a **private, verifiable sealed-bid auction** platform built on Stellar. 
 
 All four contracts are deployed, initialized and verified on Testnet (**Soroban SDK 26**, **Protocol 26**, native BN254 host functions).
 
+**Live demo (Vercel):** [https://idio-josueazcs-projects.vercel.app](https://idio-josueazcs-projects.vercel.app) — proyecto `josueazcs-projects/idio` (el alias `idio.vercel.app` no está disponible).
+
 | Contract | ID |
 |----------|----|
 | Auction | [`CAY7Z6TRRXDRGVYWBNSYVGXMRLW47XF2BGM4YBN2NWJNPU6R66UVOKRR`](https://stellar.expert/explorer/testnet/contract/CAY7Z6TRRXDRGVYWBNSYVGXMRLW47XF2BGM4YBN2NWJNPU6R66UVOKRR) |
@@ -112,7 +114,7 @@ Toggle en la app: esquina superior o ajustes de modo (`frontend/src/services/dat
 
 ## Deploy frontend (Vercel)
 
-**Producción:** [https://idio.vercel.app](https://idio.vercel.app) (proyecto Vercel **`idio`**, root **`frontend/`**). Config incluida en `frontend/vercel.json` (SPA rewrites + headers **COOP/COEP** requeridos por el prover WASM).
+**Producción:** [https://idio-josueazcs-projects.vercel.app](https://idio-josueazcs-projects.vercel.app) (proyecto Vercel **`josueazcs-projects/idio`**, root **`frontend/`**; `idio.vercel.app` no disponible). Config incluida en `frontend/vercel.json` (SPA rewrites + headers **COOP/COEP** requeridos por el prover WASM).
 
 ```bash
 cd frontend && npm install && npm run build   # verificar build local

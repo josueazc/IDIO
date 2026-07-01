@@ -2,6 +2,8 @@
 
 ## Despliegue público (Vercel)
 
+**Demo en vivo:** [https://idio-josueazcs-projects.vercel.app](https://idio-josueazcs-projects.vercel.app) (proyecto `idio`; `idio.vercel.app` no disponible).
+
 El frontend ya trae `frontend/vercel.json` con los headers COOP/COEP que
 necesita el prover WASM. Pasos (requieren tu cuenta de Vercel):
 
@@ -41,6 +43,6 @@ headers COOP/COEP en `netlify.toml`.
 
 ```bash
 # Subasta real on-chain (el monto de la oferta NO aparece)
-stellar contract invoke --id CCSKDZY7NG4ZNPI6LBMT67LAROF6KXVXYIIDK7XAO2CDTMGZHJLJ4L65 \
+stellar contract invoke --id CAY7Z6TRRXDRGVYWBNSYVGXMRLW47XF2BGM4YBN2NWJNPU6R66UVOKRR \
   --source idio --network testnet -- get_bids --auction_id 1
 ```
