@@ -131,7 +131,7 @@ Documento para el teammate que mejora el frontend. Estado base: React 18 + Vite 
 
 | Concepto | Valor Testnet |
 |----------|----------------|
-| Auction | `CCEDJPYUYYRS7JOOALDV2IZLHBKIMA76XHUDRJ3HAWT2NSTUS2YE5B7T` |
+| Auction | `CAY7Z6TRRXDRGVYWBNSYVGXMRLW47XF2BGM4YBN2NWJNPU6R66UVOKRR` |
 | Admin (`idio`) | `GCTXTCGN5W3QG6GARAVOIQ6WV5QBFSAVHZ6J2SJENHFKQHMU36FJAK6R` |
 | ZK elegibilidad | Groth16: `capacity ≥ bid ≥ min` + commitment `SHA-256(be16(bid)‖salt)` — **no** saldo de wallet aún |
 | Deploy | Root `frontend/`, config `frontend/vercel.json` |

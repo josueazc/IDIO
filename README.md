@@ -47,7 +47,7 @@ All four contracts are deployed, initialized and verified on Testnet (**Soroban 
 
 | Contract | ID |
 |----------|----|
-| Auction | [`CCEDJPYUYYRS7JOOALDV2IZLHBKIMA76XHUDRJ3HAWT2NSTUS2YE5B7T`](https://stellar.expert/explorer/testnet/contract/CCEDJPYUYYRS7JOOALDV2IZLHBKIMA76XHUDRJ3HAWT2NSTUS2YE5B7T) |
+| Auction | [`CAY7Z6TRRXDRGVYWBNSYVGXMRLW47XF2BGM4YBN2NWJNPU6R66UVOKRR`](https://stellar.expert/explorer/testnet/contract/CAY7Z6TRRXDRGVYWBNSYVGXMRLW47XF2BGM4YBN2NWJNPU6R66UVOKRR) |
 | Verifier | [`CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6`](https://stellar.expert/explorer/testnet/contract/CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6) |
 | Token | [`CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH`](https://stellar.expert/explorer/testnet/contract/CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH) |
 | ASP | [`CBKCM7DFWKYLMQIXN3IE2IRFV7P2ZZQI3DPGZNQZRYB3R3FG7SJ3ZJNR`](https://stellar.expert/explorer/testnet/contract/CBKCM7DFWKYLMQIXN3IE2IRFV7P2ZZQI3DPGZNQZRYB3R3FG7SJ3ZJNR) |
@@ -112,7 +112,7 @@ Toggle en la app: esquina superior o ajustes de modo (`frontend/src/services/dat
 
 ## Deploy frontend (Vercel)
 
-Root del proyecto en Vercel: **`frontend/`**. Config incluida en `frontend/vercel.json` (SPA rewrites + headers **COOP/COEP** requeridos por el prover WASM).
+**Producción:** [https://idio.vercel.app](https://idio.vercel.app) (proyecto Vercel **`idio`**, root **`frontend/`**). Config incluida en `frontend/vercel.json` (SPA rewrites + headers **COOP/COEP** requeridos por el prover WASM).
 
 ```bash
 cd frontend && npm install && npm run build   # verificar build local
@@ -190,15 +190,15 @@ cd circuits && nargo test         # Noir circuits
 
 ```bash
 # Versión del contrato desplegado (debe ser 2):
-stellar contract invoke --id CCEDJPYUYYRS7JOOALDV2IZLHBKIMA76XHUDRJ3HAWT2NSTUS2YE5B7T \
+stellar contract invoke --id CAY7Z6TRRXDRGVYWBNSYVGXMRLW47XF2BGM4YBN2NWJNPU6R66UVOKRR \
   --source <your-key> --network testnet -- version
 
 # Admin on-chain (quien puede set_capacity):
-stellar contract invoke --id CCEDJPYUYYRS7JOOALDV2IZLHBKIMA76XHUDRJ3HAWT2NSTUS2YE5B7T \
+stellar contract invoke --id CAY7Z6TRRXDRGVYWBNSYVGXMRLW47XF2BGM4YBN2NWJNPU6R66UVOKRR \
   --source <your-key> --network testnet -- get_admin
 
 # Una oferta sellada on-chain — el monto NO aparece en claro:
-stellar contract invoke --id CCEDJPYUYYRS7JOOALDV2IZLHBKIMA76XHUDRJ3HAWT2NSTUS2YE5B7T \
+stellar contract invoke --id CAY7Z6TRRXDRGVYWBNSYVGXMRLW47XF2BGM4YBN2NWJNPU6R66UVOKRR \
   --source <your-key> --network testnet -- get_bids --auction_id 1
 ```
 
