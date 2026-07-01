@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Auction } from '../types'
 import { fmtUSD } from '../utils/format'
-import { submitBid, getMode, lastProof, lastBidSecret } from '../services/data'
+import { submitBid, getMode, getCapacity, lastProof, lastBidSecret } from '../services/data'
+import { getProfile } from '../services/auth'
 
 interface Props {
   auction: Auction
@@ -13,17 +14,34 @@ interface Props {
 const BALANCE = 50_000_000
 
 export default function BidForm({ auction, bidderAddress, onClose, onDone }: Props) {
+  const chain = getMode() === 'chain'
+  const profile = getProfile(bidderAddress)
   const [amount, setAmount] = useState<number>(auction.minBid)
-  const [name, setName] = useState('Institutional bidder')
+  const [name, setName] = useState(profile?.name ?? 'Institutional bidder')
   const [phase, setPhase] = useState<'form' | 'proving' | 'done'>('form')
   const [error, setError] = useState<string | null>(null)
   const [proofInfo, setProofInfo] = useState<string | null>(null)
+  const [capacity, setCapacity] = useState<number | null>(null)
 
+  useEffect(() => {
+    if (!chain) return
+    let alive = true
+    getCapacity(bidderAddress)
+      .then((c) => alive && setCapacity(c))
+      .catch(() => alive && setCapacity(0))
+    return () => {
+      alive = false
+    }
+  }, [chain, bidderAddress])
+
+  // En chain, el techo es el cupo registrado on-chain; en demo, el balance simulado.
+  const ceiling = chain ? (capacity ?? 0) : BALANCE
+  const registered = !chain || !!profile
   const checks = {
-    balance: BALANCE >= amount,
+    balance: ceiling >= amount,
     min: amount >= auction.minBid,
-    credential: true,
-    whitelist: true,
+    credential: registered,
+    whitelist: registered,
   }
   const ready = Object.values(checks).every(Boolean)
 
@@ -64,14 +82,28 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
         <div className="space-y-5 p-5">
           <div className="grid grid-cols-2 gap-3">
             <div className="border border-edge bg-white/[0.02] p-3">
-              <div className="micro-label">Simulated balance</div>
-              <div className="mt-2 font-mono text-sm text-white">{fmtUSD(BALANCE)} USDC</div>
+              <div className="micro-label">{chain ? 'Cupo on-chain' : 'Simulated balance'}</div>
+              <div className="mt-2 font-mono text-sm text-white">
+                {chain ? (capacity === null ? 'consultando…' : fmtUSD(capacity)) : `${fmtUSD(BALANCE)} USDC`}
+              </div>
             </div>
             <div className="border border-edge bg-white/[0.02] p-3">
               <div className="micro-label">Minimum bid</div>
               <div className="mt-2 font-mono text-sm text-white">{fmtUSD(auction.minBid)}</div>
             </div>
           </div>
+
+          {chain && !profile && (
+            <div className="border border-amber-400/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+              Tu wallet no está registrada como banco. Si el Covenant ZK está activo, necesitás
+              registrarte (Sign up) para probar tu membresía y poder ofertar.
+            </div>
+          )}
+          {chain && capacity === 0 && (
+            <div className="border border-amber-400/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+              No tenés cupo (capacity) asignado on-chain. Pedile al emisor/admin que registre tu cupo.
+            </div>
+          )}
 
           <label className="block">
             <span className="label">Bidder label</span>
@@ -91,10 +123,10 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
           </label>
 
           <div className="grid gap-2 border-y border-edge py-4">
-            <Check ok={checks.balance} label={`Balance >= ${fmtUSD(amount)}`} />
+            <Check ok={checks.balance} label={`${chain ? 'Cupo' : 'Balance'} >= ${fmtUSD(amount)}`} />
             <Check ok={checks.min} label="Amount clears minimum bid" />
-            <Check ok={checks.credential} label="Institutional credential accepted" />
-            <Check ok={checks.whitelist} label="Participant is allow-listed" />
+            <Check ok={checks.credential} label={chain ? 'Banco registrado (perfil)' : 'Institutional credential accepted'} />
+            <Check ok={checks.whitelist} label={chain ? 'Membresía Covenant / allow-list' : 'Participant is allow-listed'} />
           </div>
 
           {error && <div className="border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}

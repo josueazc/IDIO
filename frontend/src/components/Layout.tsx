@@ -6,6 +6,7 @@ import ModeToggle from './ModeToggle'
 import BrandLogo from './BrandLogo'
 import { useRole } from '../utils/useRole'
 import { ROLES, ROLE_ROUTES, setRole, type Role } from '../services/role'
+import { getProfile, subscribeAuth } from '../services/auth'
 
 interface Props {
   children: ReactNode
@@ -174,6 +175,11 @@ function SidebarContent({
   onDisconnect: () => void
 }) {
   const roleInfo = ROLES.find((r) => r.id === role)
+  const [profile, setProfile] = useState(() => getProfile(address))
+  useEffect(() => {
+    setProfile(getProfile(address))
+    return subscribeAuth(() => setProfile(getProfile(address)))
+  }, [address])
   const menuItemStyle = (index: number): CSSProperties | undefined =>
     mobile
       ? {
@@ -208,6 +214,13 @@ function SidebarContent({
             </NavLink>
           )}
         </div>
+        {profile && (
+          <div className="mt-3 border-t border-edge pt-3">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-600">Registered bank</div>
+            <div className="mt-1 truncate text-sm font-medium text-white">{profile.name}</div>
+            <div className="mt-0.5 text-[11px] text-brand">Covenant member #{profile.membershipIndex + 1}</div>
+          </div>
+        )}
       </div>
 
       <nav className="mt-8 space-y-1" data-menu-item style={menuItemStyle(2)}>
