@@ -28,6 +28,11 @@ use soroban_sdk::{
 /// Política mínima de liquidez (%) que el emisor debe probar en reservas.
 const MIN_LIQUIDITY_PCT: i128 = 30;
 
+/// Ventana de revelación tras el cierre de bidding, en segundos. Los bidders
+/// disponen de este plazo para revelar `(monto, salt)`; pasado el plazo,
+/// `reveal_bid` se rechaza (una oferta no revelada a tiempo no puede ganar).
+const REVEAL_WINDOW_SECS: u64 = 86_400;
+
 /// Interfaz del contrato ASP para la llamada cross-contract de gating.
 /// Genera `AspClient`, usado por la subasta para validar participantes.
 #[contractclient(name = "AspClient")]
@@ -78,6 +83,12 @@ pub enum AuctionError {
     ApprovalAlreadyCast = 18,
     NotEnoughApprovals = 19,
     ConsensusNotConfigured = 20,
+    /// Se intentó operar sobre una subasta ya cancelada.
+    AuctionCancelled = 21,
+    /// El reveal llegó fuera de la ventana de revelación.
+    RevealWindowClosed = 22,
+    /// No se puede cancelar una subasta que ya recibió ofertas.
+    AuctionHasBids = 23,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -115,6 +126,9 @@ pub struct Auction {
     pub winner: Option<Address>,
     pub winning_amount: i128,
     pub end_time: u64,
+    /// Límite para revelar ofertas (tras el cierre de bidding). Pasado este
+    /// instante, `reveal_bid` se rechaza con `RevealWindowClosed`.
+    pub reveal_deadline: u64,
     /// Si el ganador ya pagó confidencialmente al emisor (Paso 4-5).
     pub paid: bool,
 }
@@ -211,6 +225,7 @@ impl AuctionContract {
             + 1;
         env.storage().instance().set(&DataKey::Counter, &id);
 
+        let end_time = env.ledger().timestamp() + duration;
         let auction = Auction {
             id,
             issuer,
@@ -221,7 +236,8 @@ impl AuctionContract {
             reserves_commitment,
             winner: None,
             winning_amount: 0,
-            end_time: env.ledger().timestamp() + duration,
+            end_time,
+            reveal_deadline: end_time + REVEAL_WINDOW_SECS,
             paid: false,
         };
 
@@ -248,6 +264,9 @@ impl AuctionContract {
         Self::require_allowed(&env, &bidder);
 
         let mut auction = Self::get(&env, auction_id);
+        if auction.status == AuctionStatus::Cancelled {
+            panic(&env, AuctionError::AuctionCancelled);
+        }
         if auction.status != AuctionStatus::BiddingOpen {
             panic(&env, AuctionError::NotInBiddingPhase);
         }
@@ -317,11 +336,18 @@ impl AuctionContract {
         bidder.require_auth();
         let mut auction = Self::get(&env, auction_id);
 
+        if auction.status == AuctionStatus::Cancelled {
+            panic(&env, AuctionError::AuctionCancelled);
+        }
         if env.ledger().timestamp() <= auction.end_time {
             panic(&env, AuctionError::BiddingStillOpen);
         }
         if auction.status == AuctionStatus::Settled {
             panic(&env, AuctionError::AlreadySettled);
+        }
+        // Ventana de revelación: pasado el plazo ya no se acepta ningún reveal.
+        if env.ledger().timestamp() > auction.reveal_deadline {
+            panic(&env, AuctionError::RevealWindowClosed);
         }
         auction.status = AuctionStatus::BiddingClosed;
         env.storage()
@@ -431,6 +457,9 @@ impl AuctionContract {
     /// validadores antes de liquidar (BEShield).
     pub fn settle(env: Env, auction_id: u64) -> Option<Address> {
         let mut auction = Self::get(&env, auction_id);
+        if auction.status == AuctionStatus::Cancelled {
+            panic(&env, AuctionError::AuctionCancelled);
+        }
         if auction.status == AuctionStatus::Settled {
             panic(&env, AuctionError::AlreadySettled);
         }
@@ -453,11 +482,26 @@ impl AuctionContract {
             .get(&DataKey::Bids(auction_id))
             .unwrap();
 
+        // Selección del ganador: mayor monto revelado. Criterio de desempate
+        // determinista: ante montos iguales gana la oferta con menor timestamp
+        // (la primera en llegar).
         let mut best_amount: i128 = 0;
+        let mut best_ts: u64 = 0;
         let mut winner: Option<Address> = None;
         for bid in bids.iter() {
-            if bid.revealed && bid.revealed_amount > best_amount {
+            if !bid.revealed {
+                continue;
+            }
+            let is_better = match winner {
+                None => true,
+                Some(_) => {
+                    bid.revealed_amount > best_amount
+                        || (bid.revealed_amount == best_amount && bid.timestamp < best_ts)
+                }
+            };
+            if is_better {
                 best_amount = bid.revealed_amount;
+                best_ts = bid.timestamp;
                 winner = Some(bid.bidder.clone());
             }
         }
@@ -506,12 +550,28 @@ impl AuctionContract {
             .set(&DataKey::Auction(auction_id), &auction);
     }
 
-    /// Cancela una subasta (solo el emisor, antes de liquidar).
+    /// Cancela una subasta (solo el emisor). Solo puede cancelarse mientras
+    /// está en fase de bidding y **antes de recibir ofertas**: una vez que hay
+    /// compromisos en cadena, el emisor ya no puede retirar la subasta.
     pub fn cancel_auction(env: Env, auction_id: u64) {
         let mut auction = Self::get(&env, auction_id);
         auction.issuer.require_auth();
         if auction.status == AuctionStatus::Settled {
             panic(&env, AuctionError::AlreadySettled);
+        }
+        if auction.status == AuctionStatus::Cancelled {
+            panic(&env, AuctionError::AuctionCancelled);
+        }
+        if auction.status != AuctionStatus::BiddingOpen {
+            panic(&env, AuctionError::NotInBiddingPhase);
+        }
+        let bids: Vec<SealedBid> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Bids(auction_id))
+            .unwrap_or(Vec::new(&env));
+        if !bids.is_empty() {
+            panic(&env, AuctionError::AuctionHasBids);
         }
         auction.status = AuctionStatus::Cancelled;
         env.storage()
@@ -1006,5 +1066,181 @@ mod test {
 
         // Ahora sí liquida.
         assert_eq!(client.settle(&auction_id), Some(bank));
+    }
+
+    // ---- Tarea 2: casos borde y robustez ----
+
+    /// Prepara un contrato inicializado con `banks` en la allow-list y una
+    /// subasta abierta (mínimo 10M, duración 100s). Devuelve cliente y contexto.
+    fn deploy_with_auction<'a>(
+        env: &'a Env,
+        banks: &[&Address],
+    ) -> (AuctionContractClient<'a>, Address, Env_, u64) {
+        let id = env.register(AuctionContract, ());
+        let client = AuctionContractClient::new(env, &id);
+        let admin = Address::generate(env);
+        let issuer = Address::generate(env);
+        let asp = setup_asp(env, &admin, banks);
+        let token = setup_token(env, &admin);
+        let z = setup_zk(env);
+        client.initialize(&admin, &asp, &token, &z.verifier, &z.elig_vk, &z.reserves_vk);
+        let reserves = BytesN::random(env);
+        let auction_id = client.create_auction(
+            &issuer,
+            &String::from_str(env, "Bonos"),
+            &500_000_000,
+            &10_000_000,
+            &100,
+            &reserves,
+            &reserves_proof(env, &z, 500_000_000, 600_000_000),
+        );
+        (client, issuer, z, auction_id)
+    }
+
+    /// Empate de montos: gana la oferta con menor timestamp (la primera).
+    #[test]
+    fn ties_resolved_by_earliest_timestamp() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let bank_a = Address::generate(&env);
+        let bank_b = Address::generate(&env);
+        let (client, _issuer, z, auction_id) = deploy_with_auction(&env, &[&bank_a, &bank_b]);
+
+        client.set_capacity(&bank_a, &50_000_000);
+        client.set_capacity(&bank_b, &50_000_000);
+        let salt_a = BytesN::random(&env);
+        let salt_b = BytesN::random(&env);
+        let amount = 15_000_000i128;
+
+        // bank_a oferta primero; avanzamos el ledger para que bank_b tenga un
+        // timestamp estrictamente mayor.
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank_a,
+            &commit(&env, amount, &salt_a),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+        env.ledger().with_mut(|l| l.timestamp += 1);
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank_b,
+            &commit(&env, amount, &salt_b),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+
+        env.ledger().with_mut(|l| l.timestamp += 200);
+        client.reveal_bid(&auction_id, &bank_a, &amount, &salt_a);
+        client.reveal_bid(&auction_id, &bank_b, &amount, &salt_b);
+
+        // Ante el empate, gana bank_a (menor timestamp).
+        assert_eq!(client.settle(&auction_id), Some(bank_a));
+        assert_eq!(client.get_auction(&auction_id).winning_amount, amount);
+    }
+
+    /// Reveal fuera de la ventana de revelación: se rechaza.
+    #[test]
+    fn late_reveal_is_rejected() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let bank = Address::generate(&env);
+        let (client, _issuer, z, auction_id) = deploy_with_auction(&env, &[&bank]);
+
+        client.set_capacity(&bank, &50_000_000);
+        let salt = BytesN::random(&env);
+        let bid = 15_000_000i128;
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, bid, &salt),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+
+        // Muy pasado el reveal_deadline (end_time + 86400s).
+        env.ledger().with_mut(|l| l.timestamp += 200_000);
+        let res = client.try_reveal_bid(&auction_id, &bank, &bid, &salt);
+        assert!(res.is_err());
+    }
+
+    /// Doble settle: la segunda llamada aborta.
+    #[test]
+    fn double_settle_is_rejected() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let bank = Address::generate(&env);
+        let (client, _issuer, z, auction_id) = deploy_with_auction(&env, &[&bank]);
+
+        client.set_capacity(&bank, &50_000_000);
+        let salt = BytesN::random(&env);
+        let bid = 15_000_000i128;
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, bid, &salt),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+        env.ledger().with_mut(|l| l.timestamp += 200);
+        client.reveal_bid(&auction_id, &bank, &bid, &salt);
+
+        assert_eq!(client.settle(&auction_id), Some(bank));
+        // Segunda liquidación: debe abortar.
+        assert!(client.try_settle(&auction_id).is_err());
+    }
+
+    /// Cancelación antes de ofertas: OK; luego no se puede ofertar ni recancelar.
+    #[test]
+    fn cancel_before_bids_blocks_further_ops() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let bank = Address::generate(&env);
+        let (client, _issuer, z, auction_id) = deploy_with_auction(&env, &[&bank]);
+
+        client.cancel_auction(&auction_id);
+        assert_eq!(client.get_auction(&auction_id).status, AuctionStatus::Cancelled);
+
+        // No se puede ofertar sobre una subasta cancelada.
+        client.set_capacity(&bank, &50_000_000);
+        let salt = BytesN::random(&env);
+        let res = client.try_submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, 15_000_000, &salt),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+        assert!(res.is_err());
+        // Recancelar aborta.
+        assert!(client.try_cancel_auction(&auction_id).is_err());
+    }
+
+    /// Cancelación después de recibir ofertas: se rechaza.
+    #[test]
+    fn cancel_after_bids_is_rejected() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let bank = Address::generate(&env);
+        let (client, _issuer, z, auction_id) = deploy_with_auction(&env, &[&bank]);
+
+        client.set_capacity(&bank, &50_000_000);
+        let salt = BytesN::random(&env);
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, 15_000_000, &salt),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+        assert!(client.try_cancel_auction(&auction_id).is_err());
+    }
+
+    /// No se puede revelar sin haber ofertado (orden de estados).
+    #[test]
+    fn reveal_without_bid_is_rejected() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let bank = Address::generate(&env);
+        let (client, _issuer, _z, auction_id) = deploy_with_auction(&env, &[&bank]);
+
+        env.ledger().with_mut(|l| l.timestamp += 200);
+        let salt = BytesN::random(&env);
+        let res = client.try_reveal_bid(&auction_id, &bank, &15_000_000, &salt);
+        assert!(res.is_err());
     }
 }
