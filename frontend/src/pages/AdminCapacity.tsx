@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { PageHeader, RuledPanel, Toast, EmptyState } from '../components/Primitives'
-import { getCapacity, getMode, setCapacity } from '../services/data'
+import { getAuctionAdmin, getCapacity, getMode, setCapacity } from '../services/data'
 import { listBanks } from '../services/auth'
 import { fmtUSD } from '../utils/format'
 import { shortAddress } from '../services/wallet'
@@ -32,24 +32,37 @@ function isStellarAddress(a: string): boolean {
   return /^G[A-Z2-7]{55}$/.test(a.trim())
 }
 
+function adminMismatchMessage(connected: string, admin: string): string {
+  return `Solo el admin on-chain (${shortAddress(admin)}) puede registrar cupos. Tu wallet conectada (${shortAddress(connected)}) no coincide. Conectá la wallet del deployer o pedí que te transfieran el admin (requiere redespliegue).`
+}
+
 export default function AdminCapacity({ address }: Props) {
   const mode = getMode()
   const [who, setWho] = useState('')
   const [amount, setAmount] = useState(50_000_000)
   const [rows, setRows] = useState<Row[]>([])
+  const [onChainAdmin, setOnChainAdmin] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(
     null
   )
 
+  const walletIsAdmin =
+    mode !== 'chain' || !address || !onChainAdmin
+      ? true
+      : address === onChainAdmin
+
   const refresh = useCallback(async () => {
     if (mode !== 'chain') {
       setRows([])
+      setOnChainAdmin(null)
       return
     }
     setLoading(true)
     try {
+      const admin = await getAuctionAdmin()
+      setOnChainAdmin(admin)
       const banks = listBanks()
       const nameByAddr = new Map(banks.map((b) => [b.address, b.name]))
       const addresses = [...new Set([...banks.map((b) => b.address), ...loadTracked()])]
@@ -81,7 +94,11 @@ export default function AdminCapacity({ address }: Props) {
       return
     }
     if (!address) {
-      setNotice({ type: 'error', message: 'Conectá la wallet del admin/emisor para firmar el registro.' })
+      setNotice({ type: 'error', message: 'Conectá la wallet del admin on-chain para firmar el registro.' })
+      return
+    }
+    if (onChainAdmin && address !== onChainAdmin) {
+      setNotice({ type: 'error', message: adminMismatchMessage(address, onChainAdmin) })
       return
     }
     if (!isStellarAddress(who)) {
@@ -126,6 +143,19 @@ export default function AdminCapacity({ address }: Props) {
           onClose={() => {}}
         />
       )}
+
+      {mode === 'chain' && onChainAdmin && (
+        <Toast
+          notice={{
+            type: walletIsAdmin ? 'info' : 'error',
+            message: walletIsAdmin
+              ? `Admin on-chain: ${onChainAdmin}. Solo esta wallet puede firmar set_capacity.`
+              : adminMismatchMessage(address ?? '', onChainAdmin),
+          }}
+          onClose={() => {}}
+        />
+      )}
+
       <Toast notice={notice} onClose={() => setNotice(null)} />
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -178,10 +208,25 @@ export default function AdminCapacity({ address }: Props) {
                   onChange={(e) => setAmount(Number(e.target.value))}
                 />
               </Field>
-              <div className="border border-edge bg-[#0b0b0b] p-4 text-sm text-slate-400">
-                Firmado por el admin/emisor: <span className="font-mono text-[11px] text-slate-300">{address ? shortAddress(address) : '— sin wallet —'}</span>
+              <div className="space-y-2 border border-edge bg-[#0b0b0b] p-4 text-sm text-slate-400">
+                <div>
+                  Admin on-chain:{' '}
+                  <span className="font-mono text-[11px] text-slate-300">
+                    {onChainAdmin ? shortAddress(onChainAdmin) : '— consultando —'}
+                  </span>
+                </div>
+                <div>
+                  Wallet conectada:{' '}
+                  <span className="font-mono text-[11px] text-slate-300">
+                    {address ? shortAddress(address) : '— sin wallet —'}
+                  </span>
+                </div>
               </div>
-              <button className="btn-primary w-full" onClick={register} disabled={busy}>
+              <button
+                className="btn-primary w-full"
+                onClick={register}
+                disabled={busy || (mode === 'chain' && !walletIsAdmin)}
+              >
                 {busy ? 'Registrando on-chain…' : 'Registrar cupo'}
               </button>
             </div>

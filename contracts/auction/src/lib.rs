@@ -787,6 +787,11 @@ impl AuctionContract {
         env.storage().instance().get(&DataKey::BidGateZk).unwrap_or(true)
     }
 
+    /// Dirección del admin on-chain (la que firmó `initialize`).
+    pub fn get_admin(env: Env) -> Address {
+        Self::admin(&env)
+    }
+
     /// Reembolsa el depósito de un participante tras la liquidación.
     ///
     /// - Un **perdedor** puede reclamar apenas la subasta esté liquidada.

@@ -3,6 +3,7 @@
   "networkPassphrase": "Test SDF Network ; September 2015",
   "rpcUrl": "https://soroban-testnet.stellar.org",
   "deployer": "GCTXTCGN5W3QG6GARAVOIQ6WV5QBFSAVHZ6J2SJENHFKQHMU36FJAK6R",
+  "admin": "GCTXTCGN5W3QG6GARAVOIQ6WV5QBFSAVHZ6J2SJENHFKQHMU36FJAK6R",
   "sdk": "soroban-sdk 26.1.0 (Protocol 26, BN254 nativo)",
   "pedersenH": "0000000000000000000000000000000000000000000000000000000000007a691d98d781d9e01f0772f9c737e6c25cfd0167d663db7eec32db8003c0e70f3f87",
   "zk": "Groth16 BN254 verificado on-chain; elegibilidad ata la oferta a la capacidad registrada (capacidad>=oferta>=minimo) y reservas exige respaldo de la emision",

@@ -215,6 +215,14 @@ export const chain = {
     return Number((await readContract(config.contracts.auction, 'get_capacity', [addr(who)])) ?? 0)
   },
 
+  /** Admin on-chain del contrato de subasta (quien firmó `initialize`). */
+  async getAdmin(): Promise<string> {
+    const res = await readContract(config.contracts.auction, 'get_admin')
+    if (typeof res === 'string') return res
+    if (res && typeof res === 'object' && 'toString' in res) return String(res)
+    throw new Error('get_admin devolvió un valor inesperado')
+  },
+
   /** Registra el cupo (capacidad) de un banco. Firmado por el admin. */
   async setCapacity(admin: string, who: string, capacity: number): Promise<void> {
     await invokeContract(

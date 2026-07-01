@@ -70,8 +70,8 @@ sync_config() {
 
   echo "▶ Actualizando deployments.testnet.json…"
   tmp="$(mktemp)"
-  jq --arg a "$auction_id" --arg s "$asp_id" \
-    '.contracts.auction = $a | .contracts.asp = $s' deployments.testnet.json > "$tmp" \
+  jq --arg a "$auction_id" --arg s "$asp_id" --arg admin "$ADMIN" \
+    '.contracts.auction = $a | .contracts.asp = $s | .admin = $admin | .deployer = $admin' deployments.testnet.json > "$tmp" \
     && mv "$tmp" deployments.testnet.json
 
   echo "▶ Sincronizando frontend/src/config.ts…"
@@ -144,10 +144,12 @@ sync_config "$AUCTION" "$ASP"
 
 VER="$(stellar contract invoke --id "$AUCTION" --source "$IDENT" --network "$NETWORK" -- version 2>/dev/null || echo '?')"
 GATE="$(stellar contract invoke --id "$AUCTION" --source "$IDENT" --network "$NETWORK" -- get_bid_gate_zk 2>/dev/null || echo '?')"
+ONCHAIN_ADMIN="$(stellar contract invoke --id "$AUCTION" --source "$IDENT" --network "$NETWORK" -- get_admin 2>/dev/null || echo "$ADMIN")"
 
 echo "✅ Listo."
 echo "   asp              = $ASP"
 echo "   auction          = $AUCTION"
+echo "   admin (on-chain) = $ONCHAIN_ADMIN"
 echo "   covenant root    = $MEMBERSHIP_ROOT"
 echo "   version()        = $VER"
 echo "   get_bid_gate_zk  = $GATE"

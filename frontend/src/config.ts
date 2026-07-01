@@ -14,6 +14,12 @@ export const config = {
   /** Cuenta usada como fuente para simular lecturas (debe existir on-chain). */
   readSource:
     import.meta.env.VITE_READ_SOURCE ?? 'GCTXTCGN5W3QG6GARAVOIQ6WV5QBFSAVHZ6J2SJENHFKQHMU36FJAK6R',
+  /**
+   * Admin on-chain del contrato de subasta (quien firmó `initialize`).
+   * Solo esta wallet puede `set_capacity`, `pause`, etc. Distinto del rol UI "emisor".
+   */
+  onChainAdmin:
+    import.meta.env.VITE_ON_CHAIN_ADMIN ?? 'GCTXTCGN5W3QG6GARAVOIQ6WV5QBFSAVHZ6J2SJENHFKQHMU36FJAK6R',
   contracts: {
     asp: import.meta.env.VITE_ASP_CONTRACT_ID ?? 'CBKCM7DFWKYLMQIXN3IE2IRFV7P2ZZQI3DPGZNQZRYB3R3FG7SJ3ZJNR',
     token:

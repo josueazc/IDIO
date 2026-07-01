@@ -8,6 +8,7 @@
  */
 import { chain } from './contracts'
 import * as demo from './store'
+import { config } from '../config'
 import { commitBid, generateReservesProof, randomSalt } from './proofs'
 import type { ZkResult } from './noir'
 import { proveEligibility, proveReserves, proveMembership } from './groth'
@@ -245,6 +246,16 @@ export async function payWinner(auctionId: number, winner: string, amount: numbe
 export async function getCapacity(who: string): Promise<number> {
   if (getMode() === 'chain') return chain.getCapacity(who)
   return getDemoCapacity(who)
+}
+
+/** Admin on-chain del contrato de subasta. Fallback a config si el wasm aún no expone get_admin. */
+export async function getAuctionAdmin(): Promise<string> {
+  if (getMode() !== 'chain') return ''
+  try {
+    return await chain.getAdmin()
+  } catch {
+    return config.onChainAdmin
+  }
 }
 
 /** Registra el cupo de un banco (on-chain o demo localStorage). */
