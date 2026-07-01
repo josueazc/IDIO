@@ -81,6 +81,7 @@ Leyenda: ✅ hecho · 🟦 buildable (puedo hacerlo) · 🟣 research-grade (inc
 - 🟦 Notificaciones (cierre, ganaste, hora de revelar/pagar).
 - 🟦 Indexador/backend de lectura (no iterar IDs).
 - 🟦 i18n, accesibilidad, responsive fino.
+- 📋 **Asignación detallada para teammate:** [FRONTEND_ROADMAP.md](./FRONTEND_ROADMAP.md) (wallet kit, backend auth, Vercel, UI, video demo, mainnet opcional).
 
 ## 8. Infraestructura / ops
 - 🟥 **Deploy público** (Vercel/Netlify — configs incluidas, falta tu cuenta).

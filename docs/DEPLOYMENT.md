@@ -52,7 +52,7 @@ VITE_TOKEN_CONTRACT_ID=C…
 # … resto de contratos
 ```
 
-5. **Cupos (`set_capacity`)**: en mainnet el cupo sigue siendo un límite administrativo registrado por el emisor — no lee automáticamente el balance USDC de la wallet. Para anclar saldo real haría falta integrar el token confidencial Pedersen (roadmap).
+5. **Cupos (`set_capacity`)**: en mainnet el cupo sigue siendo un límite administrativo registrado por el **admin on-chain** (la wallet que firmó `initialize` al redesplegar, por defecto la identidad `idio` del deployer) — no lee automáticamente el balance USDC de la wallet. El rol UI "emisor" puede usar otra wallet distinta; la mesa **Cupos** muestra el admin on-chain y bloquea la tx si la wallet conectada no coincide. Para anclar saldo real haría falta integrar el token confidencial Pedersen (roadmap).
 6. Los participantes conectan **wallets mainnet** (Freighter, etc.) con XLM para fees y, si aplica, USDC para liquidación.
 
 **Recomendación hackathon/demo:** quedarse en testnet. Mainnet solo cuando el flujo esté auditado y quieras producción con activos reales.
@@ -74,7 +74,9 @@ El script:
 2. Calcula la raíz Covenant desde `COVENANT_SECRETS` (default `1,2,3,4,5,6,7,8`)
 3. Redespliega ASP si el contrato on-chain no tiene `set_membership`
 4. Despliega auction e inicializa con asp/token/verifier
-5. Actualiza `deployments.testnet.json` y `frontend/src/config.ts`
+5. Actualiza `deployments.testnet.json` y `frontend/src/config.ts` (incluye campo `admin`)
+
+**Admin on-chain vs emisor en la UI:** `set_capacity` exige la firma del admin guardado en el contrato (`deployer` / identidad `idio`), no la wallet con la que un usuario se registró como emisor. Para registrar cupos conectá `GCTXTCGN5W3QG6GARAVOIQ6WV5QBFSAVHZ6J2SJENHFKQHMU36FJAK6R` (o la que hayas pasado a `--admin` en `initialize`). Para usar otra wallet como admin hay que redesplegar con `IDENT=tu_identidad ./scripts/redeploy-auction.sh`.
 
 Variables útiles:
 
