@@ -36,6 +36,13 @@ const REVEAL_WINDOW_SECS: u64 = 86_400;
 /// Versión del contrato (se incrementa en cada cambio de lógica/ABI).
 const CONTRACT_VERSION: u32 = 2;
 
+/// Depósito por defecto (basis points sobre el mínimo de la subasta). 500 = 5%.
+const DEPOSIT_BPS_DEFAULT: u32 = 500;
+
+/// Ventana de pago del ganador tras la liquidación, en segundos. Si el ganador
+/// no ejecuta `settle_payment` en este plazo, el emisor puede hacer slashing.
+const PAYMENT_WINDOW_SECS: u64 = 86_400;
+
 /// Interfaz del contrato ASP para la llamada cross-contract de gating.
 /// Genera `AspClient`, usado por la subasta para validar participantes.
 #[contractclient(name = "AspClient")]
@@ -96,6 +103,14 @@ pub enum AuctionError {
     ContractPaused = 24,
     /// La dirección superó el límite de frecuencia (anti-spam).
     RateLimited = 25,
+    /// El depósito del ganador está retenido hasta que pague.
+    DepositLocked = 26,
+    /// No hay depósito reclamable para esta dirección.
+    NoDepositToClaim = 27,
+    /// La ventana de pago del ganador sigue abierta (slashing prematuro).
+    PaymentWindowStillOpen = 28,
+    /// El depósito ya fue reembolsado o penalizado.
+    DepositAlreadySettled = 29,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -117,6 +132,10 @@ pub struct SealedBid {
     pub revealed_amount: i128,
     pub revealed: bool,
     pub timestamp: u64,
+    /// Colateral retenido por el contrato al ofertar (anti no-pago).
+    pub deposit: i128,
+    /// Si el depósito ya fue reembolsado o penalizado (slashing).
+    pub deposit_settled: bool,
 }
 
 #[derive(Clone)]
@@ -136,6 +155,9 @@ pub struct Auction {
     /// Límite para revelar ofertas (tras el cierre de bidding). Pasado este
     /// instante, `reveal_bid` se rechaza con `RevealWindowClosed`.
     pub reveal_deadline: u64,
+    /// Límite para que el ganador pague tras la liquidación. Pasado el plazo
+    /// sin pagar, el emisor puede hacer slashing del depósito. 0 hasta settle.
+    pub payment_deadline: u64,
     /// Si el ganador ya pagó confidencialmente al emisor (Paso 4-5).
     pub paid: bool,
 }
@@ -174,6 +196,8 @@ enum DataKey {
     RateLimitSecs,
     /// Anti-spam: timestamp de la última acción de una dirección.
     LastAction(Address),
+    /// Tasa de depósito (basis points sobre el mínimo) configurada por el admin.
+    DepositBps,
 }
 
 #[contract]
@@ -287,6 +311,7 @@ impl AuctionContract {
             winning_amount: 0,
             end_time,
             reveal_deadline: end_time + REVEAL_WINDOW_SECS,
+            payment_deadline: 0,
             paid: false,
         };
 
@@ -350,6 +375,16 @@ impl AuctionContract {
             .get(&DataKey::Bids(auction_id))
             .unwrap();
 
+        // Depósito anti no-pago: colateral = min_bid * deposit_bps / 10000.
+        // Se ata al mínimo público (no al monto oculto de la oferta, que
+        // filtraría información). El contrato lo retiene como garantía.
+        let bps: u32 = env
+            .storage()
+            .instance()
+            .get(&DataKey::DepositBps)
+            .unwrap_or(DEPOSIT_BPS_DEFAULT);
+        let deposit = auction.min_bid * (bps as i128) / 10_000;
+
         let commitment_topic = commitment.clone();
         let new_bid = SealedBid {
             bidder: bidder.clone(),
@@ -357,6 +392,8 @@ impl AuctionContract {
             revealed_amount: 0,
             revealed: false,
             timestamp: env.ledger().timestamp(),
+            deposit,
+            deposit_settled: false,
         };
 
         // Si el bidder ya tiene una oferta no revelada, la REEMPLAZA
@@ -580,6 +617,8 @@ impl AuctionContract {
         auction.status = AuctionStatus::Settled;
         auction.winner = winner.clone();
         auction.winning_amount = best_amount;
+        // Abre la ventana de pago del ganador (para slashing si no paga).
+        auction.payment_deadline = env.ledger().timestamp() + PAYMENT_WINDOW_SECS;
         env.storage()
             .persistent()
             .set(&DataKey::Auction(auction_id), &auction);
@@ -666,6 +705,116 @@ impl AuctionContract {
             (symbol_short!("auction"), symbol_short!("cancel")),
             (auction_id, auction.issuer.clone()),
         );
+    }
+
+    // ---- Tarea 3: depósito y penalización (slashing) ----
+
+    /// Tasa de depósito en basis points sobre el mínimo (solo admin).
+    /// Ej.: 500 = 5%. Se aplica a las ofertas creadas a partir de aquí.
+    pub fn set_deposit_bps(env: Env, bps: u32) {
+        Self::admin(&env).require_auth();
+        env.storage().instance().set(&DataKey::DepositBps, &bps);
+    }
+
+    /// Tasa de depósito configurada (basis points). Default = 500 (5%).
+    pub fn get_deposit_bps(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get(&DataKey::DepositBps)
+            .unwrap_or(DEPOSIT_BPS_DEFAULT)
+    }
+
+    /// Reembolsa el depósito de un participante tras la liquidación.
+    ///
+    /// - Un **perdedor** puede reclamar apenas la subasta esté liquidada.
+    /// - El **ganador** solo puede reclamar una vez que pagó (`paid == true`).
+    ///   Si no pagó y la ventana sigue abierta, el depósito está retenido; si
+    ///   la ventana venció, queda sujeto a slashing por el emisor.
+    pub fn claim_deposit_refund(env: Env, auction_id: u64, who: Address) -> i128 {
+        who.require_auth();
+        let auction = Self::get(&env, auction_id);
+        if auction.status != AuctionStatus::Settled {
+            panic(&env, AuctionError::NotSettled);
+        }
+
+        let mut bids: Vec<SealedBid> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Bids(auction_id))
+            .unwrap();
+
+        let is_winner = auction.winner == Some(who.clone());
+        for i in 0..bids.len() {
+            let mut bid = bids.get(i).unwrap();
+            if bid.bidder != who {
+                continue;
+            }
+            if bid.deposit_settled {
+                panic(&env, AuctionError::DepositAlreadySettled);
+            }
+            if is_winner && !auction.paid {
+                // El ganador debe pagar antes de recuperar su depósito.
+                panic(&env, AuctionError::DepositLocked);
+            }
+            let refunded = bid.deposit;
+            bid.deposit_settled = true;
+            bids.set(i, bid);
+            env.storage()
+                .persistent()
+                .set(&DataKey::Bids(auction_id), &bids);
+            env.events().publish(
+                (symbol_short!("auction"), symbol_short!("refund")),
+                (auction_id, who.clone(), refunded),
+            );
+            return refunded;
+        }
+        panic(&env, AuctionError::NoDepositToClaim);
+    }
+
+    /// Penaliza (slashing) al ganador que no pagó dentro de la ventana.
+    ///
+    /// Solo el emisor, con la subasta liquidada, sin pago y con la ventana de
+    /// pago ya vencida. El depósito del ganador se transfiere al emisor
+    /// (contablemente) y se marca como saldado.
+    pub fn slash_winner(env: Env, auction_id: u64) -> i128 {
+        let auction = Self::get(&env, auction_id);
+        auction.issuer.require_auth();
+        if auction.status != AuctionStatus::Settled {
+            panic(&env, AuctionError::NotSettled);
+        }
+        if auction.paid {
+            panic(&env, AuctionError::AlreadyPaid);
+        }
+        if env.ledger().timestamp() <= auction.payment_deadline {
+            panic(&env, AuctionError::PaymentWindowStillOpen);
+        }
+        let winner = match &auction.winner {
+            Some(w) => w.clone(),
+            None => panic(&env, AuctionError::NotWinner),
+        };
+
+        let mut bids: Vec<SealedBid> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Bids(auction_id))
+            .unwrap();
+        for i in 0..bids.len() {
+            let mut bid = bids.get(i).unwrap();
+            if bid.bidder == winner && !bid.deposit_settled {
+                let slashed = bid.deposit;
+                bid.deposit_settled = true;
+                bids.set(i, bid);
+                env.storage()
+                    .persistent()
+                    .set(&DataKey::Bids(auction_id), &bids);
+                env.events().publish(
+                    (symbol_short!("auction"), symbol_short!("slashed")),
+                    (auction_id, winner.clone(), slashed),
+                );
+                return slashed;
+            }
+        }
+        panic(&env, AuctionError::NoDepositToClaim);
     }
 
     // ---- Lecturas ----
@@ -1449,6 +1598,105 @@ mod test {
             &commit(&env, 15_000_000, &salt),
             &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
         );
+    }
+
+    // ---- Tarea 3: depósito y slashing ----
+
+    /// Camino feliz: perdedor recupera su depósito al liquidar; el ganador lo
+    /// recupera recién tras pagar. Doble reclamo falla.
+    #[test]
+    fn deposit_refund_happy_path() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let id = env.register(AuctionContract, ());
+        let client = AuctionContractClient::new(&env, &id);
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let winner = Address::generate(&env);
+        let loser = Address::generate(&env);
+        let asp = setup_asp(&env, &admin, &[&winner, &loser]);
+        let token_id = setup_token(&env, &admin);
+        let z = setup_zk(&env);
+        client.initialize(&admin, &asp, &token_id, &z.verifier, &z.elig_vk, &z.reserves_vk);
+
+        let reserves = BytesN::random(&env);
+        let auction_id = client.create_auction(
+            &issuer,
+            &String::from_str(&env, "Bonos"),
+            &500_000_000,
+            &10_000_000,
+            &100,
+            &reserves,
+            &reserves_proof(&env, &z, 500_000_000, 600_000_000),
+        );
+        client.set_capacity(&winner, &50_000_000);
+        client.set_capacity(&loser, &50_000_000);
+
+        let salt_w = BytesN::random(&env);
+        let salt_l = BytesN::random(&env);
+        client.submit_sealed_bid(
+            &auction_id,
+            &winner,
+            &commit(&env, 15_000_000, &salt_w),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+        client.submit_sealed_bid(
+            &auction_id,
+            &loser,
+            &commit(&env, 12_000_000, &salt_l),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000),
+        );
+        env.ledger().with_mut(|l| l.timestamp += 200);
+        client.reveal_bid(&auction_id, &winner, &15_000_000, &salt_w);
+        client.reveal_bid(&auction_id, &loser, &12_000_000, &salt_l);
+        assert_eq!(client.settle(&auction_id), Some(winner.clone()));
+
+        // Depósito esperado = 10M * 500 / 10000 = 500_000.
+        assert_eq!(client.claim_deposit_refund(&auction_id, &loser), 500_000);
+        // El ganador aún no pagó: su depósito está retenido.
+        assert!(client.try_claim_deposit_refund(&auction_id, &winner).is_err());
+
+        // El ganador paga confidencialmente.
+        let token = ConfidentialTokenClient::new(&env, &token_id);
+        let blinding = BytesN::from_array(&env, &[9u8; 32]);
+        let value_commitment = token.commit_value(&15_000_000, &blinding);
+        client.settle_payment(&auction_id, &value_commitment);
+
+        // Ahora sí recupera su depósito; el doble reclamo falla.
+        assert_eq!(client.claim_deposit_refund(&auction_id, &winner), 500_000);
+        assert!(client.try_claim_deposit_refund(&auction_id, &loser).is_err());
+    }
+
+    /// Slashing: el ganador no paga en la ventana; el emisor reclama su depósito.
+    #[test]
+    fn slash_winner_when_unpaid() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let bank = Address::generate(&env);
+        let (client, issuer, z, auction_id) = deploy_with_auction(&env, &[&bank]);
+
+        client.set_capacity(&bank, &50_000_000);
+        let salt = BytesN::random(&env);
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, 15_000_000, &salt),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+        env.ledger().with_mut(|l| l.timestamp += 200);
+        client.reveal_bid(&auction_id, &bank, &15_000_000, &salt);
+        assert_eq!(client.settle(&auction_id), Some(bank.clone()));
+        let _ = issuer;
+
+        // Slashing prematuro (ventana de pago abierta): rechazado.
+        assert!(client.try_slash_winner(&auction_id).is_err());
+
+        // Vencida la ventana de pago (payment_deadline = settle + 86400s).
+        env.ledger().with_mut(|l| l.timestamp += 100_000);
+        assert_eq!(client.slash_winner(&auction_id), 500_000);
+        // El ganador penalizado ya no puede reclamar; el slashing no se repite.
+        assert!(client.try_claim_deposit_refund(&auction_id, &bank).is_err());
+        assert!(client.try_slash_winner(&auction_id).is_err());
     }
 
     // ---- Tarea 6: eventos estandarizados ----
