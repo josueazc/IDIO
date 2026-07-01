@@ -225,6 +225,21 @@ export async function payWinner(auctionId: number, winner: string, amount: numbe
   }
 }
 
+/** Cupo (capacidad) registrado on-chain para un banco. 0 en demo. */
+export async function getCapacity(who: string): Promise<number> {
+  if (getMode() === 'chain') return chain.getCapacity(who)
+  return 0
+}
+
+/** Registra el cupo de un banco on-chain (firmado por el admin/emisor). */
+export async function setCapacity(admin: string, who: string, capacity: number): Promise<void> {
+  if (getMode() !== 'chain') {
+    throw new Error('Registrar cupos on-chain requiere el modo Testnet (chain).')
+  }
+  await chain.setCapacity(admin, who, capacity)
+  emit()
+}
+
 export function resetDemo() {
   demo.resetDemo()
 }

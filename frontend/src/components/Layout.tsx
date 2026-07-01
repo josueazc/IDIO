@@ -20,6 +20,7 @@ const LABELS: Record<string, string> = {
   '/roles': 'Authority switch',
   '/auctions': 'Auction registry',
   '/create': 'Issue auction',
+  '/capacity': 'Capacity desk',
   '/audit': 'Audit desk',
   '/compliance': 'Compliance desk',
   '/activity': 'My activity',

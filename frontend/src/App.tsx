@@ -5,6 +5,7 @@ import RolePicker from './pages/RolePicker'
 import Home from './pages/Home'
 import Auctions from './pages/Auctions'
 import CreateAuction from './pages/CreateAuction'
+import AdminCapacity from './pages/AdminCapacity'
 import Audit from './pages/Audit'
 import Activity from './pages/Activity'
 import Compliance from './pages/Compliance'
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/roles" element={<RoleSwitch />} />
         <Route path="/auctions" element={<Auctions address={address} />} />
         <Route path="/create" element={<CreateAuction address={address} />} />
+        <Route path="/capacity" element={<AdminCapacity address={address} />} />
         <Route path="/audit" element={<Audit />} />
         <Route path="/compliance" element={<Compliance />} />
         <Route path="/activity" element={<Activity address={address} />} />
