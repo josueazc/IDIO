@@ -33,6 +33,9 @@ const MIN_LIQUIDITY_PCT: i128 = 30;
 /// `reveal_bid` se rechaza (una oferta no revelada a tiempo no puede ganar).
 const REVEAL_WINDOW_SECS: u64 = 86_400;
 
+/// Versión del contrato (se incrementa en cada cambio de lógica/ABI).
+const CONTRACT_VERSION: u32 = 2;
+
 /// Interfaz del contrato ASP para la llamada cross-contract de gating.
 /// Genera `AspClient`, usado por la subasta para validar participantes.
 #[contractclient(name = "AspClient")]
@@ -89,6 +92,10 @@ pub enum AuctionError {
     RevealWindowClosed = 22,
     /// No se puede cancelar una subasta que ya recibió ofertas.
     AuctionHasBids = 23,
+    /// El contrato está en pausa de emergencia.
+    ContractPaused = 24,
+    /// La dirección superó el límite de frecuencia (anti-spam).
+    RateLimited = 25,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -161,6 +168,12 @@ enum DataKey {
     ApprovalCount(u64),
     /// Capacidad registrada (cupo máximo de oferta) de un banco.
     Capacity(Address),
+    /// Pausa de emergencia (true = operaciones bloqueadas).
+    Paused,
+    /// Anti-spam: intervalo mínimo (segundos) entre acciones por dirección.
+    RateLimitSecs,
+    /// Anti-spam: timestamp de la última acción de una dirección.
+    LastAction(Address),
 }
 
 #[contract]
@@ -190,6 +203,40 @@ impl AuctionContract {
         env.storage().instance().set(&DataKey::Counter, &0u64);
     }
 
+    /// Versión del contrato (para trazabilidad de upgrades).
+    pub fn version(_env: Env) -> u32 {
+        CONTRACT_VERSION
+    }
+
+    /// Pausa de emergencia (solo admin): bloquea create/bid/settle.
+    pub fn pause(env: Env) {
+        Self::admin(&env).require_auth();
+        env.storage().instance().set(&DataKey::Paused, &true);
+    }
+
+    /// Reanuda las operaciones (solo admin).
+    pub fn unpause(env: Env) {
+        Self::admin(&env).require_auth();
+        env.storage().instance().set(&DataKey::Paused, &false);
+    }
+
+    /// ¿El contrato está en pausa?
+    pub fn is_paused(env: Env) -> bool {
+        env.storage().instance().get(&DataKey::Paused).unwrap_or(false)
+    }
+
+    /// Anti-spam (solo admin): intervalo mínimo en segundos entre acciones de
+    /// una misma dirección al crear subastas u ofertar. `0` desactiva el límite.
+    pub fn set_rate_limit(env: Env, secs: u64) {
+        Self::admin(&env).require_auth();
+        env.storage().instance().set(&DataKey::RateLimitSecs, &secs);
+    }
+
+    /// Intervalo anti-spam configurado (0 = desactivado).
+    pub fn get_rate_limit(env: Env) -> u64 {
+        env.storage().instance().get(&DataKey::RateLimitSecs).unwrap_or(0)
+    }
+
     /// Crea una subasta. `duration` en segundos a partir de ahora.
     ///
     /// Exige una **prueba de reservas Groth16** (`total ≥ amount`) verificada
@@ -205,6 +252,8 @@ impl AuctionContract {
         reserves_proof: Groth16Proof,
     ) -> u64 {
         issuer.require_auth();
+        Self::ensure_not_paused(&env);
+        Self::enforce_rate_limit(&env, &issuer);
 
         // Verifica la prueba de reservas (Auspex+): entradas públicas =
         // [monto subastado, política mínima de liquidez %]. El emisor prueba
@@ -261,6 +310,8 @@ impl AuctionContract {
         eligibility_proof: Groth16Proof,
     ) {
         bidder.require_auth();
+        Self::ensure_not_paused(&env);
+        Self::enforce_rate_limit(&env, &bidder);
         Self::require_allowed(&env, &bidder);
 
         let mut auction = Self::get(&env, auction_id);
@@ -456,6 +507,7 @@ impl AuctionContract {
     /// Si hay consenso configurado (umbral > 0), exige `k` aprobaciones de
     /// validadores antes de liquidar (BEShield).
     pub fn settle(env: Env, auction_id: u64) -> Option<Address> {
+        Self::ensure_not_paused(&env);
         let mut auction = Self::get(&env, auction_id);
         if auction.status == AuctionStatus::Cancelled {
             panic(&env, AuctionError::AuctionCancelled);
@@ -627,6 +679,46 @@ impl AuctionContract {
     /// Capacidad registrada de un banco (0 si no tiene cupo asignado).
     pub fn get_capacity(env: Env, who: Address) -> i128 {
         Self::capacity(&env, &who)
+    }
+
+    /// Dirección del admin registrada en `initialize`.
+    fn admin(env: &Env) -> Address {
+        env.storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .unwrap_or_else(|| panic(env, AuctionError::NotInitialized))
+    }
+
+    /// Aborta si el contrato está en pausa de emergencia.
+    fn ensure_not_paused(env: &Env) {
+        if env.storage().instance().get(&DataKey::Paused).unwrap_or(false) {
+            panic(env, AuctionError::ContractPaused);
+        }
+    }
+
+    /// Anti-spam: exige que haya pasado al menos `RateLimitSecs` desde la última
+    /// acción de esta dirección. Registra el instante actual. `0` = desactivado.
+    fn enforce_rate_limit(env: &Env, who: &Address) {
+        let secs: u64 = env
+            .storage()
+            .instance()
+            .get(&DataKey::RateLimitSecs)
+            .unwrap_or(0);
+        if secs == 0 {
+            return;
+        }
+        let now = env.ledger().timestamp();
+        let last: u64 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::LastAction(who.clone()))
+            .unwrap_or(0);
+        if last != 0 && now < last + secs {
+            panic(env, AuctionError::RateLimited);
+        }
+        env.storage()
+            .persistent()
+            .set(&DataKey::LastAction(who.clone()), &now);
     }
 
     fn capacity(env: &Env, who: &Address) -> i128 {
@@ -1228,6 +1320,98 @@ mod test {
             &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
         );
         assert!(client.try_cancel_auction(&auction_id).is_err());
+    }
+
+    // ---- Tarea 5: pausa, versión y anti-spam ----
+
+    /// En pausa, ofertar se rechaza; al reanudar, vuelve a permitirse.
+    #[test]
+    fn pause_blocks_operations() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let bank = Address::generate(&env);
+        let (client, _issuer, z, auction_id) = deploy_with_auction(&env, &[&bank]);
+
+        assert_eq!(client.version(), 2);
+        client.set_capacity(&bank, &50_000_000);
+        let salt = BytesN::random(&env);
+
+        client.pause();
+        assert!(client.is_paused());
+        let res = client.try_submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, 15_000_000, &salt),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+        assert!(res.is_err());
+
+        client.unpause();
+        assert!(!client.is_paused());
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, 15_000_000, &salt),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+    }
+
+    /// Rate-limit anti-spam: dos ofertas de la misma dirección demasiado
+    /// seguidas se rechazan; pasado el intervalo, se vuelven a permitir.
+    #[test]
+    fn rate_limit_blocks_rapid_actions() {
+        let env = Env::default();
+        env.mock_all_auths();
+        env.ledger().with_mut(|l| l.timestamp = 1_000);
+        let id = env.register(AuctionContract, ());
+        let client = AuctionContractClient::new(&env, &id);
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let bank = Address::generate(&env);
+        let asp = setup_asp(&env, &admin, &[&bank]);
+        let token = setup_token(&env, &admin);
+        let z = setup_zk(&env);
+        client.initialize(&admin, &asp, &token, &z.verifier, &z.elig_vk, &z.reserves_vk);
+        let reserves = BytesN::random(&env);
+        let auction_id = client.create_auction(
+            &issuer,
+            &String::from_str(&env, "Bonos"),
+            &500_000_000,
+            &10_000_000,
+            &100_000,
+            &reserves,
+            &reserves_proof(&env, &z, 500_000_000, 600_000_000),
+        );
+
+        client.set_rate_limit(&100);
+        assert_eq!(client.get_rate_limit(), 100);
+        client.set_capacity(&bank, &50_000_000);
+        let salt = BytesN::random(&env);
+
+        // Primera oferta: OK (registra el instante).
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, 15_000_000, &salt),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+        // Inmediata (mismo timestamp, < 100s): rechazada.
+        assert!(client
+            .try_submit_sealed_bid(
+                &auction_id,
+                &bank,
+                &commit(&env, 15_000_000, &salt),
+                &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            )
+            .is_err());
+        // Pasado el intervalo: permitida de nuevo.
+        env.ledger().with_mut(|l| l.timestamp += 150);
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commit(&env, 15_000_000, &salt),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
     }
 
     /// No se puede revelar sin haber ofertado (orden de estados).
