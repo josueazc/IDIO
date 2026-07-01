@@ -25,6 +25,16 @@ export const config = {
       import.meta.env.VITE_AUCTION_CONTRACT_ID ??
       'CDBVGKAIM5S5RMPI3LJ2UCRO5T2BORYDNLDP2HDLFD7UNQ4T5R36VO3N',
   },
+  /**
+   * Covenant (allow-list ZK): set de secretos del árbol de Merkle de miembros.
+   * El admin usa la misma lista al configurar el ASP (`set_membership`) y el
+   * frontend la usa para generar la prueba de pertenencia. Cada banco registrado
+   * recibe un índice en esta lista. Demo/research: en producción cada banco
+   * conocería solo su propio secreto y su camino, no toda la lista.
+   */
+  covenant: {
+    secretsCsv: import.meta.env.VITE_COVENANT_SECRETS ?? '1,2,3,4,5,6,7,8',
+  },
 }
 
 export type IdioConfig = typeof config

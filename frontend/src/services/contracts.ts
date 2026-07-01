@@ -215,6 +215,29 @@ export const chain = {
     return Number((await readContract(config.contracts.auction, 'get_capacity', [addr(who)])) ?? 0)
   },
 
+  /** Registra el cupo (capacidad) de un banco. Firmado por el admin. */
+  async setCapacity(admin: string, who: string, capacity: number): Promise<void> {
+    await invokeContract(
+      config.contracts.auction,
+      'set_capacity',
+      [addr(who), i128(capacity)],
+      admin
+    )
+  },
+
+  /** ¿El gate del bid exige prueba ZK de membresía (Covenant)? */
+  async getBidGateZk(): Promise<boolean> {
+    return Boolean(await readContract(config.contracts.auction, 'get_bid_gate_zk'))
+  },
+
+  /** Raíz Merkle del Covenant en el ASP (vacía si no está configurado). */
+  async aspMembershipRoot(): Promise<string> {
+    const res = (await readContract(config.contracts.asp, 'membership_root')) as
+      | Uint8Array
+      | undefined
+    return res ? hex(res) : ''
+  },
+
   async createAuction(
     issuer: string,
     asset: string,
@@ -250,6 +273,33 @@ export const chain = {
       config.contracts.auction,
       'submit_sealed_bid',
       [u64(auctionId), addr(bidder), bytes32(commitmentHex), proofScVal(eligibilityProof)],
+      bidder
+    )
+  },
+
+  /**
+   * Oferta sellada con prueba ZK de membresía (Covenant) + nullifier. Es la
+   * vía por defecto cuando el gate ZK del contrato está activo.
+   */
+  async submitSealedBidCovenant(
+    auctionId: number,
+    bidder: string,
+    commitmentHex: string,
+    eligibilityProof: { a: string; b: string; c: string },
+    membershipProof: { a: string; b: string; c: string },
+    nullifierHex: string
+  ): Promise<void> {
+    await invokeContract(
+      config.contracts.auction,
+      'submit_sealed_bid_covenant',
+      [
+        u64(auctionId),
+        addr(bidder),
+        bytes32(commitmentHex),
+        proofScVal(eligibilityProof),
+        proofScVal(membershipProof),
+        bytes32(nullifierHex),
+      ],
       bidder
     )
   },

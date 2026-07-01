@@ -48,6 +48,12 @@ const PAYMENT_WINDOW_SECS: u64 = 86_400;
 #[contractclient(name = "AspClient")]
 pub trait AspInterface {
     fn is_allowed(env: Env, who: Address) -> bool;
+    /// Covenant: verifica una prueba ZK de pertenencia + nullifier anti-reuso.
+    /// Devuelve true si el miembro es válido; aborta si la prueba es inválida o
+    /// el nullifier ya fue usado.
+    fn verify_membership(env: Env, proof: Groth16Proof, nullifier: BytesN<32>) -> bool;
+    /// Raíz Merkle del set de miembros (None si el Covenant no está configurado).
+    fn membership_root(env: Env) -> Option<BytesN<32>>;
 }
 
 /// Interfaz del token confidencial para la liquidación del pago.
@@ -111,6 +117,8 @@ pub enum AuctionError {
     PaymentWindowStillOpen = 28,
     /// El depósito ya fue reembolsado o penalizado.
     DepositAlreadySettled = 29,
+    /// El gate ZK (Covenant) exige prueba de membresía y nullifier.
+    MembershipProofRequired = 30,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -198,6 +206,8 @@ enum DataKey {
     LastAction(Address),
     /// Tasa de depósito (basis points sobre el mínimo) configurada por el admin.
     DepositBps,
+    /// Covenant: si el gate del bid exige prueba ZK de membresía (default true).
+    BidGateZk,
 }
 
 #[contract]
@@ -340,10 +350,49 @@ impl AuctionContract {
         commitment: BytesN<32>,
         eligibility_proof: Groth16Proof,
     ) {
+        // Sin prueba de membresía. Solo válido si el gate ZK está apagado o el
+        // Covenant no está configurado (modo allow-list). Con Covenant activo,
+        // el gate exige la variante `submit_sealed_bid_covenant`.
+        Self::submit_bid_inner(env, auction_id, bidder, commitment, eligibility_proof, None, None);
+    }
+
+    /// Oferta sellada con **prueba ZK de membresía (Covenant) + nullifier**.
+    /// Es la vía por defecto cuando el gate ZK está activo: el banco prueba que
+    /// pertenece al set aprobado sin revelar su identidad, y el nullifier evita
+    /// reusar la misma prueba.
+    pub fn submit_sealed_bid_covenant(
+        env: Env,
+        auction_id: u64,
+        bidder: Address,
+        commitment: BytesN<32>,
+        eligibility_proof: Groth16Proof,
+        membership_proof: Groth16Proof,
+        nullifier: BytesN<32>,
+    ) {
+        Self::submit_bid_inner(
+            env,
+            auction_id,
+            bidder,
+            commitment,
+            eligibility_proof,
+            Some(membership_proof),
+            Some(nullifier),
+        );
+    }
+
+    fn submit_bid_inner(
+        env: Env,
+        auction_id: u64,
+        bidder: Address,
+        commitment: BytesN<32>,
+        eligibility_proof: Groth16Proof,
+        membership_proof: Option<Groth16Proof>,
+        nullifier: Option<BytesN<32>>,
+    ) {
         bidder.require_auth();
         Self::ensure_not_paused(&env);
         Self::enforce_rate_limit(&env, &bidder);
-        Self::require_allowed(&env, &bidder);
+        Self::require_gate(&env, &bidder, membership_proof, nullifier);
 
         let mut auction = Self::get(&env, auction_id);
         if auction.status == AuctionStatus::Cancelled {
@@ -724,6 +773,19 @@ impl AuctionContract {
             .unwrap_or(DEPOSIT_BPS_DEFAULT)
     }
 
+    /// Covenant: activa/desactiva el gate ZK de membresía para ofertar (solo
+    /// admin). `true` (default) exige prueba de membresía + nullifier; `false`
+    /// vuelve a la allow-list pública simple (modo compatibilidad).
+    pub fn set_bid_gate_zk(env: Env, enabled: bool) {
+        Self::admin(&env).require_auth();
+        env.storage().instance().set(&DataKey::BidGateZk, &enabled);
+    }
+
+    /// ¿El gate del bid exige prueba ZK de membresía? (default true).
+    pub fn get_bid_gate_zk(env: Env) -> bool {
+        env.storage().instance().get(&DataKey::BidGateZk).unwrap_or(true)
+    }
+
     /// Reembolsa el depósito de un participante tras la liquidación.
     ///
     /// - Un **perdedor** puede reclamar apenas la subasta esté liquidada.
@@ -932,14 +994,42 @@ impl AuctionContract {
         BytesN::from_array(env, &out)
     }
 
-    fn require_allowed(env: &Env, who: &Address) {
+    /// Gate de compliance para ofertar. Por defecto (Covenant activo) exige una
+    /// **prueba ZK de membresía + nullifier** verificada por el ASP: el banco
+    /// prueba que pertenece al set aprobado sin revelar cuál es, y el nullifier
+    /// evita reusar la misma prueba. Si el gate ZK está apagado, o el ASP no
+    /// tiene Covenant configurado, cae al modo allow-list pública (`is_allowed`).
+    fn require_gate(
+        env: &Env,
+        who: &Address,
+        membership_proof: Option<Groth16Proof>,
+        nullifier: Option<BytesN<32>>,
+    ) {
         let asp_id: Address = env
             .storage()
             .instance()
             .get(&DataKey::Asp)
             .unwrap_or_else(|| panic(env, AuctionError::NotInitialized));
         let asp = AspClient::new(env, &asp_id);
-        if !asp.is_allowed(who) {
+
+        let zk_gate: bool = env.storage().instance().get(&DataKey::BidGateZk).unwrap_or(true);
+        let configured = asp.membership_root().is_some();
+
+        if zk_gate && configured {
+            let proof = match membership_proof {
+                Some(p) => p,
+                None => panic(env, AuctionError::MembershipProofRequired),
+            };
+            let nf = match nullifier {
+                Some(n) => n,
+                None => panic(env, AuctionError::MembershipProofRequired),
+            };
+            // El ASP verifica la prueba y consume el nullifier (aborta si es
+            // inválida o si el nullifier ya fue usado).
+            if !asp.verify_membership(&proof, &nf) {
+                panic(env, AuctionError::NotAllowed);
+            }
+        } else if !asp.is_allowed(who) {
             panic(env, AuctionError::NotAllowed);
         }
     }
@@ -1697,6 +1787,108 @@ mod test {
         // El ganador penalizado ya no puede reclamar; el slashing no se repite.
         assert!(client.try_claim_deposit_refund(&auction_id, &bank).is_err());
         assert!(client.try_slash_winner(&auction_id).is_err());
+    }
+
+    // ---- Tarea 4: Covenant como gate real del bid ----
+
+    /// Con el gate ZK activo (default) y el Covenant configurado en el ASP:
+    /// un miembro puede ofertar con su prueba de membresía; el nullifier no se
+    /// puede reusar; un no-miembro es rechazado; y la variante sin membresía
+    /// (allow-list) queda deshabilitada.
+    #[test]
+    fn covenant_gate_requires_membership() {
+        use ark_bn254::Fr;
+        let env = Env::default();
+        env.mock_all_auths();
+        let id = env.register(AuctionContract, ());
+        let client = AuctionContractClient::new(&env, &id);
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let bidder = Address::generate(&env);
+
+        // ASP sin allow-list (no importa en modo ZK), con Covenant configurado.
+        let asp_id = env.register(Asp, ());
+        let asp = RealAspClient::new(&env, &asp_id);
+        asp.initialize(&admin);
+        let token = setup_token(&env, &admin);
+        let z = setup_zk(&env);
+
+        // Set de miembros (secrets 1..=4). Raíz + VK de membresía en el ASP.
+        let (mpk, mvk) = setup_membership();
+        let members = [Fr::from(1u64), Fr::from(2u64), Fr::from(3u64), Fr::from(4u64)];
+        let (_, mroot, _) = prove_membership(&mpk, &members, 0, 1);
+        asp.set_membership(
+            &BytesN::from_array(&env, &fr_be(&mroot)),
+            &to_vk(&env, &mvk),
+            &z.verifier,
+        );
+
+        client.initialize(&admin, &asp_id, &token, &z.verifier, &z.elig_vk, &z.reserves_vk);
+        assert!(client.get_bid_gate_zk());
+
+        let reserves = BytesN::random(&env);
+        let auction_id = client.create_auction(
+            &issuer,
+            &String::from_str(&env, "Bonos"),
+            &500_000_000,
+            &10_000_000,
+            &100,
+            &reserves,
+            &reserves_proof(&env, &z, 500_000_000, 600_000_000),
+        );
+        client.set_capacity(&bidder, &50_000_000);
+
+        let salt = BytesN::random(&env);
+        let elig = elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000);
+
+        // Miembro válido (índice 0): oferta aceptada con prueba de membresía.
+        let (mproof, _r, mnull) = prove_membership(&mpk, &members, 0, 77);
+        let nf = BytesN::from_array(&env, &fr_be(&mnull));
+        client.submit_sealed_bid_covenant(
+            &auction_id,
+            &bidder,
+            &commit(&env, 15_000_000, &salt),
+            &elig,
+            &to_proof(&env, &mproof),
+            &nf,
+        );
+
+        // No-miembro: prueba contra otra raíz -> verificación falla.
+        let outsiders = [Fr::from(9u64), Fr::from(10u64)];
+        let (oproof, _or, onull) = prove_membership(&mpk, &outsiders, 0, 3);
+        assert!(client
+            .try_submit_sealed_bid_covenant(
+                &auction_id,
+                &bidder,
+                &commit(&env, 16_000_000, &salt),
+                &elig_proof(&env, &z, 10_000_000, 50_000_000, 16_000_000),
+                &to_proof(&env, &oproof),
+                &BytesN::from_array(&env, &fr_be(&onull)),
+            )
+            .is_err());
+
+        // Reuso del mismo nullifier del miembro: rechazado.
+        let (mproof2, _r2, _n2) = prove_membership(&mpk, &members, 0, 78);
+        assert!(client
+            .try_submit_sealed_bid_covenant(
+                &auction_id,
+                &bidder,
+                &commit(&env, 17_000_000, &salt),
+                &elig_proof(&env, &z, 10_000_000, 50_000_000, 17_000_000),
+                &to_proof(&env, &mproof2),
+                &nf,
+            )
+            .is_err());
+
+        // Con Covenant activo, la variante sin membresía queda deshabilitada.
+        assert!(client
+            .try_submit_sealed_bid(
+                &auction_id,
+                &bidder,
+                &commit(&env, 18_000_000, &salt),
+                &elig_proof(&env, &z, 10_000_000, 50_000_000, 18_000_000),
+            )
+            .is_err());
     }
 
     // ---- Tarea 6: eventos estandarizados ----

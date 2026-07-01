@@ -8,6 +8,14 @@
 export function prove_eligibility_hex(min_bid: bigint, capacity: bigint, bid: bigint, seed: bigint): string;
 
 /**
+ * Covenant: prueba de pertenencia (Merkle + nullifier). `secrets_csv` es la
+ * lista de secretos del árbol (u64 separados por comas), `index` el del
+ * banco que prueba. Devuelve en hex: `a‖b‖c‖nullifier‖root`
+ * (256 + 32 + 32 = 320 bytes = 640 chars) para construir el bid Covenant.
+ */
+export function prove_membership_hex(secrets_csv: string, index: number, seed: bigint): string;
+
+/**
  * Prueba de reservas. Devuelve `a‖b‖c` en hex (256 bytes).
  */
 export function prove_reserves_hex(auction_amount: bigint, min_liquidity_pct: bigint, total: bigint, liquid: bigint, seed: bigint): string;
@@ -17,9 +25,12 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly prove_eligibility_hex: (a: bigint, b: bigint, c: bigint, d: bigint) => [number, number];
+    readonly prove_membership_hex: (a: number, b: number, c: number, d: bigint) => [number, number];
     readonly prove_reserves_hex: (a: bigint, b: bigint, c: bigint, d: bigint, e: bigint) => [number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+    readonly __wbindgen_malloc: (a: number, b: number) => number;
+    readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
     readonly __wbindgen_start: () => void;
 }
 

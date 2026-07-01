@@ -258,6 +258,10 @@ mod wasm {
         static PK: OnceLock<ProvingKey<Bn254>> = OnceLock::new();
         PK.get_or_init(|| setup_reserves().0)
     }
+    fn membership_pk() -> &'static ProvingKey<Bn254> {
+        static PK: OnceLock<ProvingKey<Bn254>> = OnceLock::new();
+        PK.get_or_init(|| crate::membership::setup_membership().0)
+    }
 
     /// Prueba de elegibilidad. Devuelve la prueba como hex de 256 bytes
     /// (`a‖b‖c`) lista para construir el `Groth16Proof` del contrato.
@@ -280,6 +284,30 @@ mod wasm {
         let p = prove_reserves(reserves_pk(), auction_amount, min_liquidity_pct, total, liquid, seed);
         let (a, b, c) = proof_bytes(&p);
         ark_std::format!("{}{}{}", hex(&a), hex(&b), hex(&c))
+    }
+
+    /// Covenant: prueba de pertenencia (Merkle + nullifier). `secrets_csv` es la
+    /// lista de secretos del árbol (u64 separados por comas), `index` el del
+    /// banco que prueba. Devuelve en hex: `a‖b‖c‖nullifier‖root`
+    /// (256 + 32 + 32 = 320 bytes = 640 chars) para construir el bid Covenant.
+    #[wasm_bindgen]
+    pub fn prove_membership_hex(secrets_csv: String, index: u32, seed: u64) -> String {
+        let secrets: ark_std::vec::Vec<Fr> = secrets_csv
+            .split(',')
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| Fr::from(s.trim().parse::<u64>().unwrap_or(0)))
+            .collect();
+        let (proof, root, null) =
+            crate::membership::prove_membership(membership_pk(), &secrets, index as usize, seed);
+        let (a, b, c) = proof_bytes(&proof);
+        ark_std::format!(
+            "{}{}{}{}{}",
+            hex(&a),
+            hex(&b),
+            hex(&c),
+            hex(&fr_be(&null)),
+            hex(&fr_be(&root))
+        )
     }
 }
 

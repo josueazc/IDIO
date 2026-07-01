@@ -211,7 +211,7 @@
                   "u64": "100"
                 },
                 {
-                  "bytes": "09c3c73ecff26f5bf6fb5c1eaf18924bc193c521a182e077c04782625b3c5bc7"
+                  "bytes": "556f7d1593d26626c26fcea3a026122f882b34077ab1f2cc27914d6863b4f17d"
                 },
                 {
                   "map": [
@@ -338,10 +338,26 @@
                   },
                   {
                     "key": {
+                      "symbol": "payment_deadline"
+                    },
+                    "val": {
+                      "u64": "0"
+                    }
+                  },
+                  {
+                    "key": {
                       "symbol": "reserves_commitment"
                     },
                     "val": {
-                      "bytes": "09c3c73ecff26f5bf6fb5c1eaf18924bc193c521a182e077c04782625b3c5bc7"
+                      "bytes": "556f7d1593d26626c26fcea3a026122f882b34077ab1f2cc27914d6863b4f17d"
+                    }
+                  },
+                  {
+                    "key": {
+                      "symbol": "reveal_deadline"
+                    },
+                    "val": {
+                      "u64": "86500"
                     }
                   },
                   {

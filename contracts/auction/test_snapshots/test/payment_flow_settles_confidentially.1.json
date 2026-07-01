@@ -230,7 +230,7 @@
                   "u64": "100"
                 },
                 {
-                  "bytes": "3be549ddd4063d7a13e6cd4a502614c0e8efbd803140ac4264dcddaa46b7dbb7"
+                  "bytes": "a69f330c2eb03f59ee31d7a8fc4953d8fb06ce09a20fe9200a16a3a1a039aa97"
                 },
                 {
                   "map": [
@@ -305,7 +305,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "bytes": "b9ad9dd33ee5a245f6a63916dafcfd945aba04d8d45b290232b1c79521deefa5"
+                  "bytes": "bc1e7d6439002f512709f10f8d204b8db614145d2881cf28e02d497d8bbc6e17"
                 },
                 {
                   "map": [
@@ -361,7 +361,7 @@
                   "i128": "15000000"
                 },
                 {
-                  "bytes": "d6ebbd58a9ad989f520abde53d4bb9543d539a7a8a98307383fa3d0b7f7bbf68"
+                  "bytes": "13e1bf06210997ea66f51517915604f6faa46b00d8a1acbe4bb0eeba8c7de700"
                 }
               ]
             }
@@ -506,10 +506,26 @@
                   },
                   {
                     "key": {
+                      "symbol": "payment_deadline"
+                    },
+                    "val": {
+                      "u64": "86600"
+                    }
+                  },
+                  {
+                    "key": {
                       "symbol": "reserves_commitment"
                     },
                     "val": {
-                      "bytes": "3be549ddd4063d7a13e6cd4a502614c0e8efbd803140ac4264dcddaa46b7dbb7"
+                      "bytes": "a69f330c2eb03f59ee31d7a8fc4953d8fb06ce09a20fe9200a16a3a1a039aa97"
+                    }
+                  },
+                  {
+                    "key": {
+                      "symbol": "reveal_deadline"
+                    },
+                    "val": {
+                      "u64": "86500"
                     }
                   },
                   {
@@ -583,7 +599,23 @@
                           "symbol": "commitment"
                         },
                         "val": {
-                          "bytes": "b9ad9dd33ee5a245f6a63916dafcfd945aba04d8d45b290232b1c79521deefa5"
+                          "bytes": "bc1e7d6439002f512709f10f8d204b8db614145d2881cf28e02d497d8bbc6e17"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "deposit"
+                        },
+                        "val": {
+                          "i128": "500000"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "deposit_settled"
+                        },
+                        "val": {
+                          "bool": false
                         }
                       },
                       {

@@ -230,7 +230,7 @@
                   "u64": "100"
                 },
                 {
-                  "bytes": "c4df829721a2709b6f3d55fb695c2135fe80641e077f4ed9a7c2b8bdf64e7cd8"
+                  "bytes": "5abfffb91b9e91febedb652775dce9e0c3719a16d979a6c95626286dbe1039b6"
                 },
                 {
                   "map": [
@@ -305,7 +305,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "bytes": "bf0f7296e7981613e254288bc8250cf15afee53a354f3420ae67b10bba1dcfa1"
+                  "bytes": "e7141794749edca39d44ce03702b6f4da8c3163821a53507f546e15c962d2566"
                 },
                 {
                   "map": [
@@ -358,7 +358,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "bytes": "6b0913f1ae8a61b78fa0415f8d49132d72031ad1a6429074084a47da9e124140"
+                  "bytes": "f878b742d425de59da4f90634388e81213916d31ac5d3d12187e36fd1f394db0"
                 },
                 {
                   "map": [
@@ -415,7 +415,7 @@
                   "i128": "18000000"
                 },
                 {
-                  "bytes": "ee4513d8c06d9fca331a9c19e88493a9cc6f42a3cd058637634d6eb8846da789"
+                  "bytes": "659fcf03cf59134d998000b9233861f53976fd46575f0f6a31551c8294288fc7"
                 }
               ]
             }
@@ -515,10 +515,26 @@
                   },
                   {
                     "key": {
+                      "symbol": "payment_deadline"
+                    },
+                    "val": {
+                      "u64": "86600"
+                    }
+                  },
+                  {
+                    "key": {
                       "symbol": "reserves_commitment"
                     },
                     "val": {
-                      "bytes": "c4df829721a2709b6f3d55fb695c2135fe80641e077f4ed9a7c2b8bdf64e7cd8"
+                      "bytes": "5abfffb91b9e91febedb652775dce9e0c3719a16d979a6c95626286dbe1039b6"
+                    }
+                  },
+                  {
+                    "key": {
+                      "symbol": "reveal_deadline"
+                    },
+                    "val": {
+                      "u64": "86500"
                     }
                   },
                   {
@@ -592,7 +608,23 @@
                           "symbol": "commitment"
                         },
                         "val": {
-                          "bytes": "6b0913f1ae8a61b78fa0415f8d49132d72031ad1a6429074084a47da9e124140"
+                          "bytes": "f878b742d425de59da4f90634388e81213916d31ac5d3d12187e36fd1f394db0"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "deposit"
+                        },
+                        "val": {
+                          "i128": "500000"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "deposit_settled"
+                        },
+                        "val": {
+                          "bool": false
                         }
                       },
                       {

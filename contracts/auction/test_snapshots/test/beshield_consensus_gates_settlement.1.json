@@ -306,7 +306,7 @@
                   "u64": "100"
                 },
                 {
-                  "bytes": "5f7dd70a60f0f2f51e36d2b776251157fef02acb777de83ef3c06b93c4f776af"
+                  "bytes": "585a6e70eef8428af2175b4e5deeea2434ba7794d27d655a1dd9b04d0f252120"
                 },
                 {
                   "map": [
@@ -381,7 +381,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "bytes": "21f80916abd7dc0bbd74824fba24b1bb174fa80e9a886e45377867210bb187a4"
+                  "bytes": "2ae6eb8d3f101c8993ae589854c1afb295cfca03f10334ef6f61d35703fe05c9"
                 },
                 {
                   "map": [
@@ -437,7 +437,7 @@
                   "i128": "15000000"
                 },
                 {
-                  "bytes": "47760166421151cdd07a5f636c27a06b6a078917a99105912f4d751b4321cd72"
+                  "bytes": "d803fef1af566c31551a97acb9be014e3311197239584d65f5a0f86ca09f724c"
                 }
               ]
             }
@@ -627,10 +627,26 @@
                   },
                   {
                     "key": {
+                      "symbol": "payment_deadline"
+                    },
+                    "val": {
+                      "u64": "86600"
+                    }
+                  },
+                  {
+                    "key": {
                       "symbol": "reserves_commitment"
                     },
                     "val": {
-                      "bytes": "5f7dd70a60f0f2f51e36d2b776251157fef02acb777de83ef3c06b93c4f776af"
+                      "bytes": "585a6e70eef8428af2175b4e5deeea2434ba7794d27d655a1dd9b04d0f252120"
+                    }
+                  },
+                  {
+                    "key": {
+                      "symbol": "reveal_deadline"
+                    },
+                    "val": {
+                      "u64": "86500"
                     }
                   },
                   {
@@ -704,7 +720,23 @@
                           "symbol": "commitment"
                         },
                         "val": {
-                          "bytes": "21f80916abd7dc0bbd74824fba24b1bb174fa80e9a886e45377867210bb187a4"
+                          "bytes": "2ae6eb8d3f101c8993ae589854c1afb295cfca03f10334ef6f61d35703fe05c9"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "deposit"
+                        },
+                        "val": {
+                          "i128": "500000"
+                        }
+                      },
+                      {
+                        "key": {
+                          "symbol": "deposit_settled"
+                        },
+                        "val": {
+                          "bool": false
                         }
                       },
                       {
@@ -1411,5 +1443,39 @@
       }
     ]
   },
-  "events": []
+  "events": [
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "auction"
+              },
+              {
+                "symbol": "settled"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u64": "1"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
+                },
+                {
+                  "i128": "15000000"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    }
+  ]
 }

@@ -10,7 +10,8 @@ import { chain } from './contracts'
 import * as demo from './store'
 import { commitBid, generateReservesProof, randomSalt } from './proofs'
 import { proveSealedBid, type ZkResult } from './noir'
-import { proveEligibility, proveReserves } from './groth'
+import { proveEligibility, proveReserves, proveMembership } from './groth'
+import { getProfile, covenantSecretsCsv } from './auth'
 import type { Auction } from '../types'
 
 /** Resultado de la última prueba ZK generada (para mostrar en la UI). */
@@ -138,7 +139,36 @@ export async function submitBid(
     }
     const proof = await proveEligibility(minBid, capacity, amount)
     lastProof = { proofHex: proof.a, witnessOk: true, proofOk: true, ms: 0 }
-    await chain.submitSealedBid(auctionId, address, commitment, proof)
+
+    // Gate del bid: si el Covenant está activo on-chain (gate ZK + raíz de
+    // membresía configurada), se exige una prueba ZK de pertenencia + nullifier
+    // en vez de la allow-list pública. Cae a la allow-list si no está activo.
+    let covenantActive = false
+    try {
+      covenantActive = (await chain.getBidGateZk()) && Boolean(await chain.aspMembershipRoot())
+    } catch {
+      covenantActive = false
+    }
+
+    if (covenantActive) {
+      const profile = getProfile(address)
+      if (!profile) {
+        throw new Error(
+          'El Covenant ZK está activo: registrá el banco (Sign up) para poder probar tu membresía y ofertar.'
+        )
+      }
+      const membership = await proveMembership(covenantSecretsCsv(), profile.membershipIndex)
+      await chain.submitSealedBidCovenant(
+        auctionId,
+        address,
+        commitment,
+        proof,
+        membership.proof,
+        membership.nullifier
+      )
+    } else {
+      await chain.submitSealedBid(auctionId, address, commitment, proof)
+    }
     saveSalt(auctionId, address, amount, salt)
     lastBidSecret = { amount, salt }
   } else {
