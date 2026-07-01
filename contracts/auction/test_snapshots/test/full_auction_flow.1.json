@@ -252,7 +252,7 @@
                   "u64": "100"
                 },
                 {
-                  "bytes": "05496830b52a6b2512eeac81c6cc08e0abda8c7993f9ae5cc96c10d473b64c4c"
+                  "bytes": "3ca565fad559cf2f53d5d831792d7fa886138918bacae86cde1e723f4ad548fd"
                 },
                 {
                   "map": [
@@ -349,7 +349,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAITA4"
                 },
                 {
-                  "bytes": "9cc650f63db952f8f56840a388b5ac249ef937085293b51ddf56228dfdd301d6"
+                  "bytes": "5a720cbd01eeb0ff85de75ad5c1dc546138251608b92add2b006ad3f2479eed4"
                 },
                 {
                   "map": [
@@ -358,7 +358,7 @@
                         "symbol": "a"
                       },
                       "val": {
-                        "bytes": "17061936d3996f47e3cec9a9292546a01314c5f9bc97d1e1589901fb0536d4b10224c565ed4a4a93c19aaadf8a61f51e5bdf1bed3c16a0d6ab5e91470c4c658d"
+                        "bytes": "07467c354fcf375a084a15e62489a01bb3905359bb459fe80bcb64cd0e8e28ce020fd6c8cd35d8e1498b712c8046fa85f6e4de47b390bb976a4f1d1b1bdc2d6d"
                       }
                     },
                     {
@@ -366,7 +366,7 @@
                         "symbol": "b"
                       },
                       "val": {
-                        "bytes": "083a8ac0c7c89ebc41a3a80a0ad193e8824524a5e8fe52f8e350c71102bb95061275760bec9355e8ab5138a03b284b87195cb847dcc1b9cb1e13110d6397cb240e3c5b4540f5fd6ee15a2fbcee87c17c1520bfb2272f2ddd21cd72c9fec044b60faa116e2a36dcb2eb1874941f4c9015895827552041f1fe109b5d905a123eb4"
+                        "bytes": "1b68a97a518439ebb090f8fe7d1e8b333dd92960a05dfffdb359a2729695a51309ee3970f54f621575341d24def9a783501b62a6cec273696ebf2405a3dd240930456899cdde8aa4317d69579551d54dbdff9d1a866b6f65ea9bf5b4a1e5b8522bcf9699fd2f3b5af67a8a27e363cc260f0ac67cae7ca854ac85e3211d388772"
                       }
                     },
                     {
@@ -374,7 +374,7 @@
                         "symbol": "c"
                       },
                       "val": {
-                        "bytes": "24b4db868534bc0e4e7b00d8c961c59af989c4cea6952a53e95edf2fa5bf2f220bad3978f36573683fa11796d45bcb082786357cb672f752ef91309a0107a0a5"
+                        "bytes": "1c046060e1e2af5b2fb711acb539522850c7acdc91ca840aabb03d80e1d48d35165aeecfd31d55e25e83d78b260accb42c628cbe58a3a84f7c6133e7f7a815fa"
                       }
                     }
                   ]
@@ -402,7 +402,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "bytes": "e63f109fbc9536f0aa6e8d64ae0b7ea41b5e2db1631a6ab007fe2c0a8c229ec5"
+                  "bytes": "71cd5695d655ca5439df38aa6e5e0375f607d6cca6cac2ebda2827f60c25f644"
                 },
                 {
                   "map": [
@@ -411,7 +411,7 @@
                         "symbol": "a"
                       },
                       "val": {
-                        "bytes": "00e759d13a46ec2f0883af97a1ba44f774bac380f0555f16eaf3667529016d7e070b388e6e317a1a87dfbe9d3d31b462f8be8207edd890f16a6a4e29c6d9a9ef"
+                        "bytes": "05d205bd22cadecce9d4ddff8d16b4d076aee938f7d97e855bf3f86753e60af324e8a16d7920fbb7f2f845e40519a85273849e48af50c84b94a3b6e9073a530a"
                       }
                     },
                     {
@@ -419,7 +419,7 @@
                         "symbol": "b"
                       },
                       "val": {
-                        "bytes": "2665657f1138ebd7709cb7b6c8009b715625eb4e479f0ad904e92c14a6e7b5a81b17246d901c7d1b2a9ce5b585606e4b69da0b96a7acad11fa8ef427bc1dd57a14c8a74418f02553e40ee3a9a418dba8fe17b26de4fdf63f02dc08ead671191a228d78d262e3e3ff3906fe679753f081a9feee15c4af6c2146d3464618dbf5d5"
+                        "bytes": "2294cd701314fb6743de27c96e9aea3975f7db37c00d6f09db33167be42780d6083b094002d4195aaca371b346d8b673dc20c70b9d42d33e78ee87011eeee96a25d7a3f8904120daded42941f8d0225273a0fd07654b68ce2be69766e783551020be506358157c28a905153a49e530a7901378600b71ce4d42bd1fb54f80e2fa"
                       }
                     },
                     {
@@ -427,7 +427,7 @@
                         "symbol": "c"
                       },
                       "val": {
-                        "bytes": "08bb112ada5e843dbbbc2b7d45b2e95454e31d13c8859dfdfdf435441074d68d2a2ca769674302565437cc0b29bb52cf9d9e38050903b734e1c3e18f033dc1ea"
+                        "bytes": "22604451ef219198734413773a2e0a27834ee5fe869de3b80ee36df8b28360952ac020268d040cb69270424a8e45292136dc57159d1e9c986eebe0b74b19d3b5"
                       }
                     }
                   ]
@@ -458,7 +458,7 @@
                   "i128": "12000000"
                 },
                 {
-                  "bytes": "753012d3704589548a56b4b55c4db281adccd6534bcd42e92c4448752df7cfa1"
+                  "bytes": "d21f49fb0e26e0850c0f7f46395d5f6483f0c20770631684f757ca7e2991cf39"
                 }
               ]
             }
@@ -486,7 +486,7 @@
                   "i128": "15000000"
                 },
                 {
-                  "bytes": "be84d4840e4ec752e9de5fcc540e515a0c26fe825445324399ff4267b9ec6d6e"
+                  "bytes": "aa8ca18ba9aad1e51f37ff93523b701cdd0016d717643795e98175a3ec5630b2"
                 }
               ]
             }
@@ -597,7 +597,7 @@
                       "symbol": "reserves_commitment"
                     },
                     "val": {
-                      "bytes": "05496830b52a6b2512eeac81c6cc08e0abda8c7993f9ae5cc96c10d473b64c4c"
+                      "bytes": "3ca565fad559cf2f53d5d831792d7fa886138918bacae86cde1e723f4ad548fd"
                     }
                   },
                   {
@@ -679,7 +679,7 @@
                           "symbol": "commitment"
                         },
                         "val": {
-                          "bytes": "9cc650f63db952f8f56840a388b5ac249ef937085293b51ddf56228dfdd301d6"
+                          "bytes": "5a720cbd01eeb0ff85de75ad5c1dc546138251608b92add2b006ad3f2479eed4"
                         }
                       },
                       {
@@ -739,7 +739,7 @@
                           "symbol": "commitment"
                         },
                         "val": {
-                          "bytes": "e63f109fbc9536f0aa6e8d64ae0b7ea41b5e2db1631a6ab007fe2c0a8c229ec5"
+                          "bytes": "71cd5695d655ca5439df38aa6e5e0375f607d6cca6cac2ebda2827f60c25f644"
                         }
                       },
                       {
