@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import ModeToggle from '../components/ModeToggle'
 import WalletConnect from '../components/WalletConnect'
 import BrandLogo from '../components/BrandLogo'
+import BankAccess from '../components/BankAccess'
 import { ROLES, setRole, type Role } from '../services/role'
 import { roleHome } from '../utils/roleNav'
 
@@ -18,6 +19,10 @@ export default function RolePicker({ address, demo, onConnect, onDisconnect }: P
   function pick(role: Role) {
     setRole(role)
     nav(roleHome(role))
+  }
+
+  function enterAsBank() {
+    pick('oferente')
   }
 
   return (
@@ -59,9 +64,9 @@ export default function RolePicker({ address, demo, onConnect, onDisconnect }: P
             <button className="btn-primary" onClick={() => pick('emisor')}>
               Enter issuer desk
             </button>
-            <button className="btn-ghost" onClick={() => pick('oferente')}>
-              Open auction registry
-            </button>
+            <a className="btn-ghost text-center" href="#banks">
+              Sign up / log in as a bank
+            </a>
           </div>
           <div className="mt-8 grid max-w-2xl grid-cols-3 border border-edge">
             {[
@@ -126,6 +131,16 @@ export default function RolePicker({ address, demo, onConnect, onDisconnect }: P
             </button>
           ))}
         </div>
+      </section>
+
+      <section id="banks" className="mx-auto max-w-7xl px-4 pb-4 sm:px-6 lg:px-8">
+        <BankAccess
+          address={address}
+          demo={demo}
+          onConnect={onConnect}
+          onDisconnect={onDisconnect}
+          onEnter={enterAsBank}
+        />
       </section>
 
       <section id="wallet" className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
