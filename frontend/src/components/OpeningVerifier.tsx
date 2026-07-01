@@ -21,14 +21,14 @@ export default function OpeningVerifier() {
   }
 
   return (
-    <RuledPanel title="Bid opening (view key)">
+    <RuledPanel title="Apertura de oferta (view key)">
       <p className="text-sm leading-6 text-slate-400">
-        With the opening (amount, salt) you can prove which amount a bid commitment maps to. Without
-        it, only the hash is visible. Recomputes SHA-256(be16(amount) || salt) and compares.
+        Con la apertura (monto, salt) podés probar a qué monto corresponde el compromiso de una oferta.
+        Sin ella, solo se ve el hash. Recalcula SHA-256(be16(monto) || salt) y compara.
       </p>
       <div className="mt-4 grid gap-4 md:grid-cols-3">
         <label>
-          <span className="label">Amount</span>
+          <span className="label">Monto</span>
           <input
             type="number"
             className="input font-mono"
@@ -42,7 +42,7 @@ export default function OpeningVerifier() {
         </label>
       </div>
       <label className="mt-4 block">
-        <span className="label">Published commitment (hex)</span>
+        <span className="label">Compromiso publicado (hex)</span>
         <input
           className="input font-mono text-xs"
           placeholder="d772f954..."
@@ -51,7 +51,7 @@ export default function OpeningVerifier() {
         />
       </label>
       <button className="btn-primary mt-4" onClick={verify} disabled={!salt || !commitment}>
-        Verify opening
+        Verificar apertura
       </button>
       {result !== null && (
         <div
@@ -60,8 +60,8 @@ export default function OpeningVerifier() {
           }`}
         >
           {result
-            ? 'Valid opening: the commitment matches this (amount, salt).'
-            : 'No match: that amount/salt does not open this commitment.'}
+            ? 'Apertura válida: el compromiso coincide con este (monto, salt).'
+            : 'No coincide: ese monto/salt no abre este compromiso.'}
         </div>
       )}
     </RuledPanel>

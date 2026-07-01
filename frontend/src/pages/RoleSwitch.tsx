@@ -16,9 +16,9 @@ export default function RoleSwitch() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Authority switch"
-        title="Choose the operating desk for this session."
-        description="Switching desks changes the frontend permissions and navigation context. It does not change protocol state."
+        eyebrow="Cambiar de rol"
+        title="Elegí la mesa de operación para esta sesión."
+        description="Cambiar de mesa cambia los permisos del frontend y el contexto de navegación. No cambia el estado del protocolo."
       />
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -45,19 +45,19 @@ export default function RoleSwitch() {
                 <p className="mt-3 text-sm leading-6 text-slate-500">{role.desc}</p>
               </div>
               <div className={`mt-8 text-sm font-semibold ${active ? 'text-brand' : 'text-slate-500 group-hover:text-brand'}`}>
-                {active ? 'Current desk' : 'Switch to desk'}
+                {active ? 'Mesa actual' : 'Cambiar a esta mesa'}
               </div>
             </button>
           )
         })}
       </div>
 
-      <RuledPanel title="Switching rules">
+      <RuledPanel title="Reglas del cambio de rol">
         <div className="grid gap-4 md:grid-cols-3">
           {[
-            ['No backend mutation', 'Changing roles only changes the active frontend desk.'],
-            ['Wallet remains active', 'Connected wallet or demo session persists across desk changes.'],
-            ['Route changes intentionally', 'Each desk opens on its most useful operational page.'],
+            ['Sin mutación del backend', 'Cambiar de rol solo cambia la mesa activa del frontend.'],
+            ['La billetera sigue activa', 'La billetera conectada o la sesión demo persisten al cambiar de mesa.'],
+            ['La ruta cambia a propósito', 'Cada mesa abre en su pantalla operativa más útil.'],
           ].map(([title, body]) => (
             <div key={title} className="border border-edge bg-[#080808] p-4">
               <div className="text-sm font-semibold text-white">{title}</div>

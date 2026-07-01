@@ -39,44 +39,44 @@ export default function ConfidentialBalance() {
 
   if (!chainMode) {
     return (
-      <RuledPanel title="Confidential balance">
+      <RuledPanel title="Balance confidencial">
         <p className="text-sm leading-6 text-slate-400">
-          Pedersen token commitments are available in Testnet mode.
+          Los compromisos Pedersen del token están disponibles en modo Testnet.
         </p>
       </RuledPanel>
     )
   }
 
   return (
-    <RuledPanel title="Confidential balance">
+    <RuledPanel title="Balance confidencial">
       <div className="space-y-5">
         <p className="text-sm leading-6 text-slate-400">
-          The token balance is stored as a Pedersen commitment. The auditor verifies an opening without
-          exposing the value publicly.
+          El balance del token se guarda como un compromiso Pedersen. El auditor verifica una apertura sin
+          exponer el valor públicamente.
         </p>
 
         <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
           <label>
-            <span className="label">Account</span>
+            <span className="label">Cuenta</span>
             <input className="input font-mono text-xs" value={addr} onChange={(event) => setAddr(event.target.value)} />
           </label>
           <button className="btn-ghost" onClick={load} disabled={busy}>
-            Read commitment
+            Leer compromiso
           </button>
         </div>
 
         {commitment && (
           <div className="border border-edge bg-white/[0.02] p-4">
-            <div className="micro-label">On-chain commitment</div>
+            <div className="micro-label">Compromiso on-chain</div>
             <div className="mt-2 break-all font-mono text-xs text-slate-300">{commitment}</div>
           </div>
         )}
 
         <div className="border-t border-edge pt-5">
-          <div className="micro-label mb-4">Verify opening</div>
+          <div className="micro-label mb-4">Verificar apertura</div>
           <div className="grid gap-3 md:grid-cols-2">
             <label>
-              <span className="label">Declared amount</span>
+              <span className="label">Monto declarado</span>
               <input
                 type="number"
                 className="input font-mono"
@@ -85,7 +85,7 @@ export default function ConfidentialBalance() {
               />
             </label>
             <label>
-              <span className="label">Blinding hex</span>
+              <span className="label">Blinding (hex)</span>
               <input
                 className="input font-mono text-xs"
                 value={blinding}
@@ -94,13 +94,13 @@ export default function ConfidentialBalance() {
             </label>
           </div>
           <button className="btn-primary mt-4" onClick={verify} disabled={busy}>
-            Verify on-chain opening
+            Verificar apertura on-chain
           </button>
           {opening !== null && (
             <div className={`mt-4 border p-3 text-sm ${opening ? 'border-brand/40 bg-brand/10 text-brand' : 'border-red-400/30 bg-red-500/10 text-red-200'}`}>
               {opening
-                ? 'Valid opening: commitment matches amount and blinding.'
-                : 'Invalid opening: amount and blinding do not match.'}
+                ? 'Apertura válida: el compromiso coincide con el monto y el blinding.'
+                : 'Apertura inválida: el monto y el blinding no coinciden.'}
             </div>
           )}
         </div>

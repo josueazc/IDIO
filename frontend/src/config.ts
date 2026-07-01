@@ -23,7 +23,7 @@ export const config = {
       'CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6',
     auction:
       import.meta.env.VITE_AUCTION_CONTRACT_ID ??
-      'CDGVV7ZARFX7NZWYROCW3IKCX2ZGCJK2BYD7647YOOUO2DX4JIKHFWL4',
+      'CCEDJPYUYYRS7JOOALDV2IZLHBKIMA76XHUDRJ3HAWT2NSTUS2YE5B7T',
   },
   /**
    * Covenant (allow-list ZK): set de secretos del árbol de Merkle de miembros.

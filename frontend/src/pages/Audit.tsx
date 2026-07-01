@@ -4,7 +4,6 @@ import OpeningVerifier from '../components/OpeningVerifier'
 import { EmptyState, PageHeader, RuledPanel } from '../components/Primitives'
 import StatusBadge from '../components/StatusBadge'
 import { useAuctions } from '../utils/useAuctions'
-import { useRole } from '../utils/useRole'
 import { getStoredWalletAddress } from '../services/wallet'
 import { config } from '../config'
 import { fmtUSD } from '../utils/format'
@@ -45,10 +44,8 @@ async function downloadReport(auction: Auction) {
 
 export default function Audit() {
   const { auctions: all } = useAuctions()
-  const role = useRole()
   const myAddress = getStoredWalletAddress()
-  // The issuer only audits its own auctions; the auditor sees all.
-  const auctions = role === 'emisor' ? all.filter((a) => a.issuer === myAddress) : all
+  const auctions = all.filter((a) => a.issuer === myAddress)
   const [selected, setSelected] = useState<number | null>(null)
   const [unlocked, setUnlocked] = useState(false)
   const [viewKey, setViewKey] = useState('')
@@ -62,21 +59,17 @@ export default function Audit() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow={role === 'emisor' ? 'Issuer audit' : 'Audit desk'}
-        title={role === 'emisor' ? 'Audit your own auctions.' : 'Reveal evidence with a controlled view key.'}
-        description={
-          role === 'emisor'
-            ? 'Only your auctions. After close you can review every bid and verify the highest one won.'
-            : 'Auditors can inspect commitments, revealed amounts and final winner logic without changing protocol state.'
-        }
+        eyebrow="Auditoría del emisor"
+        title="Auditá tus propias subastas."
+        description="Tras el cierre revisá cada oferta, verificá que ganó la más alta y descargá el informe."
       />
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <RuledPanel title="View key gate">
+          <RuledPanel title="Acceso con view key">
             <div className="grid gap-4 md:grid-cols-[260px_1fr_auto] md:items-end">
               <label>
-                <span className="label">Auction</span>
+                <span className="label">Subasta</span>
                 <select
                   className="input"
                   value={selected ?? ''}
@@ -102,35 +95,35 @@ export default function Audit() {
                 />
               </label>
               <button className="btn-primary" onClick={() => setUnlocked(true)} disabled={viewKey.length < 3}>
-                Unlock
+                Desbloquear
               </button>
             </div>
           </RuledPanel>
 
           {!auction ? (
-            <EmptyState title="No auction selected" description="Create or select an auction to audit its evidence." />
+            <EmptyState title="Ninguna subasta seleccionada" description="Creá o seleccioná una subasta para auditar su evidencia." />
           ) : !unlocked ? (
             <EmptyState
-              title="Evidence locked"
-              description={`Enter a view key to inspect sealed bids for ${auction.asset}. Public users only see commitments.`}
+              title="Evidencia bloqueada"
+              description={`Ingresá una view key para inspeccionar las ofertas selladas de ${auction.asset}. El público solo ve los compromisos.`}
             />
           ) : (
-            <RuledPanel title="Revealed bid evidence">
+            <RuledPanel title="Evidencia de ofertas reveladas">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] text-sm">
                   <thead>
                     <tr className="border-b border-edge text-left">
-                      <th className="px-3 py-3 micro-label">Participant</th>
-                      <th className="px-3 py-3 micro-label">Commitment</th>
-                      <th className="px-3 py-3 micro-label text-right">Amount</th>
-                      <th className="px-3 py-3 micro-label text-right">Result</th>
+                      <th className="px-3 py-3 micro-label">Participante</th>
+                      <th className="px-3 py-3 micro-label">Compromiso</th>
+                      <th className="px-3 py-3 micro-label text-right">Monto</th>
+                      <th className="px-3 py-3 micro-label text-right">Resultado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[...auction.bids].sort((a, b) => b.amount - a.amount).map((bid, index) => (
                       <tr key={`${bid.bidderAddress}-${index}`} className="data-row">
                         <td className="px-3 py-4">
-                          <div className="font-semibold text-white">{bid.bidderName || 'Bidder'}</div>
+                          <div className="font-semibold text-white">{bid.bidderName || 'Oferente'}</div>
                           <div className="mt-1 font-mono text-[11px] text-slate-600">
                             {bid.bidderAddress.slice(0, 10)}...{bid.bidderAddress.slice(-4)}
                           </div>
@@ -138,7 +131,7 @@ export default function Audit() {
                         <td className="px-3 py-4 font-mono text-xs text-slate-500">{bid.commitment}</td>
                         <td className="px-3 py-4 text-right font-mono text-slate-100">{fmtUSD(bid.amount)}</td>
                         <td className="px-3 py-4 text-right">
-                          {index === 0 ? <span className="pill bg-brand/15 text-brand">winner</span> : <span className="text-slate-600">cleared</span>}
+                          {index === 0 ? <span className="pill bg-brand/15 text-brand">ganador</span> : <span className="text-slate-600">no seleccionado</span>}
                         </td>
                       </tr>
                     ))}
@@ -152,7 +145,7 @@ export default function Audit() {
           <ConfidentialBalance />
         </div>
 
-        <RuledPanel title="Audit verdict">
+        <RuledPanel title="Veredicto de auditoría">
           {auction ? (
             <div className="space-y-5">
               <div>
@@ -161,10 +154,10 @@ export default function Audit() {
               </div>
               <div className="divide-y divide-edge border-y border-edge">
                 {[
-                  ['Commitment set', `${auction.bids.length} sealed bids`],
-                  ['Reserve proof', auction.reservesCommitment],
-                  ['Winner rule', 'Highest revealed bid'],
-                  ['Report state', unlocked ? 'Ready' : 'Locked'],
+                  ['Conjunto de compromisos', `${auction.bids.length} ofertas selladas`],
+                  ['Prueba de reservas', auction.reservesCommitment],
+                  ['Regla del ganador', 'Oferta revelada más alta'],
+                  ['Estado del informe', unlocked ? 'Listo' : 'Bloqueado'],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-4 py-3 text-sm">
                     <span className="text-slate-500">{label}</span>
@@ -177,11 +170,11 @@ export default function Audit() {
                 disabled={!unlocked}
                 onClick={() => downloadReport(auction)}
               >
-                Generate signed report
+                Generar informe firmado
               </button>
             </div>
           ) : (
-            <p className="text-sm leading-6 text-slate-500">No audit target available.</p>
+            <p className="text-sm leading-6 text-slate-500">No hay ninguna subasta para auditar.</p>
           )}
         </RuledPanel>
       </section>

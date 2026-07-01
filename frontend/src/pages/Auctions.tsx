@@ -77,6 +77,20 @@ export default function Auctions({ address }: Props) {
     }
   }
 
+  async function onReveal(auction: Auction) {
+    if (!requireWallet()) return
+    setBusy(auction.id)
+    setNotice(null)
+    try {
+      await revealBid(auction.id, address ?? '')
+      setNotice({ type: 'success', message: 'Oferta revelada on-chain. El emisor puede liquidar cuando todas estén abiertas.' })
+    } catch (e) {
+      setNotice({ type: 'error', message: (e as Error).message })
+    } finally {
+      setBusy(null)
+    }
+  }
+
   async function onSettle(auction: Auction) {
     if (!requireWallet()) return
     if (!window.confirm(`Liquidar la subasta #${String(auction.id).padStart(3, '0')}: se revelan las ofertas y se elige al ganador. Es irreversible. ¿Confirmás?`)) return
@@ -108,13 +122,13 @@ export default function Auctions({ address }: Props) {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Auction registry"
-        title="Records, commitments and settlement status."
-        description="Inspect active and settled auctions. Bid amounts remain private until reveal."
+        eyebrow="Registro de subastas"
+        title="Registros, compromisos y estado de liquidación."
+        description="Inspeccioná subastas activas y liquidadas. Los montos ofertados quedan privados hasta el reveal."
         actions={
           getMode() === 'demo' && (
             <button className="btn-ghost" onClick={resetDemo}>
-              Reset demo
+              Reiniciar demo
             </button>
           )
         }
@@ -129,7 +143,7 @@ export default function Auctions({ address }: Props) {
               filter === item ? 'border-brand bg-brand text-ink' : 'border-edge bg-white/[0.02] text-slate-400 hover:text-white'
             }`}
           >
-            {item === 'all' ? 'All records' : item === 'open' ? 'Open' : 'Settled'}
+            {item === 'all' ? 'Todas' : item === 'open' ? 'Abiertas' : 'Liquidadas'}
           </button>
         ))}
         <button
@@ -138,7 +152,7 @@ export default function Auctions({ address }: Props) {
             typeFilter === 'all' ? 'border-white/50 bg-white text-ink' : 'border-edge bg-white/[0.02] text-slate-400 hover:text-white'
           }`}
         >
-          All classes
+          Todas las clases
         </button>
         {ASSET_TYPES.map((type) => (
           <button
@@ -171,7 +185,7 @@ export default function Auctions({ address }: Props) {
         <span className="text-xs text-slate-500">{filtered.length} resultado(s)</span>
       </div>
 
-      {error && <ErrorNotice message={`Chain read failed: ${error}`} />}
+      {error && <ErrorNotice message={`Falló la lectura on-chain: ${error}`} />}
       <Toast notice={notice} onClose={() => setNotice(null)} />
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -180,9 +194,9 @@ export default function Auctions({ address }: Props) {
             <SkeletonRows rows={6} />
           ) : filtered.length === 0 ? (
             <EmptyState
-              title="No records in this view"
-              description="Adjust filters or issue a demo auction from the issuer desk."
-              action={role === 'emisor' && <Link className="btn-primary" to="/create">Issue auction</Link>}
+              title="No hay registros en esta vista"
+              description="Ajustá los filtros o emití una subasta desde la mesa del emisor."
+              action={role === 'emisor' && <Link className="btn-primary" to="/create">Emitir subasta</Link>}
             />
           ) : (
             <>
@@ -190,13 +204,13 @@ export default function Auctions({ address }: Props) {
                 <table className="w-full min-w-[860px] text-sm">
                   <thead>
                     <tr className="border-b border-edge text-left">
-                      <th className="px-4 py-3 micro-label">Record</th>
-                      <th className="px-4 py-3 micro-label">Asset</th>
-                      <th className="px-4 py-3 micro-label">Status</th>
-                      <th className="px-4 py-3 micro-label text-right">Issue amount</th>
-                      <th className="px-4 py-3 micro-label text-right">Min bid</th>
-                      <th className="px-4 py-3 micro-label text-right">Bids</th>
-                      <th className="px-4 py-3 micro-label text-right">Action</th>
+                      <th className="px-4 py-3 micro-label">Registro</th>
+                      <th className="px-4 py-3 micro-label">Activo</th>
+                      <th className="px-4 py-3 micro-label">Estado</th>
+                      <th className="px-4 py-3 micro-label text-right">Monto emitido</th>
+                      <th className="px-4 py-3 micro-label text-right">Oferta mín.</th>
+                      <th className="px-4 py-3 micro-label text-right">Ofertas</th>
+                      <th className="px-4 py-3 micro-label text-right">Acción</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -224,6 +238,7 @@ export default function Auctions({ address }: Props) {
                             busy={busy === auction.id}
                             address={address}
                             onBid={openBid}
+                            onReveal={onReveal}
                             onSettle={onSettle}
                             onPay={onPay}
                           />
@@ -247,7 +262,7 @@ export default function Auctions({ address }: Props) {
                       <div>
                         <div className="font-mono text-xs text-brand">#{String(auction.id).padStart(3, '0')}</div>
                         <div className="mt-2 font-semibold text-white">{auction.asset}</div>
-                        <div className="mt-1 text-sm text-slate-500">{fmtUSD(auction.amount)} / {auction.bids.length} bids</div>
+                        <div className="mt-1 text-sm text-slate-500">{fmtUSD(auction.amount)} / {auction.bids.length} ofertas</div>
                       </div>
                       <StatusBadge status={auction.status} />
                     </div>
@@ -256,8 +271,9 @@ export default function Auctions({ address }: Props) {
                         auction={auction}
                         role={role}
                         busy={busy === auction.id}
-                            address={address}
+                        address={address}
                         onBid={openBid}
+                        onReveal={onReveal}
                         onSettle={onSettle}
                         onPay={onPay}
                       />
@@ -290,6 +306,7 @@ function AuctionAction({
   busy,
   address,
   onBid,
+  onReveal,
   onSettle,
   onPay,
 }: {
@@ -298,39 +315,57 @@ function AuctionAction({
   busy: boolean
   address: string | null
   onBid: (auction: Auction) => void
+  onReveal: (auction: Auction) => void
   onSettle: (auction: Auction) => void
   onPay: (auction: Auction) => void
 }) {
   const open = auction.status === 'BiddingOpen'
   const closed = open && auction.endTime <= Date.now()
   const alreadyBid = !!address && auction.bids.some((b) => b.bidderAddress === address)
+  const chain = getMode() === 'chain'
+  const canReveal =
+    chain && closed && can(role, 'bid') && alreadyBid && !!address && Boolean(getSalt(auction.id, address))
 
   if (auction.status === 'Settled') {
-    if (auction.paid) return <span className="pill bg-brand/15 text-brand">Paid</span>
+    if (auction.paid) return <span className="pill bg-brand/15 text-brand">Pagada</span>
     if (can(role, 'pay')) {
       return <button className="btn-primary min-h-9 px-3 py-1 text-xs" disabled={busy} onClick={(event) => {
         event.stopPropagation()
         onPay(auction)
-      }}>Pay confidential</button>
+      }}>Pagar confidencial</button>
     }
-    return <span className="text-xs text-slate-500">Settled</span>
+    return <span className="text-xs text-slate-500">Liquidada</span>
   }
 
   if (closed) {
+    if (canReveal) {
+      return (
+        <button
+          className="btn-primary min-h-9 px-3 py-1 text-xs"
+          disabled={busy}
+          onClick={(event) => {
+            event.stopPropagation()
+            onReveal(auction)
+          }}
+        >
+          Revelar mi oferta
+        </button>
+      )
+    }
     if (can(role, 'settle')) {
       return <button className="btn-ghost min-h-9 px-3 py-1 text-xs" disabled={busy} onClick={(event) => {
         event.stopPropagation()
         onSettle(auction)
-      }}>Reveal and settle</button>
+      }}>Revelar y liquidar</button>
     }
-    return <span className="text-xs text-slate-500">Awaiting settlement</span>
+    return <span className="text-xs text-slate-500">Esperando liquidación</span>
   }
 
   if (can(role, 'bid')) {
     return <button className="btn-primary min-h-9 px-3 py-1 text-xs" onClick={(event) => {
       event.stopPropagation()
       onBid(auction)
-    }}>{alreadyBid ? 'Update bid' : 'Submit bid'}</button>
+    }}>{alreadyBid ? 'Actualizar oferta' : 'Ofertar'}</button>
   }
 
   return <span className="text-xs text-slate-500">{timeLeft(auction.endTime)}</span>
@@ -347,8 +382,8 @@ function InspectionPanel({
 }) {
   if (!auction) {
     return (
-      <RuledPanel title="Inspection">
-        <p className="text-sm leading-6 text-slate-500">Select an auction record to inspect proof, issuer and bid state.</p>
+      <RuledPanel title="Inspección">
+        <p className="text-sm leading-6 text-slate-500">Seleccioná una subasta para inspeccionar su prueba, emisor y estado de ofertas.</p>
       </RuledPanel>
     )
   }
@@ -356,7 +391,7 @@ function InspectionPanel({
   const hint = statusHint(auction, role, address)
 
   return (
-    <RuledPanel title="Inspection">
+    <RuledPanel title="Inspección">
       <div className="space-y-5">
         <div>
           <div className="font-mono text-xs text-brand">#{String(auction.id).padStart(3, '0')}</div>
@@ -379,16 +414,16 @@ function InspectionPanel({
         <PrivacyPanel auction={auction} />
         <div className="divide-y divide-edge border-y border-edge">
           <div className="flex justify-between gap-4 py-3 text-sm">
-            <span className="text-slate-500">Closes in</span>
+            <span className="text-slate-500">Cierra en</span>
             <span className="text-right font-mono text-xs">
-              {auction.status === 'BiddingOpen' ? <Countdown endTime={auction.endTime} /> : 'closed'}
+              {auction.status === 'BiddingOpen' ? <Countdown endTime={auction.endTime} /> : 'cerrada'}
             </span>
           </div>
           {[
-            ['Issuer', `${auction.issuer.slice(0, 8)}...${auction.issuer.slice(-4)}`],
-            ['Reserve commitment', auction.reservesCommitment],
-            ['Minimum bid', fmtUSD(auction.minBid)],
-            ['Sealed bids', String(auction.bids.length)],
+            ['Emisor', `${auction.issuer.slice(0, 8)}...${auction.issuer.slice(-4)}`],
+            ['Compromiso de reservas', auction.reservesCommitment],
+            ['Oferta mínima', fmtUSD(auction.minBid)],
+            ['Ofertas selladas', String(auction.bids.length)],
           ].map(([label, value]) => (
             <div key={label} className="flex justify-between gap-4 py-3 text-sm">
               <span className="text-slate-500">{label}</span>
@@ -398,12 +433,12 @@ function InspectionPanel({
         </div>
         {auction.status === 'Settled' && (
           <div>
-            <div className="micro-label mb-2">Public results (post-close)</div>
+            <div className="micro-label mb-2">Resultados públicos (post-cierre)</div>
             <BidResults auction={auction} />
           </div>
         )}
         <Link className="btn-ghost w-full" to={`/banco/${auction.issuer}`}>
-          View issuer profile
+          Ver perfil del emisor
         </Link>
       </div>
     </RuledPanel>

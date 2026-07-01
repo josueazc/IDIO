@@ -44,7 +44,7 @@ export default function BankAccess({ address, demo, onConnect, onDisconnect, onE
 
   return (
     <div className="border border-edge bg-[#050505] p-6">
-      <div className="micro-label mb-3">For banks</div>
+      <div className="micro-label mb-3">Para bancos</div>
       <h2 className="text-2xl font-semibold tracking-[-0.02em] text-white">
         Registrá tu banco para ofertar.
       </h2>
@@ -123,7 +123,7 @@ export default function BankAccess({ address, demo, onConnect, onDisconnect, onE
         </div>
 
         <div className="space-y-3 md:w-64">
-          <div className="micro-label">Wallet</div>
+          <div className="micro-label">Billetera</div>
           <WalletConnect address={address} demo={demo} onConnect={onConnect} onDisconnect={onDisconnect} />
           <p className="text-xs leading-5 text-slate-600">
             El ingreso (log in) es reconectar la misma wallet: si ya tenés perfil, entrás directo.

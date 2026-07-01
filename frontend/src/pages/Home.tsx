@@ -9,23 +9,13 @@ import { fmtUSD, timeLeft } from '../utils/format'
 const ROLE_CTA: Record<string, { to: string; label: string; description: string }> = {
   emisor: {
     to: '/create',
-    label: 'Issue auction',
-    description: 'Create a private auction after reserve preflight.',
+    label: 'Emitir subasta',
+    description: 'Publicá una emisión con prueba de reservas.',
   },
   oferente: {
     to: '/auctions',
-    label: 'Open registry',
-    description: 'Review auctions and submit sealed bids.',
-  },
-  auditor: {
-    to: '/audit',
-    label: 'Open audit desk',
-    description: 'Reveal evidence with a view key.',
-  },
-  regulador: {
-    to: '/compliance',
-    label: 'Open compliance',
-    description: 'Validate participants without seeing bid amounts.',
+    label: 'Ver subastas',
+    description: 'Enviá ofertas selladas en las subastas abiertas.',
   },
 }
 
@@ -41,36 +31,36 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Protocol overview"
-        title="Operational console for private institutional auctions."
-        description="Monitor auction state, proof status and role-specific next actions from one surface."
+        eyebrow="Resumen del protocolo"
+        title="Consola operativa para subastas institucionales privadas."
+        description="Monitoreá el estado de las subastas, el de las pruebas y las próximas acciones de tu rol desde una sola pantalla."
         actions={cta && <Link className="btn-primary" to={cta.to}>{cta.label}</Link>}
       />
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Metric label="Active auctions" value={String(open.length)} detail="Bidding window open" />
-        <Metric label="Settled auctions" value={String(settled.length)} detail="Winner selected" />
-        <Metric label="Settled volume" value={fmtUSD(volume)} detail="Demo or Testnet data" />
+        <Metric label="Subastas activas" value={String(open.length)} detail="Ventana de ofertas abierta" />
+        <Metric label="Subastas liquidadas" value={String(settled.length)} detail="Ganador seleccionado" />
+        <Metric label="Volumen liquidado" value={fmtUSD(volume)} detail="Datos de Demo o Testnet" />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <RuledPanel title="Recent auction activity">
+        <RuledPanel title="Actividad reciente de subastas">
           {auctions.length === 0 ? (
             <EmptyState
-              title="No auctions yet"
-              description="Create a demo auction or switch to Testnet once your wallet is connected."
-              action={role === 'emisor' && <Link className="btn-primary" to="/create">Issue auction</Link>}
+              title="Aún sin subastas"
+              description="Creá una subasta demo o cambiá a Testnet una vez conectada tu billetera."
+              action={role === 'emisor' && <Link className="btn-primary" to="/create">Emitir subasta</Link>}
             />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-sm">
                 <thead>
                   <tr className="border-b border-edge text-left">
-                    <th className="px-3 py-3 micro-label">Record</th>
-                    <th className="px-3 py-3 micro-label">Asset</th>
-                    <th className="px-3 py-3 micro-label">Status</th>
-                    <th className="px-3 py-3 micro-label text-right">Amount</th>
-                    <th className="px-3 py-3 micro-label text-right">Close</th>
+                    <th className="px-3 py-3 micro-label">Registro</th>
+                    <th className="px-3 py-3 micro-label">Activo</th>
+                    <th className="px-3 py-3 micro-label">Estado</th>
+                    <th className="px-3 py-3 micro-label text-right">Monto</th>
+                    <th className="px-3 py-3 micro-label text-right">Cierre</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -88,7 +78,7 @@ export default function Home() {
                       <td className="px-3 py-4"><StatusBadge status={auction.status} /></td>
                       <td className="px-3 py-4 text-right font-mono text-slate-200">{fmtUSD(auction.amount)}</td>
                       <td className="px-3 py-4 text-right text-slate-400">
-                        {auction.status === 'BiddingOpen' ? timeLeft(auction.endTime) : 'closed'}
+                        {auction.status === 'BiddingOpen' ? timeLeft(auction.endTime) : 'cerrada'}
                       </td>
                     </tr>
                   ))}
@@ -98,7 +88,7 @@ export default function Home() {
           )}
         </RuledPanel>
 
-        <RuledPanel title="Active authority">
+        <RuledPanel title="Rol activo">
           <div className="space-y-5">
             <div>
               <div className="text-xl font-semibold text-white">{roleInfo?.label}</div>
@@ -106,7 +96,7 @@ export default function Home() {
             </div>
             {cta && (
               <div className="border border-edge bg-white/[0.02] p-4">
-                <div className="micro-label">Next action</div>
+                <div className="micro-label">Próxima acción</div>
                 <div className="mt-3 font-semibold text-white">{cta.label}</div>
                 <p className="mt-1 text-sm leading-6 text-slate-500">{cta.description}</p>
                 <Link className="btn-primary mt-4 w-full" to={cta.to}>
@@ -115,7 +105,7 @@ export default function Home() {
               </div>
             )}
             <div className="space-y-3 border-t border-edge pt-4">
-              {['Reserve proof available before publish', 'Sealed bids remain private', 'Audit trail stays readable'].map((item) => (
+              {['Prueba de reservas disponible antes de publicar', 'Las ofertas selladas quedan privadas', 'El rastro de auditoría permanece legible'].map((item) => (
                 <div key={item} className="flex items-center gap-3 text-sm text-slate-300">
                   <span className="h-2 w-2 rounded-full bg-brand" />
                   {item}

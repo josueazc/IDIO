@@ -12,41 +12,41 @@ export default function BankProfile() {
   const settled = mine.filter((auction) => auction.status === 'Settled').length
   const volume = mine.reduce((sum, auction) => sum + (auction.winningAmount ?? 0), 0)
   const demand = mine.reduce((sum, auction) => sum + auction.bids.length, 0)
-  const short = address ? `${address.slice(0, 8)}...${address.slice(-4)}` : 'unknown'
+  const short = address ? `${address.slice(0, 8)}...${address.slice(-4)}` : 'desconocido'
 
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Issuer profile"
+        eyebrow="Perfil del emisor"
         title={short}
-        description="Read-only issuer record with auction history, settlement state and public commitments."
-        actions={<Link className="btn-ghost" to="/auctions">Back to registry</Link>}
+        description="Registro de solo lectura del emisor con historial de subastas, estado de liquidación y compromisos públicos."
+        actions={<Link className="btn-ghost" to="/auctions">Volver al registro</Link>}
       />
 
       <section className="grid gap-4 md:grid-cols-4">
-        <Metric label="Issued auctions" value={String(mine.length)} />
-        <Metric label="Open / settled" value={`${open} / ${settled}`} />
-        <Metric label="Settled volume" value={fmtUSD(volume)} />
-        <Metric label="Total demand (bids)" value={String(demand)} />
+        <Metric label="Subastas emitidas" value={String(mine.length)} />
+        <Metric label="Abiertas / liquidadas" value={`${open} / ${settled}`} />
+        <Metric label="Volumen liquidado" value={fmtUSD(volume)} />
+        <Metric label="Demanda total (ofertas)" value={String(demand)} />
       </section>
 
-      <RuledPanel title="Issuer address">
+      <RuledPanel title="Dirección del emisor">
         <div className="break-all border border-edge bg-white/[0.02] p-4 font-mono text-sm text-slate-300">{address}</div>
       </RuledPanel>
 
       {mine.length === 0 ? (
-        <EmptyState title="No issuer records" description="This address has not issued auctions in the current data source." />
+        <EmptyState title="Sin registros del emisor" description="Esta dirección no emitió subastas en la fuente de datos actual." />
       ) : (
-        <RuledPanel title="Issuance history">
+        <RuledPanel title="Historial de emisiones">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="border-b border-edge text-left">
-                  <th className="px-3 py-3 micro-label">Record</th>
-                  <th className="px-3 py-3 micro-label">Asset</th>
-                  <th className="px-3 py-3 micro-label">Status</th>
-                  <th className="px-3 py-3 micro-label text-right">Amount</th>
-                  <th className="px-3 py-3 micro-label text-right">Winner</th>
+                  <th className="px-3 py-3 micro-label">Registro</th>
+                  <th className="px-3 py-3 micro-label">Activo</th>
+                  <th className="px-3 py-3 micro-label">Estado</th>
+                  <th className="px-3 py-3 micro-label text-right">Monto</th>
+                  <th className="px-3 py-3 micro-label text-right">Ganador</th>
                 </tr>
               </thead>
               <tbody>
@@ -56,7 +56,7 @@ export default function BankProfile() {
                     <td className="px-3 py-4 font-semibold text-white">{auction.asset}</td>
                     <td className="px-3 py-4"><StatusBadge status={auction.status} /></td>
                     <td className="px-3 py-4 text-right font-mono text-slate-200">{fmtUSD(auction.amount)}</td>
-                    <td className="px-3 py-4 text-right font-mono text-xs text-slate-500">{auction.winnerName ?? 'sealed'}</td>
+                    <td className="px-3 py-4 text-right font-mono text-xs text-slate-500">{auction.winnerName ?? 'sellado'}</td>
                   </tr>
                 ))}
               </tbody>

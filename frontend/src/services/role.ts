@@ -1,24 +1,33 @@
-export type Role = 'emisor' | 'oferente' | 'auditor' | 'regulador'
+export type Role = 'emisor' | 'oferente'
 
 const KEY = 'idio.role'
 const listeners = new Set<() => void>()
 
 export const ROLES: { id: Role; label: string; desc: string; icon: string }[] = [
-  { id: 'emisor', label: 'Issuer', desc: 'Creates auctions and proves reserves', icon: 'ISS' },
-  { id: 'oferente', label: 'Bidder', desc: 'Submits sealed bids and pays if selected', icon: 'BID' },
-  { id: 'auditor', label: 'Auditor', desc: 'Verifies the process with a view key', icon: 'AUD' },
-  { id: 'regulador', label: 'Regulator', desc: 'Validates compliance and participant state', icon: 'REG' },
+  {
+    id: 'emisor',
+    label: 'Emisor',
+    desc: 'Publica subastas, audita, cumplimiento y cupos',
+    icon: 'EMI',
+  },
+  {
+    id: 'oferente',
+    label: 'Oferente',
+    desc: 'Banco que oferta en subastas selladas',
+    icon: 'OFE',
+  },
 ]
 
+/** El emisor concentra emisión + auditoría + regulación (una sola mesa). */
 export const ROLE_ROUTES: Record<Role, string[]> = {
-  emisor: ['/', '/roles', '/create', '/auctions', '/capacity', '/audit', '/activity'],
-  oferente: ['/', '/roles', '/auctions', '/activity'],
-  auditor: ['/', '/roles', '/audit', '/activity'],
-  regulador: ['/', '/roles', '/compliance', '/activity'],
+  emisor: ['/', '/account', '/create', '/auctions', '/capacity', '/audit', '/compliance', '/activity'],
+  oferente: ['/', '/account', '/auctions', '/activity'],
 }
 
 export function getRole(): Role | null {
-  return (localStorage.getItem(KEY) as Role) || null
+  const v = localStorage.getItem(KEY)
+  if (v === 'emisor' || v === 'oferente') return v
+  return null
 }
 
 export function setRole(role: Role | null) {
@@ -39,13 +48,11 @@ export function can(
   switch (action) {
     case 'create':
     case 'settle':
+    case 'audit':
+    case 'comply':
       return role === 'emisor'
     case 'bid':
     case 'pay':
       return role === 'oferente'
-    case 'audit':
-      return role === 'auditor'
-    case 'comply':
-      return role === 'regulador'
   }
 }

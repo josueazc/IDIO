@@ -11,20 +11,17 @@ interface Props {
   onDone: () => void
 }
 
-const BALANCE = 50_000_000
-
 export default function BidForm({ auction, bidderAddress, onClose, onDone }: Props) {
   const chain = getMode() === 'chain'
   const profile = getProfile(bidderAddress)
   const [amount, setAmount] = useState<number>(auction.minBid)
-  const [name, setName] = useState(profile?.name ?? 'Institutional bidder')
+  const [name, setName] = useState(profile?.name ?? 'Oferente institucional')
   const [phase, setPhase] = useState<'form' | 'proving' | 'done'>('form')
   const [error, setError] = useState<string | null>(null)
   const [proofInfo, setProofInfo] = useState<string | null>(null)
   const [capacity, setCapacity] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!chain) return
     let alive = true
     getCapacity(bidderAddress)
       .then((c) => alive && setCapacity(c))
@@ -32,10 +29,9 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
     return () => {
       alive = false
     }
-  }, [chain, bidderAddress])
+  }, [bidderAddress])
 
-  // En chain, el techo es el cupo registrado on-chain; en demo, el balance simulado.
-  const ceiling = chain ? (capacity ?? 0) : BALANCE
+  const ceiling = capacity ?? 0
   const registered = !chain || !!profile
   const checks = {
     balance: ceiling >= amount,
@@ -49,12 +45,12 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
     setError(null)
     setPhase('proving')
     try {
-      await submitBid(auction.id, name, bidderAddress, amount, BALANCE, auction.minBid)
+      await submitBid(auction.id, name, bidderAddress, amount, auction.minBid)
       if (lastProof) {
         setProofInfo(
           lastProof.proofOk
-            ? `ZK proof generated in ${Math.round(lastProof.ms)} ms`
-            : `Circuit constraints checked in ${Math.round(lastProof.ms)} ms`
+            ? `Prueba ZK generada en ${Math.round(lastProof.ms)} ms`
+            : `Restricciones del circuito verificadas en ${Math.round(lastProof.ms)} ms`
         )
       }
       setPhase('done')
@@ -75,20 +71,20 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
           <div className="font-mono text-xs text-brand">#{String(auction.id).padStart(3, '0')}</div>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">{auction.asset}</h2>
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            Submit a sealed commitment. The amount remains private until reveal.
+            Enviá un compromiso sellado. El monto permanece privado hasta el reveal.
           </p>
         </div>
 
         <div className="space-y-5 p-5">
           <div className="grid grid-cols-2 gap-3">
             <div className="border border-edge bg-white/[0.02] p-3">
-              <div className="micro-label">{chain ? 'Cupo on-chain' : 'Simulated balance'}</div>
+              <div className="micro-label">{chain ? 'Cupo on-chain' : 'Cupo demo'}</div>
               <div className="mt-2 font-mono text-sm text-white">
-                {chain ? (capacity === null ? 'consultando…' : fmtUSD(capacity)) : `${fmtUSD(BALANCE)} USDC`}
+                {capacity === null ? 'consultando…' : fmtUSD(capacity)}
               </div>
             </div>
             <div className="border border-edge bg-white/[0.02] p-3">
-              <div className="micro-label">Minimum bid</div>
+              <div className="micro-label">Oferta mínima</div>
               <div className="mt-2 font-mono text-sm text-white">{fmtUSD(auction.minBid)}</div>
             </div>
           </div>
@@ -99,19 +95,21 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
               registrarte (Sign up) para probar tu membresía y poder ofertar.
             </div>
           )}
-          {chain && capacity === 0 && (
+          {capacity === 0 && (
             <div className="border border-amber-400/30 bg-amber-500/10 p-3 text-sm text-amber-200">
-              No tenés cupo (capacity) asignado on-chain. Pedile al emisor/admin que registre tu cupo.
+              {chain
+                ? 'No tenés cupo (capacity) asignado on-chain. Pedile al emisor/admin que registre tu cupo.'
+                : 'No tenés cupo en la demo. El emisor puede asignarlo en Cupos.'}
             </div>
           )}
 
           <label className="block">
-            <span className="label">Bidder label</span>
+            <span className="label">Nombre del oferente</span>
             <input className="input" value={name} onChange={(event) => setName(event.target.value)} />
           </label>
 
           <label className="block">
-            <span className="label">Bid amount</span>
+            <span className="label">Monto de la oferta</span>
             <input
               type="number"
               className="input font-mono"
@@ -123,10 +121,10 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
           </label>
 
           <div className="grid gap-2 border-y border-edge py-4">
-            <Check ok={checks.balance} label={`${chain ? 'Cupo' : 'Balance'} >= ${fmtUSD(amount)}`} />
-            <Check ok={checks.min} label="Amount clears minimum bid" />
-            <Check ok={checks.credential} label={chain ? 'Banco registrado (perfil)' : 'Institutional credential accepted'} />
-            <Check ok={checks.whitelist} label={chain ? 'Membresía Covenant / allow-list' : 'Participant is allow-listed'} />
+            <Check ok={checks.balance} label={`Cupo >= ${fmtUSD(amount)}`} />
+            <Check ok={checks.min} label="El monto supera la oferta mínima" />
+            <Check ok={checks.credential} label={chain ? 'Banco registrado (perfil)' : 'Credencial institucional aceptada'} />
+            <Check ok={checks.whitelist} label={chain ? 'Membresía Covenant / allow-list' : 'Participante habilitado (allow-list)'} />
           </div>
 
           {error && <div className="border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
@@ -135,8 +133,8 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
             <div className="border border-edge bg-white/[0.02] p-4">
               <div className="text-sm text-slate-300">
                 {getMode() === 'chain'
-                  ? 'Generating proof and requesting wallet signature through Stellar Wallets Kit.'
-                  : 'Generating local demo proof.'}
+                  ? 'Generando la prueba y pidiendo la firma de la billetera vía Stellar Wallets Kit.'
+                  : 'Generando prueba demo local.'}
               </div>
               <div className="mt-3 h-1 overflow-hidden bg-white/10">
                 <div className="h-full w-2/3 animate-pulse bg-brand" />
@@ -146,11 +144,18 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
 
           {phase === 'done' && (
             <div className="border border-brand/40 bg-brand/10 p-4 text-sm text-brand">
-              Sealed bid registered.
+              Oferta sellada registrada.
               {proofInfo && <div className="mt-1 text-xs text-brand-soft">{proofInfo}</div>}
               {getMode() === 'chain' && lastBidSecret && (
                 <div className="mt-3 border border-edge bg-black/30 p-3 text-xs text-slate-300">
-                  Save this to reveal from another device:
+                  Guardá esto para revelar desde otro dispositivo:
+                  <div className="mt-1 break-all font-mono">amount={lastBidSecret.amount}</div>
+                  <div className="break-all font-mono">salt={lastBidSecret.salt}</div>
+                </div>
+              )}
+              {getMode() === 'demo' && lastBidSecret && (
+                <div className="mt-3 border border-edge bg-black/30 p-3 text-xs text-slate-300">
+                  Apertura guardada localmente para reveal en demo:
                   <div className="mt-1 break-all font-mono">amount={lastBidSecret.amount}</div>
                   <div className="break-all font-mono">salt={lastBidSecret.salt}</div>
                 </div>
@@ -161,10 +166,10 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
 
         <div className="flex gap-3 border-t border-edge p-5">
           <button className="btn-ghost flex-1" onClick={onClose} disabled={phase === 'proving'}>
-            Cancel
+            Cancelar
           </button>
           <button className="btn-primary flex-1" onClick={submit} disabled={!ready || phase !== 'form'}>
-            Confirm sealed bid
+            Confirmar oferta sellada
           </button>
         </div>
       </div>

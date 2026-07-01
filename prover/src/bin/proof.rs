@@ -26,8 +26,14 @@ fn main() {
             let min: u64 = args[2].parse().unwrap();
             let capacity: u64 = args[3].parse().unwrap();
             let bid: u64 = args[4].parse().unwrap();
+            let salt_hex = args.get(5).map(|s| s.as_str()).unwrap_or("0707070707070707070707070707070707070707070707070707070707070707");
+            let mut salt = [7u8; 32];
+            let sh = salt_hex.strip_prefix("0x").unwrap_or(salt_hex);
+            for i in 0..32 {
+                salt[i] = u8::from_str_radix(&sh[i * 2..i * 2 + 2], 16).unwrap();
+            }
             let (pk, _) = setup_eligibility();
-            let (a, b, c) = proof_to_hex(&prove_eligibility(&pk, min, capacity, bid, seed));
+            let (a, b, c) = proof_to_hex(&prove_eligibility(&pk, min, capacity, bid, salt, seed));
             println!("{}", json(&a, &b, &c));
         }
         _ => eprintln!("uso: proof reserves|eligibility <args>"),

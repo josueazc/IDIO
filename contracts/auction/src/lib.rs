@@ -405,15 +405,16 @@ impl AuctionContract {
             panic(&env, AuctionError::BiddingClosed);
         }
 
-        // Verifica la prueba de elegibilidad (binding anti-trampa): entradas
-        // públicas = [mínimo de la subasta, capacidad registrada del banco].
-        // La capacidad la provee el contrato desde su registro, así el banco no
-        // puede ofertar por encima de su cupo ni declarar fondos falsos.
+        // Verifica la prueba de elegibilidad: entradas públicas =
+        // [mínimo, capacidad registrada, commitment_fr] donde commitment_fr
+        // es el hash SHA-256(be16(oferta)‖salt) interpretado como Fr. El circuito
+        // prueba cupo ≥ oferta ≥ mínimo y que el compromiso corresponde a la oferta oculta.
         let capacity = Self::capacity(&env, &bidder);
         let vk: Groth16Vk = env.storage().instance().get(&DataKey::EligVk).unwrap();
         let mut inputs: Vec<BytesN<32>> = Vec::new(&env);
         inputs.push_back(Self::i128_to_fr_bytes(&env, auction.min_bid));
         inputs.push_back(Self::i128_to_fr_bytes(&env, capacity));
+        inputs.push_back(commitment.clone());
         if !Self::verifier(&env).verify_groth16(&vk, &eligibility_proof, &inputs) {
             panic(&env, AuctionError::InvalidEligibilityProof);
         }
@@ -1106,8 +1107,11 @@ mod test {
         to_proof(env, &prove_reserves(&z.reserves_pk, amount, 30, total, total, 7))
     }
 
-    fn elig_proof(env: &Env, z: &Env_, min: u64, capacity: u64, bid: u64) -> Groth16Proof {
-        to_proof(env, &prove_eligibility(&z.elig_pk, min, capacity, bid, 7))
+    fn elig_proof(env: &Env, z: &Env_, min: u64, capacity: u64, bid: u64, salt: &BytesN<32>) -> Groth16Proof {
+        to_proof(
+            env,
+            &prove_eligibility(&z.elig_pk, min, capacity, bid, salt.to_array(), 7),
+        )
     }
 
     fn setup_token(env: &Env, admin: &Address) -> Address {
@@ -1179,13 +1183,13 @@ mod test {
             &auction_id,
             &bank_a,
             &commit(&env, bid_a, &salt_a),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000, &salt_a),
         );
         client.submit_sealed_bid(
             &auction_id,
             &bank_b,
             &commit(&env, bid_b, &salt_b),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt_b),
         );
 
         env.ledger().with_mut(|l| l.timestamp += 200);
@@ -1232,13 +1236,13 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 12_000_000, &salt1),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000, &salt1),
         );
         client.submit_sealed_bid(
             &auction_id,
             &bank,
             &commit(&env, 18_000_000, &salt2),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 18_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 18_000_000, &salt2),
         );
 
         // Una sola oferta (reemplazada, no duplicada).
@@ -1285,7 +1289,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 12_000_000, &salt),
-            &elig_proof(&env, &z, 5_000_000, 50_000_000, 12_000_000),
+            &elig_proof(&env, &z, 5_000_000, 50_000_000, 12_000_000, &salt),
         );
     }
 
@@ -1320,7 +1324,7 @@ mod test {
             &auction_id,
             &outsider,
             &commit(&env, 12_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000, &salt),
         );
     }
 
@@ -1358,7 +1362,7 @@ mod test {
             &auction_id,
             &winner,
             &commit(&env, bid, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
         env.ledger().with_mut(|l| l.timestamp += 200);
         client.reveal_bid(&auction_id, &winner, &bid, &salt);
@@ -1417,7 +1421,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 15_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
         env.ledger().with_mut(|l| l.timestamp += 200);
         client.reveal_bid(&auction_id, &bank, &15_000_000i128, &salt);
@@ -1486,14 +1490,14 @@ mod test {
             &auction_id,
             &bank_a,
             &commit(&env, amount, &salt_a),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt_a),
         );
         env.ledger().with_mut(|l| l.timestamp += 1);
         client.submit_sealed_bid(
             &auction_id,
             &bank_b,
             &commit(&env, amount, &salt_b),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt_b),
         );
 
         env.ledger().with_mut(|l| l.timestamp += 200);
@@ -1520,7 +1524,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, bid, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
 
         // Muy pasado el reveal_deadline (end_time + 86400s).
@@ -1544,7 +1548,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, bid, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
         env.ledger().with_mut(|l| l.timestamp += 200);
         client.reveal_bid(&auction_id, &bank, &bid, &salt);
@@ -1572,7 +1576,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 15_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
         assert!(res.is_err());
         // Recancelar aborta.
@@ -1593,7 +1597,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 15_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
         assert!(client.try_cancel_auction(&auction_id).is_err());
     }
@@ -1618,7 +1622,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 15_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
         assert!(res.is_err());
 
@@ -1628,7 +1632,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 15_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
     }
 
@@ -1669,7 +1673,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 15_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
         // Inmediata (mismo timestamp, < 100s): rechazada.
         assert!(client
@@ -1677,7 +1681,7 @@ mod test {
                 &auction_id,
                 &bank,
                 &commit(&env, 15_000_000, &salt),
-                &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+                &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
             )
             .is_err());
         // Pasado el intervalo: permitida de nuevo.
@@ -1686,7 +1690,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 15_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
     }
 
@@ -1728,13 +1732,13 @@ mod test {
             &auction_id,
             &winner,
             &commit(&env, 15_000_000, &salt_w),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt_w),
         );
         client.submit_sealed_bid(
             &auction_id,
             &loser,
             &commit(&env, 12_000_000, &salt_l),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 12_000_000, &salt_l),
         );
         env.ledger().with_mut(|l| l.timestamp += 200);
         client.reveal_bid(&auction_id, &winner, &15_000_000, &salt_w);
@@ -1771,7 +1775,7 @@ mod test {
             &auction_id,
             &bank,
             &commit(&env, 15_000_000, &salt),
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
         env.ledger().with_mut(|l| l.timestamp += 200);
         client.reveal_bid(&auction_id, &bank, &15_000_000, &salt);
@@ -1839,7 +1843,7 @@ mod test {
         client.set_capacity(&bidder, &50_000_000);
 
         let salt = BytesN::random(&env);
-        let elig = elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000);
+        let elig = elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt);
 
         // Miembro válido (índice 0): oferta aceptada con prueba de membresía.
         let (mproof, _r, mnull) = prove_membership(&mpk, &members, 0, 77);
@@ -1861,7 +1865,7 @@ mod test {
                 &auction_id,
                 &bidder,
                 &commit(&env, 16_000_000, &salt),
-                &elig_proof(&env, &z, 10_000_000, 50_000_000, 16_000_000),
+                &elig_proof(&env, &z, 10_000_000, 50_000_000, 16_000_000, &salt),
                 &to_proof(&env, &oproof),
                 &BytesN::from_array(&env, &fr_be(&onull)),
             )
@@ -1874,7 +1878,7 @@ mod test {
                 &auction_id,
                 &bidder,
                 &commit(&env, 17_000_000, &salt),
-                &elig_proof(&env, &z, 10_000_000, 50_000_000, 17_000_000),
+                &elig_proof(&env, &z, 10_000_000, 50_000_000, 17_000_000, &salt),
                 &to_proof(&env, &mproof2),
                 &nf,
             )
@@ -1886,7 +1890,7 @@ mod test {
                 &auction_id,
                 &bidder,
                 &commit(&env, 18_000_000, &salt),
-                &elig_proof(&env, &z, 10_000_000, 50_000_000, 18_000_000),
+                &elig_proof(&env, &z, 10_000_000, 50_000_000, 18_000_000, &salt),
             )
             .is_err());
     }
@@ -1955,7 +1959,7 @@ mod test {
             &auction_id,
             &bank,
             &commitment,
-            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000, &salt),
         );
         assert_last_event(
             &env,

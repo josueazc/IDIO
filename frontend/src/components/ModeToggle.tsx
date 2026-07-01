@@ -10,17 +10,18 @@ export default function ModeToggle({ stacked = false }: { stacked?: boolean }) {
   }
 
   return (
-    <div className={stacked ? 'grid grid-cols-2 gap-1' : 'inline-flex items-center border border-edge bg-white/[0.03] p-1'}>
+    <div className={`segmented ${stacked ? 'grid w-full grid-cols-2' : ''}`}>
       {(['demo', 'chain'] as const).map((item) => (
         <button
           key={item}
+          type="button"
           onClick={() => choose(item)}
-          className={`min-h-9 px-3 text-xs font-semibold transition ${
-            mode === item
-              ? 'bg-brand text-ink'
-              : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-100'
-          }`}
-          title={item === 'chain' ? 'Read and write against Stellar Testnet contracts' : 'Use local demo data'}
+          className={`segmented-btn ${mode === item ? 'segmented-btn-active' : ''} ${stacked ? 'w-full' : ''}`}
+          title={
+            item === 'chain'
+              ? 'Leer y escribir contra los contratos en Stellar Testnet'
+              : 'Usar datos de demo locales'
+          }
         >
           {item === 'demo' ? 'Demo' : 'Testnet'}
         </button>

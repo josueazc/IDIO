@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Layout from './components/Layout'
-import RolePicker from './pages/RolePicker'
+import WalletGate from './components/WalletGate'
+import Welcome from './pages/Welcome'
+import AuthLogin from './pages/AuthLogin'
+import AuthSignUp from './pages/AuthSignUp'
 import Home from './pages/Home'
 import Auctions from './pages/Auctions'
 import CreateAuction from './pages/CreateAuction'
@@ -10,14 +13,18 @@ import Audit from './pages/Audit'
 import Activity from './pages/Activity'
 import Compliance from './pages/Compliance'
 import BankProfile from './pages/BankProfile'
-import RoleSwitch from './pages/RoleSwitch'
+import Account from './pages/Account'
 import { useRole } from './utils/useRole'
+import { useCurrentUser } from './utils/useCurrentUser'
 import { ROLE_ROUTES } from './services/role'
 import { getStoredWalletAddress } from './services/wallet'
+import { logOut } from './services/accounts'
+import { roleHome } from './utils/roleNav'
 
 export default function App() {
   const [address, setAddress] = useState<string | null>(() => getStoredWalletAddress())
   const [demo, setDemo] = useState(false)
+  const user = useCurrentUser()
   const role = useRole()
   const location = useLocation()
 
@@ -31,24 +38,44 @@ export default function App() {
     setDemo(false)
   }
 
-  // Sin rol: solo el selector de rol.
-  if (!role) {
-    return <RolePicker address={address} demo={demo} onConnect={onConnect} onDisconnect={onDisconnect} />
+  function onLogout() {
+    logOut()
+    onDisconnect()
   }
 
-  // Guarda: si la ruta no pertenece al rol, vuelve al inicio del rol.
-  // El perfil de banco (/banco/:address) es de solo lectura para todos.
+  const authProps = { address, demo, onConnect, onDisconnect }
+
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/" element={<Welcome />} />
+        <Route path="/login" element={<AuthLogin {...authProps} />} />
+        <Route path="/signup/emisor" element={<AuthSignUp role="emisor" {...authProps} />} />
+        <Route path="/signup/oferente" element={<AuthSignUp role="oferente" {...authProps} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    )
+  }
+
+  if (!address || address !== user.walletAddress) {
+    return <WalletGate {...authProps} />
+  }
+
+  if (!role) {
+    return <Navigate to="/login" replace />
+  }
+
   const allowed = ROLE_ROUTES[role]
   const isPublic = location.pathname.startsWith('/banco/')
   if (!isPublic && !allowed.includes(location.pathname)) {
-    return <Navigate to="/" replace />
+    return <Navigate to={roleHome(role)} replace />
   }
 
   return (
-    <Layout address={address} demo={demo} onConnect={onConnect} onDisconnect={onDisconnect}>
+    <Layout address={address} demo={demo} user={user} onConnect={onConnect} onDisconnect={onDisconnect} onLogout={onLogout}>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/roles" element={<RoleSwitch />} />
+        <Route path="/account" element={<Account address={address} onLogout={onLogout} />} />
         <Route path="/auctions" element={<Auctions address={address} />} />
         <Route path="/create" element={<CreateAuction address={address} />} />
         <Route path="/capacity" element={<AdminCapacity address={address} />} />
@@ -56,7 +83,9 @@ export default function App() {
         <Route path="/compliance" element={<Compliance />} />
         <Route path="/activity" element={<Activity address={address} />} />
         <Route path="/banco/:address" element={<BankProfile />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/signup/*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to={roleHome(role)} replace />} />
       </Routes>
     </Layout>
   )

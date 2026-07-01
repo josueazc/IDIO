@@ -126,7 +126,7 @@ export interface CreateAuctionInput {
   minBid: number
   currency: string
   description: string
-  durationHours: number
+  durationSeconds: number
 }
 
 export async function createAuction(input: CreateAuctionInput): Promise<Auction> {
@@ -146,7 +146,7 @@ export async function createAuction(input: CreateAuctionInput): Promise<Auction>
     reservesCommitment: commitment.slice(0, 8) + '…',
     bids: [],
     createdAt: now,
-    endTime: now + input.durationHours * HOUR,
+    endTime: now + input.durationSeconds * 1000,
   }
   save([auction, ...auctions])
   return auction

@@ -32,13 +32,13 @@ export default function RolePicker({ address, demo, onConnect, onDisconnect }: P
           <div className="flex items-center gap-3">
             <BrandLogo />
             <div>
-              <div className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Intent issuance layer</div>
+              <div className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Capa de emisión</div>
             </div>
           </div>
           <nav className="hidden items-center gap-6 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 md:flex">
-            <a className="transition hover:text-white" href="#protocol">Protocol</a>
+            <a className="transition hover:text-white" href="#protocol">Protocolo</a>
             <a className="transition hover:text-white" href="#roles">Roles</a>
-            <a className="transition hover:text-white" href="#wallet">Wallet</a>
+            <a className="transition hover:text-white" href="#wallet">Billetera</a>
           </nav>
           <div className="hidden items-center gap-2 lg:flex">
             <ModeToggle />
@@ -51,28 +51,29 @@ export default function RolePicker({ address, demo, onConnect, onDisconnect }: P
         <div className="flex flex-col justify-center">
           <div className="mb-6 flex w-fit items-center gap-3 border border-edge bg-white/[0.02] px-3 py-2 text-xs text-slate-400">
             <span className="h-2 w-2 rounded-full bg-brand" />
-            Stellar Testnet ready / demo mode available
+            Listo para Stellar Testnet / modo demo disponible
           </div>
           <h1 className="max-w-5xl text-5xl font-semibold leading-[0.95] tracking-[-0.045em] text-white sm:text-6xl lg:text-7xl">
-            Private auctions for institutions that still need public proof.
+            Subastas privadas para instituciones que igual necesitan prueba pública.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-400">
-            IDIO lets issuers publish reserve-backed auctions, bidders submit sealed offers, and auditors
-            verify the outcome without exposing private amounts before settlement.
+            IDIO permite a los emisores publicar subastas respaldadas por reservas, a los oferentes enviar
+            ofertas selladas, y a los auditores verificar el resultado sin exponer los montos privados antes
+            de la liquidación.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button className="btn-primary" onClick={() => pick('emisor')}>
-              Enter issuer desk
+              Entrar a la mesa del emisor
             </button>
             <a className="btn-ghost text-center" href="#banks">
-              Sign up / log in as a bank
+              Registrarse / ingresar como banco
             </a>
           </div>
           <div className="mt-8 grid max-w-2xl grid-cols-3 border border-edge">
             {[
-              ['Proof', 'reserve predicate'],
-              ['Bid', 'sealed commitment'],
-              ['Settle', 'auditable winner'],
+              ['Prueba', 'predicado de reservas'],
+              ['Oferta', 'compromiso sellado'],
+              ['Liquidar', 'ganador auditable'],
             ].map(([label, text]) => (
               <div key={label} className="border-r border-edge p-4 last:border-r-0">
                 <div className="text-[10px] uppercase tracking-[0.22em] text-slate-600">{label}</div>
@@ -88,10 +89,10 @@ export default function RolePicker({ address, demo, onConnect, onDisconnect }: P
       <section id="protocol" className="border-y border-edge">
         <div className="mx-auto grid max-w-7xl gap-0 px-4 py-10 sm:px-6 lg:grid-cols-4 lg:px-8">
           {[
-            ['01', 'Issue', 'The issuer defines asset terms and generates proof of reserves.'],
-            ['02', 'Commit', 'Bidders submit sealed commitments instead of public amounts.'],
-            ['03', 'Reveal', 'Eligible bids are opened when settlement rules allow it.'],
-            ['04', 'Audit', 'Auditors inspect evidence and produce a signed report.'],
+            ['01', 'Emitir', 'El emisor define los términos del activo y genera la prueba de reservas.'],
+            ['02', 'Comprometer', 'Los oferentes envían compromisos sellados en vez de montos públicos.'],
+            ['03', 'Revelar', 'Las ofertas elegibles se abren cuando las reglas de liquidación lo permiten.'],
+            ['04', 'Auditar', 'Los auditores inspeccionan la evidencia y producen un informe firmado.'],
           ].map(([step, title, text]) => (
             <article key={step} className="border-b border-edge p-5 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0">
               <div className="font-mono text-xs text-white">{step}</div>
@@ -105,11 +106,11 @@ export default function RolePicker({ address, demo, onConnect, onDisconnect }: P
       <section id="roles" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="micro-label mb-3">Choose operating authority</div>
-            <h2 className="text-3xl font-semibold tracking-[-0.03em]">One protocol, four controlled desks.</h2>
+            <div className="micro-label mb-3">Elegí tu rol de operación</div>
+            <h2 className="text-3xl font-semibold tracking-[-0.03em]">Un protocolo, cuatro mesas controladas.</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-slate-500">
-            Each role enters a different frontend surface. The backend permissions and data model remain unchanged.
+            Cada rol entra a una interfaz distinta. Los permisos y el modelo de datos del backend no cambian.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -126,7 +127,7 @@ export default function RolePicker({ address, demo, onConnect, onDisconnect }: P
               <h3 className="mt-10 text-xl font-semibold text-white">{role.label}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">{role.desc}</p>
               <div className="mt-6 text-sm font-semibold text-brand opacity-0 transition group-hover:opacity-100">
-                Enter desk
+                Entrar
               </div>
             </button>
           ))}
@@ -146,10 +147,10 @@ export default function RolePicker({ address, demo, onConnect, onDisconnect }: P
       <section id="wallet" className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
         <div className="grid gap-6 border border-edge bg-[#050505] p-5 md:grid-cols-[1fr_auto] md:items-center">
           <div>
-            <div className="micro-label mb-3">Wallet access</div>
-            <h2 className="text-2xl font-semibold tracking-[-0.02em]">Connect with Stellar Wallets Kit.</h2>
+            <div className="micro-label mb-3">Acceso con billetera</div>
+            <h2 className="text-2xl font-semibold tracking-[-0.02em]">Conectá con Stellar Wallets Kit.</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              Wallet artwork is served from stable local assets, while signing still uses the real Stellar wallet module selected in the kit.
+              Los íconos de las billeteras se sirven desde assets locales estables, mientras que la firma sigue usando el módulo real de billetera Stellar elegido en el kit.
             </p>
           </div>
           <div className="space-y-3">
@@ -175,25 +176,25 @@ function LandingMockup() {
       </div>
       <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_220px]">
         <div>
-          <div className="micro-label">Issuer desk / new record</div>
-          <div className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-white">Issue a private auction.</div>
+          <div className="micro-label">Mesa del emisor / nuevo registro</div>
+          <div className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-white">Emitir una subasta privada.</div>
           <div className="mt-3 max-w-md text-sm leading-6 text-slate-500">
-            A proof of reserves is generated before this record is published to the protocol.
+            Se genera una prueba de reservas antes de publicar este registro en el protocolo.
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {['Sovereign Notes', 'Sovereign bond', '500000000', 'USDC'].map((value, index) => (
+            {['Sovereign Notes', 'Bono soberano', '500000000', 'USDC'].map((value, index) => (
               <div key={value} className="border border-edge bg-[#111] p-4">
-                <div className="micro-label">{['Asset', 'Asset class', 'Issue amount', 'Currency'][index]}</div>
+                <div className="micro-label">{['Activo', 'Clase de activo', 'Monto emitido', 'Moneda'][index]}</div>
                 <div className="mt-3 text-sm font-semibold text-white">{value}</div>
               </div>
             ))}
           </div>
         </div>
         <div className="border border-edge">
-          <div className="border-b border-edge p-4 micro-label">Proof preflight</div>
-          {['Stellar Testnet', 'Total coverage', 'Groth16 / BN254', 'After validation'].map((item) => (
+          <div className="border-b border-edge p-4 micro-label">Verificación previa</div>
+          {['Stellar Testnet', 'Cobertura total', 'Groth16 / BN254', 'Tras validar'].map((item) => (
             <div key={item} className="flex justify-between gap-4 border-b border-edge p-4 text-xs last:border-b-0">
-              <span className="text-slate-600">state</span>
+              <span className="text-slate-600">estado</span>
               <span className="font-mono uppercase tracking-[0.16em] text-brand">{item}</span>
             </div>
           ))}

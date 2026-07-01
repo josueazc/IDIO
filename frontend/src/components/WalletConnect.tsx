@@ -20,9 +20,7 @@ export default function WalletConnect({ address, demo, compact = false, onConnec
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const offDisconnect = onWalletDisconnect(() => {
-      onDisconnect?.()
-    })
+    const offDisconnect = onWalletDisconnect(() => onDisconnect?.())
     const offAddress = onWalletAddressChange((next) => {
       if (next) onConnect(next, false)
     })
@@ -39,7 +37,7 @@ export default function WalletConnect({ address, demo, compact = false, onConnec
       const wallet = await connectWallet()
       onConnect(wallet.address, wallet.demo)
     } catch (e) {
-      setError((e as Error).message || 'Wallet connection failed')
+      setError((e as Error).message || 'No se pudo conectar la wallet')
     } finally {
       setBusy(false)
     }
@@ -52,7 +50,7 @@ export default function WalletConnect({ address, demo, compact = false, onConnec
       if (!demo) await disconnectWallet()
       onDisconnect?.()
     } catch (e) {
-      setError((e as Error).message || 'Wallet disconnect failed')
+      setError((e as Error).message || 'No se pudo desconectar')
     } finally {
       setBusy(false)
     }
@@ -61,32 +59,48 @@ export default function WalletConnect({ address, demo, compact = false, onConnec
   if (address) {
     return (
       <div className={compact ? 'space-y-2' : 'flex flex-wrap items-center gap-2'}>
-        <span className="pill border border-edge bg-white/[0.03] font-mono text-slate-200" aria-live="polite">
-          <span className={`h-2 w-2 rounded-full ${demo ? 'bg-gold' : 'bg-brand'}`} />
-          {demo ? 'demo session' : 'wallet'} {shortAddress(address)}
+        <span className="pill w-full justify-between bg-raised font-mono text-zinc-200 sm:w-auto" aria-live="polite">
+          <span className="flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${demo ? 'bg-gold' : 'bg-brand'}`} />
+            {shortAddress(address)}
+          </span>
+          <span className="text-[10px] uppercase tracking-wide text-zinc-500">{demo ? 'demo' : 'live'}</span>
         </span>
-        <button className="btn-ghost min-h-9 px-3 py-1.5 text-xs" onClick={handleDisconnect} disabled={busy}>
-          Disconnect
+        <button type="button" className="btn-ghost btn-sm w-full sm:w-auto" onClick={handleDisconnect} disabled={busy}>
+          Desconectar
         </button>
-        {error && <div className="text-xs text-red-300" role="status">{error}</div>}
+        {error && (
+          <div className="text-xs text-red-300" role="status">
+            {error}
+          </div>
+        )}
       </div>
     )
   }
 
   return (
     <div className={compact ? 'space-y-2' : 'flex flex-wrap items-center gap-2'}>
-      <button className="btn-primary min-h-10 px-3 py-2 text-xs" onClick={handleConnect} disabled={busy}>
+      <button
+        type="button"
+        className={`btn-primary ${compact ? 'w-full' : ''} btn-sm`}
+        onClick={handleConnect}
+        disabled={busy}
+      >
         <WalletIcon />
-        {busy ? 'Opening wallet' : 'Connect wallet'}
+        {busy ? 'Conectando…' : 'Conectar wallet'}
       </button>
-      {error && <div className="max-w-[220px] text-xs text-red-300" role="status">{error}</div>}
+      {error && (
+        <div className="text-xs text-red-300" role="status">
+          {error}
+        </div>
+      )}
     </div>
   )
 }
 
 function WalletIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M4.5 7.5h15A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V6.75A2.25 2.25 0 0 1 5.25 4.5H18"
         stroke="currentColor"

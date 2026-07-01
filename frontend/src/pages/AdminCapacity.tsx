@@ -112,7 +112,7 @@ export default function AdminCapacity({ address }: Props) {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Issuer / admin desk"
+        eyebrow="Mesa de emisor / admin"
         title="Cupos de participación (capacity)."
         description="Registrá on-chain el cupo máximo de oferta de cada banco. La prueba ZK de elegibilidad ata la oferta a este cupo: nadie puede ofertar por encima de lo asignado."
       />

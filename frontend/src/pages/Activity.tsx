@@ -24,7 +24,7 @@ export default function Activity({ address }: Props) {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="My activity"
+        eyebrow="Mi actividad"
         title="Tus subastas, ofertas y aperturas."
         description={`Cuenta: ${short}. Solo lectura.`}
       />
@@ -83,10 +83,10 @@ function Table({ rows }: { rows: ReturnType<typeof useAuctions>['auctions'] }) {
       <table className="w-full min-w-[560px] text-sm">
         <thead>
           <tr className="border-b border-edge text-left">
-            <th className="px-3 py-3 micro-label">Record</th>
-            <th className="px-3 py-3 micro-label">Asset</th>
-            <th className="px-3 py-3 micro-label">Status</th>
-            <th className="px-3 py-3 micro-label text-right">Amount</th>
+            <th className="px-3 py-3 micro-label">Registro</th>
+            <th className="px-3 py-3 micro-label">Activo</th>
+            <th className="px-3 py-3 micro-label">Estado</th>
+            <th className="px-3 py-3 micro-label text-right">Monto</th>
           </tr>
         </thead>
         <tbody>

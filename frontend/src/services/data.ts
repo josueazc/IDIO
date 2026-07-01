@@ -9,7 +9,7 @@
 import { chain } from './contracts'
 import * as demo from './store'
 import { commitBid, generateReservesProof, randomSalt } from './proofs'
-import { proveSealedBid, type ZkResult } from './noir'
+import type { ZkResult } from './noir'
 import { proveEligibility, proveReserves, proveMembership } from './groth'
 import { getProfile, covenantSecretsCsv } from './auth'
 import type { Auction } from '../types'
@@ -23,6 +23,8 @@ export let lastBidSecret: { amount: number; salt: string } | null = null
 export type Mode = 'demo' | 'chain'
 const MODE_KEY = 'idio.mode'
 const SALT_KEY = 'idio.salts'
+const DEMO_CAPACITY_KEY = 'idio.demo.capacity'
+const DEFAULT_DEMO_CAPACITY = 50_000_000
 
 const listeners = new Set<() => void>()
 
@@ -89,7 +91,8 @@ export interface CreateInput {
   minBid: number
   currency: string
   description: string
-  durationHours: number
+  /** Duración de la ventana de ofertas en segundos. */
+  durationSeconds: number
 }
 
 export async function createAuction(input: CreateInput, wallet: string): Promise<void> {
@@ -103,7 +106,7 @@ export async function createAuction(input: CreateInput, wallet: string): Promise
       input.asset,
       input.amount,
       input.minBid,
-      input.durationHours * 3600,
+      input.durationSeconds,
       commitment,
       proof
     )
@@ -113,32 +116,49 @@ export async function createAuction(input: CreateInput, wallet: string): Promise
   }
 }
 
+function getDemoCapacity(address: string): number {
+  const all = JSON.parse(localStorage.getItem(DEMO_CAPACITY_KEY) || '{}') as Record<string, number>
+  return all[address] ?? DEFAULT_DEMO_CAPACITY
+}
+
+function setDemoCapacity(address: string, capacity: number) {
+  const all = JSON.parse(localStorage.getItem(DEMO_CAPACITY_KEY) || '{}') as Record<string, number>
+  all[address] = capacity
+  localStorage.setItem(DEMO_CAPACITY_KEY, JSON.stringify(all))
+}
+
 export async function submitBid(
   auctionId: number,
   name: string,
   address: string,
   amount: number,
-  balance: number,
   minBid: number
 ): Promise<void> {
   // 1. Compromiso y salt (consistentes con contrato y circuito).
   const salt = randomSalt()
   const commitment = await commitBid(amount, salt)
 
+  const capacity =
+    getMode() === 'chain' ? await chain.getCapacity(address) : getDemoCapacity(address)
+  if (capacity <= 0) {
+    throw new Error(
+      getMode() === 'chain'
+        ? 'Este banco no tiene cupo (capacity) registrado on-chain por el emisor/admin.'
+        : 'Este banco no tiene cupo asignado en la demo. Pedile al emisor que registre tu cupo.'
+    )
+  }
+  if (amount > capacity) {
+    throw new Error(`La oferta excede el cupo registrado (${capacity}).`)
+  }
+
+  // Prueba Groth16 de elegibilidad (capacidad ≥ oferta ≥ mínimo + binding al
+  // compromiso). En chain se verifica on-chain; en demo valida las mismas reglas.
+  const proof = await proveEligibility(minBid, capacity, amount, salt)
+  lastProof = { proofHex: proof.a, witnessOk: true, proofOk: true, ms: 0 }
+  saveSalt(auctionId, address, amount, salt)
+  lastBidSecret = { amount, salt }
+
   if (getMode() === 'chain') {
-    // Prueba Groth16 de elegibilidad (capacidad ≥ oferta ≥ mínimo), verificada
-    // on-chain por el contrato vía cross-contract al verifier (puente real).
-    // La capacidad es el cupo registrado on-chain para este banco: es entrada
-    // pública, así una oferta por encima del cupo no genera prueba válida.
-    const capacity = await chain.getCapacity(address)
-    if (capacity <= 0) {
-      throw new Error('Este banco no tiene cupo (capacity) registrado on-chain por el emisor/admin.')
-    }
-    if (amount > capacity) {
-      throw new Error(`La oferta excede el cupo registrado (${capacity}).`)
-    }
-    const proof = await proveEligibility(minBid, capacity, amount)
-    lastProof = { proofHex: proof.a, witnessOk: true, proofOk: true, ms: 0 }
 
     // Gate del bid: si el Covenant está activo on-chain (gate ZK + raíz de
     // membresía configurada), se exige una prueba ZK de pertenencia + nullifier
@@ -169,11 +189,7 @@ export async function submitBid(
     } else {
       await chain.submitSealedBid(auctionId, address, commitment, proof)
     }
-    saveSalt(auctionId, address, amount, salt)
-    lastBidSecret = { amount, salt }
   } else {
-    // Demo: prueba Noir UltraHonk (verificable off-chain en el navegador).
-    lastProof = await proveSealedBid(amount, balance, minBid, salt, commitment)
     await demo.submitBidWithCommitment(auctionId, name, address, amount, commitment)
   }
   emit()
@@ -225,18 +241,19 @@ export async function payWinner(auctionId: number, winner: string, amount: numbe
   }
 }
 
-/** Cupo (capacidad) registrado on-chain para un banco. 0 en demo. */
+/** Cupo (capacidad) del banco: on-chain en testnet, localStorage en demo. */
 export async function getCapacity(who: string): Promise<number> {
   if (getMode() === 'chain') return chain.getCapacity(who)
-  return 0
+  return getDemoCapacity(who)
 }
 
-/** Registra el cupo de un banco on-chain (firmado por el admin/emisor). */
+/** Registra el cupo de un banco (on-chain o demo localStorage). */
 export async function setCapacity(admin: string, who: string, capacity: number): Promise<void> {
-  if (getMode() !== 'chain') {
-    throw new Error('Registrar cupos on-chain requiere el modo Testnet (chain).')
+  if (getMode() === 'chain') {
+    await chain.setCapacity(admin, who, capacity)
+  } else {
+    setDemoCapacity(who, capacity)
   }
-  await chain.setCapacity(admin, who, capacity)
   emit()
 }
 

@@ -16,16 +16,16 @@ export default function Compliance() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Compliance desk"
-        title="Participant eligibility without bid exposure."
-        description="Regulators inspect allow-list, AML and jurisdiction state while bid amounts remain sealed."
+        eyebrow="Cumplimiento (emisor)"
+        title="Participantes autorizados sin ver las ofertas."
+        description="Revisá allow-list, Covenant y estado de la subasta mientras los montos siguen sellados."
       />
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <RuledPanel title="Auction scope">
+          <RuledPanel title="Alcance de la subasta">
             <label className="block max-w-lg">
-              <span className="label">Auction</span>
+              <span className="label">Subasta</span>
               <select className="input" value={selected ?? ''} onChange={(event) => setSelected(Number(event.target.value))}>
                 {auctions.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -37,28 +37,28 @@ export default function Compliance() {
           </RuledPanel>
 
           {!auction ? (
-            <EmptyState title="No compliance target" description="Create or select an auction to review its participant set." />
+            <EmptyState title="Sin subasta para revisar" description="Creá o seleccioná una subasta para revisar su conjunto de participantes." />
           ) : (
-            <RuledPanel title="Participants">
+            <RuledPanel title="Participantes">
               {auction.bids.length === 0 ? (
-                <EmptyState title="No participants yet" description="Compliance checks appear once sealed bids are submitted." />
+                <EmptyState title="Aún sin participantes" description="Los chequeos de cumplimiento aparecen cuando se envían ofertas selladas." />
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[760px] text-sm">
                     <thead>
                       <tr className="border-b border-edge text-left">
-                        <th className="px-3 py-3 micro-label">Participant</th>
+                        <th className="px-3 py-3 micro-label">Participante</th>
                         <th className="px-3 py-3 micro-label">ASP</th>
                         <th className="px-3 py-3 micro-label">OFAC</th>
                         <th className="px-3 py-3 micro-label">FATF</th>
-                        <th className="px-3 py-3 micro-label text-right">State</th>
+                        <th className="px-3 py-3 micro-label text-right">Estado</th>
                       </tr>
                     </thead>
                     <tbody>
                       {auction.bids.map((bid, index) => (
                         <tr key={`${bid.bidderAddress}-${index}`} className="data-row">
                           <td className="px-3 py-4">
-                            <div className="font-semibold text-white">{bid.bidderName || 'Participant'}</div>
+                            <div className="font-semibold text-white">{bid.bidderName || 'Participante'}</div>
                             <div className="mt-1 font-mono text-[11px] text-slate-600">
                               {bid.bidderAddress.slice(0, 12)}...{bid.bidderAddress.slice(-4)}
                             </div>
@@ -67,7 +67,7 @@ export default function Compliance() {
                           <td className="px-3 py-4"><Check ok /></td>
                           <td className="px-3 py-4"><Check ok /></td>
                           <td className="px-3 py-4 text-right">
-                            <span className="pill bg-brand/15 text-brand">approved</span>
+                            <span className="pill bg-brand/15 text-brand">aprobado</span>
                           </td>
                         </tr>
                       ))}
@@ -79,7 +79,7 @@ export default function Compliance() {
           )}
         </div>
 
-        <RuledPanel title="Regulatory summary">
+        <RuledPanel title="Resumen regulatorio">
           {auction ? (
             <div className="space-y-5">
               <div>
@@ -88,10 +88,10 @@ export default function Compliance() {
               </div>
               <div className="divide-y divide-edge border-y border-edge">
                 {[
-                  ['Participants', String(auction.bids.length)],
-                  ['Allow-list', 'ASP active'],
-                  ['Bid visibility', 'sealed'],
-                  ['Jurisdiction', 'permitted'],
+                  ['Participantes', String(auction.bids.length)],
+                  ['Allow-list', 'ASP activo'],
+                  ['Visibilidad de ofertas', 'selladas'],
+                  ['Jurisdicción', 'permitida'],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-4 py-3 text-sm">
                     <span className="text-slate-500">{label}</span>
@@ -100,12 +100,12 @@ export default function Compliance() {
                 ))}
               </div>
               <div className="border border-brand/40 bg-brand/10 p-4">
-                <div className="micro-label text-brand">State</div>
-                <div className="mt-2 text-2xl font-semibold text-brand">Approved</div>
+                <div className="micro-label text-brand">Estado</div>
+                <div className="mt-2 text-2xl font-semibold text-brand">Aprobado</div>
               </div>
             </div>
           ) : (
-            <p className="text-sm leading-6 text-slate-500">No auction selected.</p>
+            <p className="text-sm leading-6 text-slate-500">Ninguna subasta seleccionada.</p>
           )}
         </RuledPanel>
       </section>
@@ -116,7 +116,7 @@ export default function Compliance() {
 function Check({ ok }: { ok: boolean }) {
   return (
     <span className={`pill ${ok ? 'bg-brand/15 text-brand' : 'bg-red-500/10 text-red-200'}`}>
-      {ok ? 'clear' : 'blocked'}
+      {ok ? 'ok' : 'bloqueado'}
     </span>
   )
 }

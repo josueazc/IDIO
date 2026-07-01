@@ -7,11 +7,14 @@ export function fmtUSD(n: number): string {
 export function timeLeft(endTime: number): string {
   const ms = endTime - Date.now()
   if (ms <= 0) return 'Cerrada'
-  const h = Math.floor(ms / 3_600_000)
+  const d = Math.floor(ms / 86_400_000)
+  const h = Math.floor((ms % 86_400_000) / 3_600_000)
   const m = Math.floor((ms % 3_600_000) / 60_000)
-  if (h >= 24) return `${Math.floor(h / 24)}d ${h % 24}h`
-  if (h > 0) return `${h}h ${m}m`
-  return `${m}m`
+  const s = Math.floor((ms % 60_000) / 1000)
+  if (d >= 1) return `${d}d ${h}h`
+  if (h >= 1) return `${h}h ${m}m`
+  if (m >= 1) return `${m}m ${s}s`
+  return `${s}s`
 }
 
 import type { Auction } from '../types'

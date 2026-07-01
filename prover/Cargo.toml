@@ -24,5 +24,8 @@ ark-crypto-primitives = { version = "0.5", features = ["crh", "merkle_tree", "sp
 wasm-bindgen = "0.2"
 getrandom = { version = "0.2", features = ["js"] }
 
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
 [features]
 default = []

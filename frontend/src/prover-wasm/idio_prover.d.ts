@@ -5,7 +5,7 @@
  * Prueba de elegibilidad. Devuelve la prueba como hex de 256 bytes
  * (`a‖b‖c`) lista para construir el `Groth16Proof` del contrato.
  */
-export function prove_eligibility_hex(min_bid: bigint, capacity: bigint, bid: bigint, seed: bigint): string;
+export function prove_eligibility_hex(min_bid: bigint, capacity: bigint, bid: bigint, salt_hex: string, seed: bigint): string;
 
 /**
  * Covenant: prueba de pertenencia (Merkle + nullifier). `secrets_csv` es la
@@ -24,13 +24,13 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
-    readonly prove_eligibility_hex: (a: bigint, b: bigint, c: bigint, d: bigint) => [number, number];
+    readonly prove_eligibility_hex: (a: bigint, b: bigint, c: bigint, d: number, e: number, f: bigint) => [number, number];
     readonly prove_membership_hex: (a: number, b: number, c: number, d: bigint) => [number, number];
     readonly prove_reserves_hex: (a: bigint, b: bigint, c: bigint, d: bigint, e: bigint) => [number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
-    readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;
     readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+    readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_start: () => void;
 }
 

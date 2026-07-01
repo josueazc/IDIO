@@ -5,42 +5,43 @@ import WalletConnect from './WalletConnect'
 import ModeToggle from './ModeToggle'
 import BrandLogo from './BrandLogo'
 import { useRole } from '../utils/useRole'
-import { ROLES, ROLE_ROUTES, setRole, type Role } from '../services/role'
+import { ROLES, ROLE_ROUTES, type Role } from '../services/role'
 import { getProfile, subscribeAuth } from '../services/auth'
+import type { UserAccount } from '../services/accounts'
 
 interface Props {
   children: ReactNode
   address: string | null
   demo: boolean
+  user: UserAccount
   onConnect: (address: string, demo: boolean) => void
   onDisconnect: () => void
+  onLogout: () => void
 }
 
 const LABELS: Record<string, string> = {
-  '/': 'Protocol overview',
-  '/roles': 'Authority switch',
-  '/auctions': 'Auction registry',
-  '/create': 'Issue auction',
-  '/capacity': 'Capacity desk',
-  '/audit': 'Audit desk',
-  '/compliance': 'Compliance desk',
-  '/activity': 'My activity',
+  '/': 'Inicio',
+  '/account': 'Mi cuenta',
+  '/auctions': 'Subastas',
+  '/create': 'Nueva emisión',
+  '/capacity': 'Cupos',
+  '/audit': 'Auditoría',
+  '/compliance': 'Cumplimiento',
+  '/activity': 'Actividad',
 }
 
-export default function Layout({ children, address, demo, onConnect, onDisconnect }: Props) {
+export default function Layout({ children, address, demo, user, onConnect, onDisconnect, onLogout }: Props) {
   const role = useRole()
   const location = useLocation()
   const [open, setOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement | null>(null)
 
   const nav = useMemo(
-    () => (role ? ROLE_ROUTES[role].map((to, i) => ({ to, label: LABELS[to], end: to === '/', index: i + 1 })) : []),
+    () => (role ? ROLE_ROUTES[role].map((to) => ({ to, label: LABELS[to], end: to === '/' })) : []),
     [role]
   )
 
-  useEffect(() => {
-    setOpen(false)
-  }, [location.pathname])
+  useEffect(() => setOpen(false), [location.pathname])
 
   useEffect(() => {
     if (!open) return
@@ -62,30 +63,32 @@ export default function Layout({ children, address, demo, onConnect, onDisconnec
   }, [open])
 
   return (
-    <div className="min-h-screen bg-ink text-slate-100">
-      <MobileHeader open={open} setOpen={setOpen} buttonRef={menuButtonRef} role={role} />
+    <div className="min-h-screen text-zinc-100">
+      <MobileHeader open={open} setOpen={setOpen} buttonRef={menuButtonRef} user={user} role={role} />
 
       <div className="layout-grid min-h-screen">
-        <aside className="sticky top-0 hidden h-screen border-r border-edge bg-[#080a08] lg:block">
+        <aside className="sticky top-0 hidden h-screen overflow-y-auto lg:block">
           <SidebarContent
             address={address}
             demo={demo}
             nav={nav}
             role={role}
+            user={user}
             onConnect={onConnect}
             onDisconnect={onDisconnect}
+            onLogout={onLogout}
           />
         </aside>
 
-        <main className="min-w-0 px-4 pb-12 pt-20 sm:px-6 lg:px-10 lg:pt-10">
-          <div key={location.pathname} className="page-surface mx-auto max-w-[1320px]">
+        <main className="min-w-0 px-4 pb-16 pt-[4.75rem] sm:px-8 lg:px-12 lg:pb-20 lg:pt-12">
+          <div key={location.pathname} className="page-surface mx-auto max-w-[1200px]">
             {children}
           </div>
         </main>
       </div>
 
       <div
-        className={`fixed inset-0 z-40 bg-black/60 transition-opacity lg:hidden ${
+        className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity lg:hidden ${
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={() => setOpen(false)}
@@ -93,10 +96,9 @@ export default function Layout({ children, address, demo, onConnect, onDisconnec
       />
 
       <aside
-        className={`mobile-sidebar fixed inset-y-0 left-0 z-50 overflow-y-auto border-r border-edge bg-[#080a08] lg:hidden ${
-          open ? 'is-open translate-x-0' : '-translate-x-full'
+        className={`mobile-sidebar fixed inset-y-0 left-0 z-50 overflow-y-auto border-r border-edge bg-surface lg:hidden ${
+          open ? 'is-open' : ''
         }`}
-        style={{ transform: open ? 'translateX(0)' : 'translateX(-100%)' }}
         data-open={open}
         aria-hidden={!open}
       >
@@ -105,10 +107,12 @@ export default function Layout({ children, address, demo, onConnect, onDisconnec
           demo={demo}
           nav={nav}
           role={role}
+          user={user}
           mobile
           menuOpen={open}
           onConnect={onConnect}
           onDisconnect={onDisconnect}
+          onLogout={onLogout}
         />
       </aside>
     </div>
@@ -119,30 +123,31 @@ function MobileHeader({
   open,
   setOpen,
   buttonRef,
+  user,
   role,
 }: {
   open: boolean
   setOpen: (open: boolean) => void
   buttonRef: MutableRefObject<HTMLButtonElement | null>
+  user: UserAccount
   role: Role | null
 }) {
   const roleInfo = ROLES.find((r) => r.id === role)
   return (
-    <header className="fixed inset-x-0 top-0 z-30 border-b border-edge bg-[#080a08] lg:hidden">
-      <div className="flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-3">
+    <header className="fixed inset-x-0 top-0 z-30 border-b border-edge bg-surface/90 backdrop-blur-md lg:hidden">
+      <div className="flex h-[4.25rem] items-center justify-between gap-4 px-4">
+        <div className="flex min-w-0 items-center gap-3">
           <BrandLogo compact />
-          <div className="leading-tight">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
-              {roleInfo?.label ?? 'Demo console'}
-            </div>
+          <div className="min-w-0 leading-tight">
+            <div className="truncate text-sm font-semibold text-white">{user.displayName}</div>
+            <div className="truncate text-xs text-zinc-500">{roleInfo?.label ?? user.role}</div>
           </div>
         </div>
         <button
           ref={buttonRef}
-          className="menu-button grid h-11 w-11 place-items-center gap-[5px] border border-edge bg-white/[0.03]"
+          className="menu-button shrink-0"
           data-open={open}
-          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
           aria-expanded={open}
           onClick={() => setOpen(!open)}
         >
@@ -155,24 +160,37 @@ function MobileHeader({
   )
 }
 
+function UserAvatar({ name }: { name: string }) {
+  const initial = name.trim().charAt(0).toUpperCase() || '?'
+  return (
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-brand/25 bg-brand/10 font-display text-lg text-brand">
+      {initial}
+    </div>
+  )
+}
+
 function SidebarContent({
   address,
   demo,
   nav,
   role,
+  user,
   mobile = false,
   menuOpen = true,
   onConnect,
   onDisconnect,
+  onLogout,
 }: {
   address: string | null
   demo: boolean
-  nav: { to: string; label: string; end: boolean; index: number }[]
+  nav: { to: string; label: string; end: boolean }[]
   role: Role | null
+  user: UserAccount
   mobile?: boolean
   menuOpen?: boolean
   onConnect: (address: string, demo: boolean) => void
   onDisconnect: () => void
+  onLogout: () => void
 }) {
   const roleInfo = ROLES.find((r) => r.id === role)
   const [profile, setProfile] = useState(() => getProfile(address))
@@ -180,105 +198,67 @@ function SidebarContent({
     setProfile(getProfile(address))
     return subscribeAuth(() => setProfile(getProfile(address)))
   }, [address])
+
   const menuItemStyle = (index: number): CSSProperties | undefined =>
     mobile
       ? {
           opacity: menuOpen ? 1 : 0,
-          transform: menuOpen ? 'translateX(0)' : 'translateX(24px)',
-          transitionDelay: menuOpen ? `${40 + index * 30}ms` : '0ms',
+          transform: menuOpen ? 'translateX(0)' : 'translateX(16px)',
+          transitionDelay: menuOpen ? `${30 + index * 40}ms` : '0ms',
         }
       : undefined
 
   return (
-    <div className="flex min-h-full flex-col px-5 py-6">
+    <div className="sidebar-shell">
       <div className="flex items-center gap-3" data-menu-item style={menuItemStyle(0)}>
         <BrandLogo />
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Private auctions</div>
-        </div>
       </div>
 
-      <div className="mt-8 border border-edge bg-white/[0.02] p-4" data-menu-item style={menuItemStyle(1)}>
-        <div className="micro-label">Active authority</div>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <div>
-            <div className="font-semibold text-white">{roleInfo?.label ?? 'No role selected'}</div>
-            <div className="mt-1 text-xs text-slate-500">{roleInfo?.desc ?? 'Choose an operating desk.'}</div>
+      <div className="mt-10 rounded-2xl border border-edge bg-raised/80 p-4" data-menu-item style={menuItemStyle(1)}>
+        <div className="flex items-start gap-3">
+          <UserAvatar name={user.displayName} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-semibold text-white">{user.displayName}</div>
+            <div className="mt-0.5 text-xs text-zinc-500">{roleInfo?.label ?? user.role}</div>
+            <div className="mt-1 truncate text-xs text-zinc-600">{user.email}</div>
           </div>
-          {role && (
-            <NavLink
-              className="text-xs font-semibold text-brand transition duration-200 ease-out hover:translate-x-0.5 hover:text-brand-soft"
-              to="/roles"
-            >
-              Switch
-            </NavLink>
-          )}
         </div>
         {profile && (
-          <div className="mt-3 border-t border-edge pt-3">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-600">Registered bank</div>
-            <div className="mt-1 truncate text-sm font-medium text-white">{profile.name}</div>
-            <div className="mt-0.5 text-[11px] text-brand">Covenant member #{profile.membershipIndex + 1}</div>
+          <div className="mt-3 inline-flex rounded-full border border-brand/20 bg-brand/10 px-2.5 py-1 text-[11px] font-medium text-brand">
+            Covenant #{profile.membershipIndex + 1}
           </div>
         )}
+        <NavLink className="mt-4 inline-block text-xs font-semibold text-brand hover:text-brand-soft" to="/account">
+          Ver perfil →
+        </NavLink>
       </div>
 
       <nav className="mt-8 space-y-1" data-menu-item style={menuItemStyle(2)}>
-        {nav.length > 0 ? (
-          nav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `group flex min-h-11 items-center gap-3 px-3 text-sm transition duration-200 ease-out hover:translate-x-1 ${
-                  isActive ? 'bg-white/[0.06] text-white' : 'text-slate-500 hover:bg-white/[0.03] hover:text-slate-200'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span className={`w-6 font-mono text-[11px] ${isActive ? 'text-brand' : 'text-white'}`}>
-                    {String(item.index).padStart(2, '0')}
-                  </span>
-                  {item.label}
-                </>
-              )}
-            </NavLink>
-          ))
-        ) : (
-          <div className="space-y-2">
-            {ROLES.map((item, index) => (
-              <button
-                key={item.id}
-                onClick={() => setRole(item.id)}
-                className="flex min-h-11 w-full items-center gap-3 px-3 text-left text-sm text-slate-400 transition duration-200 ease-out hover:translate-x-1 hover:bg-white/[0.03] hover:text-white"
-              >
-                <span className="w-6 font-mono text-[11px] text-white">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                {item.label}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="mb-3 px-3 micro-label">Menú</div>
+        {nav.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+          >
+            {item.label}
+          </NavLink>
+        ))}
       </nav>
 
-      <div className="mt-auto space-y-4 border-t border-edge pt-5" data-menu-item style={menuItemStyle(3)}>
+      <div className="mt-auto space-y-5 border-t border-edge pt-6" data-menu-item style={menuItemStyle(3)}>
         <div>
-          <div className="micro-label mb-2">Execution environment</div>
+          <div className="mb-2.5 px-1 micro-label">Red</div>
           <ModeToggle stacked={mobile} />
         </div>
         <div>
-          <div className="micro-label mb-2">Wallet</div>
-          <WalletConnect
-            address={address}
-            demo={demo}
-            compact
-            onConnect={onConnect}
-            onDisconnect={onDisconnect}
-          />
+          <div className="mb-2.5 px-1 micro-label">Wallet</div>
+          <WalletConnect address={address} demo={demo} compact onConnect={onConnect} onDisconnect={onDisconnect} />
         </div>
+        <button type="button" className="btn-ghost btn-sm w-full" onClick={onLogout}>
+          Cerrar sesión
+        </button>
       </div>
     </div>
   )

@@ -6,19 +6,22 @@
  * @param {bigint} min_bid
  * @param {bigint} capacity
  * @param {bigint} bid
+ * @param {string} salt_hex
  * @param {bigint} seed
  * @returns {string}
  */
-export function prove_eligibility_hex(min_bid, capacity, bid, seed) {
-    let deferred1_0;
-    let deferred1_1;
+export function prove_eligibility_hex(min_bid, capacity, bid, salt_hex, seed) {
+    let deferred2_0;
+    let deferred2_1;
     try {
-        const ret = wasm.prove_eligibility_hex(min_bid, capacity, bid, seed);
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
+        const ptr0 = passStringToWasm0(salt_hex, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.prove_eligibility_hex(min_bid, capacity, bid, ptr0, len0, seed);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);
     } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
     }
 }
 

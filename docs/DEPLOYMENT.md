@@ -4,6 +4,59 @@
 > [`deployments.testnet.json`](../deployments.testnet.json) y en el README.
 > El frontend apunta a esos contratos por defecto (`frontend/src/config.ts`).
 
+## Redespliegue tras cambio del circuito de elegibilidad
+
+El circuito `EligibilityCircuit` ahora incluye **3 entradas públicas**:
+`[min_bid, capacity, commitment_fr]` donde `commitment_fr` es
+`SHA-256(be16(oferta)‖salt)` interpretado como Fr. Esto ata la prueba ZK al
+compromiso sellado y evita pruebas válidas con otro salt.
+
+**Consecuencia:** cualquier cambio en ese circuito genera una **nueva ELIG_VK**.
+Hay que redesplegar el contrato `auction` (y sincronizar VKs) antes de que las
+ofertas on-chain vuelvan a verificar:
+
+```bash
+./scripts/redeploy-auction.sh
+```
+
+El frontend debe regenerar el prover WASM (`wasm-pack`) para que
+`prove_eligibility_hex` reciba el `salt` y produzca pruebas compatibles con la
+VK desplegada.
+
+## Mainnet (Stellar pubnet) y dinero real
+
+**Sí podés usar mainnet** con IDIO, pero implica un despliegue completo separado del testnet — no es un toggle en la UI.
+
+| | Testnet | Mainnet (pubnet) |
+|---|---------|------------------|
+| XLM | Gratis vía [Friendbot](https://laboratory.stellar.org/#account-creator?network=test) | **Real**: comprar o transferir XLM a la wallet |
+| USDC / activos | Testnet assets (sin valor) | USDC real en Stellar (p. ej. desde un exchange) |
+| Contratos | IDs en `deployments.testnet.json` | Nuevos IDs tras `./scripts/deploy.sh` con `NETWORK=mainnet` |
+| VK Groth16 | `ELIG_VK` del circuito actual | **Regenerar** VK y `redeploy-auction.sh` en pubnet |
+| Riesgo | Ninguno para demos | Fees reales + activos reales en subastas |
+
+### Pasos para mainnet con fondos reales
+
+1. Crear identidad Stellar mainnet (`stellar keys generate idio-mainnet`) y **fondearla con XLM real** (exchange → retiro a la dirección G… de la identidad).
+2. Desplegar contratos en pubnet (ver sección anterior): `asp`, `token`, `verifier`, `auction`.
+3. Regenerar prover WASM y VKs; inicializar `auction` con las VK nuevas.
+4. Configurar frontend con variables de entorno:
+
+```bash
+# frontend/.env.production (ejemplo)
+VITE_STELLAR_NETWORK=mainnet
+VITE_STELLAR_RPC_URL=https://soroban-mainnet.stellar.org
+VITE_STELLAR_NETWORK_PASSPHRASE="Public Global Stellar Network ; September 2015"
+VITE_AUCTION_CONTRACT_ID=C…
+VITE_TOKEN_CONTRACT_ID=C…
+# … resto de contratos
+```
+
+5. **Cupos (`set_capacity`)**: en mainnet el cupo sigue siendo un límite administrativo registrado por el emisor — no lee automáticamente el balance USDC de la wallet. Para anclar saldo real haría falta integrar el token confidencial Pedersen (roadmap).
+6. Los participantes conectan **wallets mainnet** (Freighter, etc.) con XLM para fees y, si aplica, USDC para liquidación.
+
+**Recomendación hackathon/demo:** quedarse en testnet. Mainnet solo cuando el flujo esté auditado y quieras producción con activos reales.
+
 ## Redespliegue rápido (auction + ASP Covenant)
 
 Cuando cambian los circuitos Groth16 o el ABI del contrato `auction`:
