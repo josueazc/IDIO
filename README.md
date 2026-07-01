@@ -47,16 +47,14 @@ All four contracts are deployed, initialized and verified on Testnet (`soroban-s
 
 | Contract | ID |
 |----------|----|
-| Auction | [`CDBVGKAIM5S5RMPI3LJ2UCRO5T2BORYDNLDP2HDLFD7UNQ4T5R36VO3N`](https://stellar.expert/explorer/testnet/contract/CDBVGKAIM5S5RMPI3LJ2UCRO5T2BORYDNLDP2HDLFD7UNQ4T5R36VO3N) |
+| Auction | [`CDGVV7ZARFX7NZWYROCW3IKCX2ZGCJK2BYD7647YOOUO2DX4JIKHFWL4`](https://stellar.expert/explorer/testnet/contract/CDGVV7ZARFX7NZWYROCW3IKCX2ZGCJK2BYD7647YOOUO2DX4JIKHFWL4) |
 | Verifier | [`CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6`](https://stellar.expert/explorer/testnet/contract/CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6) |
 | Token | [`CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH`](https://stellar.expert/explorer/testnet/contract/CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH) |
-| ASP | [`CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY`](https://stellar.expert/explorer/testnet/contract/CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY) |
+| ASP | [`CBKCM7DFWKYLMQIXN3IE2IRFV7P2ZZQI3DPGZNQZRYB3R3FG7SJ3ZJNR`](https://stellar.expert/explorer/testnet/contract/CBKCM7DFWKYLMQIXN3IE2IRFV7P2ZZQI3DPGZNQZRYB3R3FG7SJ3ZJNR) |
 
-> El `auction` desplegado corresponde al ABI previo. Las capacidades nuevas
-> (Covenant como gate del bid, depósito/slashing, pausa/versión, anti-spam,
-> eventos) están **implementadas y testeadas** en `contracts/auction`; exponerlas
-> en Testnet requiere el redeploy con `scripts/redeploy-auction.sh` (pendiente).
-> Fuente de verdad de IDs: `deployments.testnet.json`.
+> Fuente de verdad de IDs: `deployments.testnet.json`. El contrato `auction` expone
+> `version() = 2` (Covenant gate, depósito/slashing, pausa, anti-spam, eventos).
+> Redespliegue: `./scripts/redeploy-auction.sh` (redespliega ASP si falta Covenant).
 
 ---
 
@@ -145,8 +143,12 @@ cd circuits && nargo test         # Noir circuits
 ## Verify it yourself
 
 ```bash
-# A sealed bid on-chain — the amount is NOT present:
-stellar contract invoke --id CCSKDZY7NG4ZNPI6LBMT67LAROF6KXVXYIIDK7XAO2CDTMGZHJLJ4L65 \
+# Versión del contrato desplegado (debe ser 2):
+stellar contract invoke --id CDGVV7ZARFX7NZWYROCW3IKCX2ZGCJK2BYD7647YOOUO2DX4JIKHFWL4 \
+  --source <your-key> --network testnet -- version
+
+# Una oferta sellada on-chain — el monto NO aparece en claro:
+stellar contract invoke --id CDGVV7ZARFX7NZWYROCW3IKCX2ZGCJK2BYD7647YOOUO2DX4JIKHFWL4 \
   --source <your-key> --network testnet -- get_bids --auction_id 1
 ```
 
@@ -158,14 +160,7 @@ Tests: ~30+ green across all layers — contracts (auction 18, asp 3, token 1, v
 
 ## Status & roadmap (honest)
 
-**Built, tested and on-chain:** sealed-bid core, browser→chain Groth16 bridge (eligibility + reserves), confidential Pedersen token, confidential settlement, Covenant (ZK allow-list), Auspex+ (reserve policy), BEShield (k-of-n consensus), role separation, post-close transparency.
-
-**Implemented + tested, pending live redeploy:**
-- **Covenant como gate del bid**: `submit_sealed_bid_covenant` exige la prueba ZK de membresía (`asp.verify_membership`) + nullifier, con modo de compatibilidad configurable (`set_bid_gate_zk`). El prover WASM ya expone `prove_membership_hex`.
-- **Depósito + slashing**: el bid bloquea un depósito (`deposit_bps`); `claim_deposit_refund` / `slash_winner` cierran el ciclo si el ganador no paga a tiempo. La custodia real del colateral es research-grade (documentada).
-- **Pausa de emergencia + versión + anti-spam**: `pause`/`unpause` (solo admin), `version`, y rate-limit por dirección (`set_rate_limit`).
-- **Eventos Soroban estandarizados** en create/submit/reveal/settle/settle_payment/cancel.
-- **Casos borde**: desempate determinista (menor timestamp gana), rechazo de reveal fuera de ventana, settle único, y `cancel_auction` con guardas de estado.
+**Built, tested and on-chain:** sealed-bid core, browser→chain Groth16 bridge (eligibility + reserves), confidential Pedersen token, confidential settlement, Covenant (ZK allow-list + gate del bid activo por defecto), depósito/slashing, pausa/versión/anti-spam, eventos estandarizados, casos borde (empates, reveal tardío, cancel), Auspex+ (reserve policy), BEShield (k-of-n consensus), role separation, post-close transparency, panel de cupos y registro de bancos sin backend.
 
 **Available but not the default path yet:**
 - **BEShield** consensus is wired and tested but **off by default** (`threshold = 0`); enabling it needs a real validator set/network.

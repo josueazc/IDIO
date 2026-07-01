@@ -25,6 +25,9 @@ Leyenda: ✅ hecho · 🟦 buildable (puedo hacerlo) · 🟣 research-grade (inc
 - ✅ Robustez del contrato: casos borde, depósito+slashing, pausa/versión,
   anti-spam, eventos, y Covenant como gate real del bid (ver §2).
 - ✅ 30+ tests verdes en las capas (18 en el contrato de subasta).
+- ✅ **Redespliegue Testnet** (jun 2026): ASP + auction con Covenant activo,
+  `version() = 2`. IDs en `deployments.testnet.json`. Script:
+  `./scripts/redeploy-auction.sh`.
 
 ## 1. Solidez criptográfica (anti-trampa) — lo más importante
 - 🟣 **Binding elegibilidad ↔ saldo confidencial**: el cupo (`capacity`) ya está atado on-chain, pero es público. Atarlo a un *saldo confidencial* (sin revelar el cupo) requiere EC in-circuit sobre una curva 2-ciclo (BN254/Grumpkin); Soroban expone BN254/BLS pero no Grumpkin — paso de endurecimiento restante.
