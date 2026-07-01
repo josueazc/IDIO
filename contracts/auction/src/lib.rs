@@ -21,8 +21,8 @@
 
 use idio_verifier::{Groth16Proof, Groth16Vk};
 use soroban_sdk::{
-    contract, contractclient, contracterror, contractimpl, contracttype, Address, BytesN, Env,
-    String, Vec,
+    contract, contractclient, contracterror, contractimpl, contracttype, symbol_short, Address,
+    BytesN, Env, String, Vec,
 };
 
 /// Política mínima de liquidez (%) que el emisor debe probar en reservas.
@@ -294,6 +294,12 @@ impl AuctionContract {
         env.storage()
             .persistent()
             .set(&DataKey::Bids(id), &Vec::<SealedBid>::new(&env));
+
+        // Evento: subasta creada. topics = ("auction","created").
+        env.events().publish(
+            (symbol_short!("auction"), symbol_short!("created")),
+            (id, auction.issuer.clone(), auction.amount, auction.min_bid, auction.end_time),
+        );
         id
     }
 
@@ -344,6 +350,7 @@ impl AuctionContract {
             .get(&DataKey::Bids(auction_id))
             .unwrap();
 
+        let commitment_topic = commitment.clone();
         let new_bid = SealedBid {
             bidder: bidder.clone(),
             commitment,
@@ -373,6 +380,12 @@ impl AuctionContract {
         env.storage()
             .persistent()
             .set(&DataKey::Auction(auction_id), &auction);
+
+        // Evento: oferta sellada recibida. topics = ("auction","bid").
+        env.events().publish(
+            (symbol_short!("auction"), symbol_short!("bid")),
+            (auction_id, bidder.clone(), commitment_topic),
+        );
     }
 
     /// Revela una oferta tras el cierre. El contrato recalcula
@@ -435,6 +448,12 @@ impl AuctionContract {
             panic(&env, AuctionError::BidNotFound);
         }
         env.storage().persistent().set(&DataKey::Bids(auction_id), &bids);
+
+        // Evento: oferta revelada. topics = ("auction","reveal").
+        env.events().publish(
+            (symbol_short!("auction"), symbol_short!("reveal")),
+            (auction_id, bidder.clone(), amount),
+        );
     }
 
     /// BEShield: configura el consenso de liquidación — raíz Merkle del set de
@@ -564,6 +583,12 @@ impl AuctionContract {
         env.storage()
             .persistent()
             .set(&DataKey::Auction(auction_id), &auction);
+
+        // Evento: subasta liquidada. topics = ("auction","settled").
+        env.events().publish(
+            (symbol_short!("auction"), symbol_short!("settled")),
+            (auction_id, winner.clone(), best_amount),
+        );
         winner
     }
 
@@ -600,6 +625,12 @@ impl AuctionContract {
         env.storage()
             .persistent()
             .set(&DataKey::Auction(auction_id), &auction);
+
+        // Evento: pago confidencial liquidado. topics = ("auction","paid").
+        env.events().publish(
+            (symbol_short!("auction"), symbol_short!("paid")),
+            (auction_id, winner.clone(), value_commitment),
+        );
     }
 
     /// Cancela una subasta (solo el emisor). Solo puede cancelarse mientras
@@ -629,6 +660,12 @@ impl AuctionContract {
         env.storage()
             .persistent()
             .set(&DataKey::Auction(auction_id), &auction);
+
+        // Evento: subasta cancelada. topics = ("auction","cancel").
+        env.events().publish(
+            (symbol_short!("auction"), symbol_short!("cancel")),
+            (auction_id, auction.issuer.clone()),
+        );
     }
 
     // ---- Lecturas ----
@@ -1411,6 +1448,97 @@ mod test {
             &bank,
             &commit(&env, 15_000_000, &salt),
             &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+    }
+
+    // ---- Tarea 6: eventos estandarizados ----
+
+    /// Verifica que la ÚLTIMA invocación emitió exactamente el evento
+    /// `("auction", <sub>)` con el `data` esperado. `env.events().all()` solo
+    /// reporta la última invocación, por eso se comprueba tras cada llamada.
+    fn assert_last_event<D: soroban_sdk::IntoVal<Env, soroban_sdk::Val>>(
+        env: &Env,
+        contract: &Address,
+        sub: soroban_sdk::Symbol,
+        data: D,
+    ) {
+        use soroban_sdk::testutils::Events;
+        use soroban_sdk::{vec, IntoVal, Val};
+        let topics: Vec<Val> = vec![
+            env,
+            symbol_short!("auction").into_val(env),
+            sub.into_val(env),
+        ];
+        let expected: Vec<(Address, Vec<Val>, Val)> =
+            vec![env, (contract.clone(), topics, data.into_val(env))];
+        assert_eq!(env.events().all(), expected);
+    }
+
+    /// Cada operación del flujo emite su evento Soroban estandarizado.
+    #[test]
+    fn flow_emits_standard_events() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let id = env.register(AuctionContract, ());
+        let client = AuctionContractClient::new(&env, &id);
+        let admin = Address::generate(&env);
+        let issuer = Address::generate(&env);
+        let bank = Address::generate(&env);
+        let asp = setup_asp(&env, &admin, &[&bank]);
+        let token = setup_token(&env, &admin);
+        let z = setup_zk(&env);
+        client.initialize(&admin, &asp, &token, &z.verifier, &z.elig_vk, &z.reserves_vk);
+        client.set_capacity(&bank, &50_000_000);
+
+        let reserves = BytesN::random(&env);
+        let auction_id = client.create_auction(
+            &issuer,
+            &String::from_str(&env, "Bonos"),
+            &500_000_000i128,
+            &10_000_000i128,
+            &100u64,
+            &reserves,
+            &reserves_proof(&env, &z, 500_000_000, 600_000_000),
+        );
+        // created: (id, issuer, amount, min_bid, end_time). end_time = 0 + 100.
+        assert_last_event(
+            &env,
+            &client.address,
+            symbol_short!("created"),
+            (auction_id, issuer.clone(), 500_000_000i128, 10_000_000i128, 100u64),
+        );
+
+        let salt = BytesN::random(&env);
+        let bid = 15_000_000i128;
+        let commitment = commit(&env, bid, &salt);
+        client.submit_sealed_bid(
+            &auction_id,
+            &bank,
+            &commitment,
+            &elig_proof(&env, &z, 10_000_000, 50_000_000, 15_000_000),
+        );
+        assert_last_event(
+            &env,
+            &client.address,
+            symbol_short!("bid"),
+            (auction_id, bank.clone(), commitment.clone()),
+        );
+
+        env.ledger().with_mut(|l| l.timestamp += 200);
+        client.reveal_bid(&auction_id, &bank, &bid, &salt);
+        assert_last_event(
+            &env,
+            &client.address,
+            symbol_short!("reveal"),
+            (auction_id, bank.clone(), bid),
+        );
+
+        client.settle(&auction_id);
+        assert_last_event(
+            &env,
+            &client.address,
+            symbol_short!("settled"),
+            (auction_id, Some(bank.clone()), bid),
         );
     }
 
