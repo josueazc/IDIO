@@ -19,7 +19,12 @@ Leyenda: ✅ hecho · 🟦 buildable (puedo hacerlo) · 🟣 research-grade (inc
 - ✅ BEShield: consenso k-de-n con ZK — cableado, testeado
 - ✅ Separación por rol, filtros por tipo, perfil de banco, reemplazo de oferta, transparencia post-cierre, verificador de apertura
 - ✅ **Binding elegibilidad ↔ cupo registrado**: la prueba demuestra `capacidad ≥ oferta ≥ mínimo` con la `capacity` registrada on-chain por el admin como entrada pública. Una oferta por encima del cupo no puede generar prueba válida (antes el `balance` era autodeclarado y no verificado).
-- ✅ ~26 tests verdes en las 4 capas
+- ✅ **Asignación de cupos desde la UI** (panel admin `/capacity`) — sin consola.
+- ✅ **Registro/ingreso de bancos sin backend** (wallet Stellar + perfil local +
+  índice de membresía Covenant).
+- ✅ Robustez del contrato: casos borde, depósito+slashing, pausa/versión,
+  anti-spam, eventos, y Covenant como gate real del bid (ver §2).
+- ✅ 30+ tests verdes en las capas (18 en el contrato de subasta).
 
 ## 1. Solidez criptográfica (anti-trampa) — lo más importante
 - 🟣 **Binding elegibilidad ↔ saldo confidencial**: el cupo (`capacity`) ya está atado on-chain, pero es público. Atarlo a un *saldo confidencial* (sin revelar el cupo) requiere EC in-circuit sobre una curva 2-ciclo (BN254/Grumpkin); Soroban expone BN254/BLS pero no Grumpkin — paso de endurecimiento restante.
@@ -30,12 +35,23 @@ Leyenda: ✅ hecho · 🟦 buildable (puedo hacerlo) · 🟣 research-grade (inc
 - 🟦 Generadores nothing-up-my-sleeve auditables y reproducibles.
 
 ## 2. Contratos (endurecimiento)
-- 🟦 **Activar Covenant como gating por defecto** del bid (requiere también provisión de credenciales a los bancos).
-- 🟦 Edge cases: empates, cancelaciones, reveal tardío, expiraciones, reentrancy.
-- 🟦 Reembolsos / depósitos / penalización por no-pago (slashing).
-- 🟦 Upgradeabilidad + pausa de emergencia + versionado.
-- 🟦 Anti-spam (fees, rate-limit).
-- 🟦 Eventos estandarizados para indexación.
+- ✅ **Covenant como gate por defecto del bid**: `submit_sealed_bid_covenant` exige
+  prueba ZK de membresía + nullifier (verificada por el ASP). Flag
+  `set_bid_gate_zk` para volver a allow-list (compat). El navegador genera la
+  prueba con el prover WASM (`prove_membership_hex`). Testeado.
+- ✅ Edge cases: empates (desempate determinista por timestamp), reveal tardío
+  (ventana de revelación), doble settle, cancelación con guardas de estado, no
+  ofertar/revelar fuera de orden. Testeado.
+- ✅ Depósito + penalización por no-pago (slashing): colateral en basis points
+  sobre el mínimo, `claim_deposit_refund` y `slash_winner` con ventana de pago.
+  Testeado. Nota 🟣: la custodia real del colateral vía token confidencial queda
+  pendiente (aquí la contabilidad/máquina de estados es on-chain, el valor es
+  abstracto por el modelo de compromisos).
+- ✅ Pausa de emergencia + versionado (`pause`/`unpause`/`version`). Testeado.
+- ✅ Anti-spam: rate-limit por dirección (`set_rate_limit`). Testeado.
+- ✅ Eventos estandarizados (`created`/`bid`/`reveal`/`settled`/`paid`/`refund`/
+  `slashed`/`cancel`) para indexación. Testeado.
+- 🟦 Upgradeabilidad real del wasm (hoy: redeploy + reinicialización).
 
 ## 3. BEShield / consenso
 - 🟥 **Red real de validadores** (entidades independientes con llaves).

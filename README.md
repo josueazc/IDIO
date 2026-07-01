@@ -47,10 +47,16 @@ All four contracts are deployed, initialized and verified on Testnet (`soroban-s
 
 | Contract | ID |
 |----------|----|
-| Auction | [`CCSKDZY7NG4ZNPI6LBMT67LAROF6KXVXYIIDK7XAO2CDTMGZHJLJ4L65`](https://stellar.expert/explorer/testnet/contract/CCSKDZY7NG4ZNPI6LBMT67LAROF6KXVXYIIDK7XAO2CDTMGZHJLJ4L65) |
+| Auction | [`CDBVGKAIM5S5RMPI3LJ2UCRO5T2BORYDNLDP2HDLFD7UNQ4T5R36VO3N`](https://stellar.expert/explorer/testnet/contract/CDBVGKAIM5S5RMPI3LJ2UCRO5T2BORYDNLDP2HDLFD7UNQ4T5R36VO3N) |
 | Verifier | [`CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6`](https://stellar.expert/explorer/testnet/contract/CDPACMY5BFOL4OWEW42ESAICPVVXBNPE6QJVNFASQJTI2UT7JMTR3IB6) |
 | Token | [`CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH`](https://stellar.expert/explorer/testnet/contract/CBVDXELQKBRLVQRVZNZJFPPQS3CCJRHPQ6DSCUO3SSONBPUM3YI3BPQH) |
 | ASP | [`CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY`](https://stellar.expert/explorer/testnet/contract/CAMRACXOGXS7NZXI6JF7JZNNNYPTUNI6AQRHWGFSMXNQOYJ3RP7DS5JY) |
+
+> El `auction` desplegado corresponde al ABI previo. Las capacidades nuevas
+> (Covenant como gate del bid, depósito/slashing, pausa/versión, anti-spam,
+> eventos) están **implementadas y testeadas** en `contracts/auction`; exponerlas
+> en Testnet requiere el redeploy con `scripts/redeploy-auction.sh` (pendiente).
+> Fuente de verdad de IDs: `deployments.testnet.json`.
 
 ---
 
@@ -144,7 +150,7 @@ stellar contract invoke --id CCSKDZY7NG4ZNPI6LBMT67LAROF6KXVXYIIDK7XAO2CDTMGZHJL
   --source <your-key> --network testnet -- get_bids --auction_id 1
 ```
 
-Tests: ~26 green across all layers — contracts (auction 6, asp 3, token 1, verifier 2), Groth16 prover (3), Noir circuits (7), frontend (11).
+Tests: ~30+ green across all layers — contracts (auction 18, asp 3, token 1, verifier 2), Groth16 prover (3), Noir circuits (7), frontend (11).
 
 ## Documentation
 
@@ -154,8 +160,14 @@ Tests: ~26 green across all layers — contracts (auction 6, asp 3, token 1, ver
 
 **Built, tested and on-chain:** sealed-bid core, browser→chain Groth16 bridge (eligibility + reserves), confidential Pedersen token, confidential settlement, Covenant (ZK allow-list), Auspex+ (reserve policy), BEShield (k-of-n consensus), role separation, post-close transparency.
 
+**Implemented + tested, pending live redeploy:**
+- **Covenant como gate del bid**: `submit_sealed_bid_covenant` exige la prueba ZK de membresía (`asp.verify_membership`) + nullifier, con modo de compatibilidad configurable (`set_bid_gate_zk`). El prover WASM ya expone `prove_membership_hex`.
+- **Depósito + slashing**: el bid bloquea un depósito (`deposit_bps`); `claim_deposit_refund` / `slash_winner` cierran el ciclo si el ganador no paga a tiempo. La custodia real del colateral es research-grade (documentada).
+- **Pausa de emergencia + versión + anti-spam**: `pause`/`unpause` (solo admin), `version`, y rate-limit por dirección (`set_rate_limit`).
+- **Eventos Soroban estandarizados** en create/submit/reveal/settle/settle_payment/cancel.
+- **Casos borde**: desempate determinista (menor timestamp gana), rechazo de reveal fuera de ventana, settle único, y `cancel_auction` con guardas de estado.
+
 **Available but not the default path yet:**
-- **Covenant** membership is verified by the ASP (`verify_membership`) and tested, but the live bid gate still uses the public allow-list (`is_allowed`). Switching the gate to require the ZK membership proof is the next wiring step.
 - **BEShield** consensus is wired and tested but **off by default** (`threshold = 0`); enabling it needs a real validator set/network.
 
 **Research-grade (documented, not faked):**
