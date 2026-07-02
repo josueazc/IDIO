@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { EmptyState, PageHeader, RuledPanel } from '../components/Primitives'
+import { InlineAlert, EmptyState, PageHeader, RuledPanel } from '../components/Primitives'
 import StatusBadge from '../components/StatusBadge'
 import { useAuctions } from '../utils/useAuctions'
+import { getMode } from '../services/data'
 
 export default function Compliance() {
   const { auctions } = useAuctions()
@@ -13,13 +14,21 @@ export default function Compliance() {
 
   const auction = auctions.find((item) => item.id === selected) ?? null
 
+  const mode = getMode()
+
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="Cumplimiento (emisor)"
         title="Participantes autorizados sin ver las ofertas."
-        description="Revisá allow-list, Covenant y estado de la subasta mientras los montos siguen sellados."
+        description="Revisá allow-list, Covenant ZK y estado de cumplimiento mientras los montos siguen sellados."
       />
+
+      <InlineAlert variant="info">
+        Visibilidad de cumplimiento: las ofertas siguen selladas. Solo se muestran direcciones y estado del ASP
+        (allow-list) — nunca los montos ofertados.
+        {mode !== 'chain' && ' En modo Demo los checks de ASP/OFAC/FATF son simulados.'}
+      </InlineAlert>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
@@ -99,9 +108,12 @@ export default function Compliance() {
                   </div>
                 ))}
               </div>
-              <div className="border border-brand/40 bg-brand/10 p-4">
-                <div className="micro-label text-brand">Estado</div>
+              <div className="border border-brand/40 bg-brand/10 p-4 space-y-1">
+                <div className="micro-label text-brand">Estado regulatorio</div>
                 <div className="mt-2 text-2xl font-semibold text-brand">Aprobado</div>
+                <p className="text-xs text-brand/70 leading-relaxed">
+                  Todos los participantes están en la allow-list del ASP. Los montos permanecen sellados.
+                </p>
               </div>
             </div>
           ) : (
