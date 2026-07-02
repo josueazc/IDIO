@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
 import WalletConnect from '../components/WalletConnect'
 import { accountDescription, accountLabel, signUp, type AccountRole } from '../services/accounts'
+import { supabase } from '../services/supabase'
 import { roleHome } from '../utils/roleNav'
 import { shortAddress } from '../services/wallet'
 
@@ -21,16 +22,18 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
   const [displayName, setDisplayName] = useState('')
   const [jurisdiction, setJurisdiction] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
 
   function markTouched(field: string) {
     setTouched((prev) => ({ ...prev, [field]: true }))
   }
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault()
     setError(null)
     setTouched({ email: true, password: true, displayName: true })
+
     if (!address) {
       setError('Conectá tu wallet Stellar antes de registrarte.')
       return
@@ -39,15 +42,20 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
       setError('La contraseña debe tener al menos 6 caracteres.')
       return
     }
+
+    setLoading(true)
     try {
-      signUp({ email, password, role, walletAddress: address, displayName, jurisdiction })
+      await signUp({ email, password, role, walletAddress: address, displayName, jurisdiction })
       nav(roleHome(role))
     } catch (err) {
       setError((err as Error).message)
+    } finally {
+      setLoading(false)
     }
   }
 
   const nameLabel = role === 'emisor' ? 'Nombre de la institución' : 'Nombre del banco'
+  const usingSupabase = !!supabase
 
   return (
     <main className="auth-shell">
@@ -63,6 +71,12 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
         <h1 className="font-display mt-2 text-3xl text-white">{accountLabel(role)}</h1>
         <p className="mt-2 text-sm leading-relaxed text-zinc-500">{accountDescription(role)}</p>
 
+        {usingSupabase && (
+          <div className="mt-4 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-xs text-brand/80">
+            <span className="font-medium text-brand">Cuenta real</span> — tus datos se guardan de forma segura en la nube.
+          </div>
+        )}
+
         <form className="mt-8 space-y-5" onSubmit={submit}>
           <label className="block">
             <span className="label">Email</span>
@@ -73,8 +87,10 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </label>
+
           <label className="block">
             <span className="label">Contraseña</span>
             <input
@@ -85,11 +101,13 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => markTouched('password')}
               required
+              autoComplete="new-password"
             />
             {touched.password && password.length > 0 && password.length < 6 && (
               <p className="mt-1 text-xs text-red-300">Mínimo 6 caracteres.</p>
             )}
           </label>
+
           <label className="block">
             <span className="label">{nameLabel}</span>
             <input
@@ -100,6 +118,7 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
               required
             />
           </label>
+
           <label className="block">
             <span className="label">Jurisdicción (opcional)</span>
             <input
@@ -126,8 +145,8 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
             </div>
           )}
 
-          <button type="submit" className="btn-primary w-full">
-            Crear cuenta
+          <button type="submit" className="btn-primary w-full" disabled={loading}>
+            {loading ? 'Creando cuenta…' : 'Crear cuenta'}
           </button>
         </form>
 

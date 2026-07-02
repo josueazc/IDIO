@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
 import WalletConnect from '../components/WalletConnect'
 import { getCurrentUser, logIn } from '../services/accounts'
+import { supabase } from '../services/supabase'
 import { roleHome } from '../utils/roleNav'
 import { shortAddress } from '../services/wallet'
 
@@ -18,25 +19,28 @@ export default function AuthLogin({ address, demo, onConnect, onDisconnect }: Pr
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    setLoading(true)
     try {
-      const user = logIn(email, password)
+      const user = await logIn(email, password)
       if (address && address !== user.walletAddress) {
-        setError(
-          `Esta cuenta usa ${shortAddress(user.walletAddress)}. Conectá esa wallet para continuar.`
-        )
+        setError(`Esta cuenta usa ${shortAddress(user.walletAddress)}. Conectá esa wallet para continuar.`)
         return
       }
       nav(roleHome(user.role))
     } catch (err) {
       setError((err as Error).message)
+    } finally {
+      setLoading(false)
     }
   }
 
   const pending = getCurrentUser()
+  const usingSupabase = !!supabase
 
   return (
     <main className="auth-shell">
@@ -53,15 +57,25 @@ export default function AuthLogin({ address, demo, onConnect, onDisconnect }: Pr
         <p className="mt-2 text-sm text-zinc-500">
           Tu rol quedó fijado al registrarte. Conectá la misma wallet Stellar para continuar.
         </p>
-        <div className="mt-4 rounded-xl border border-edge bg-raised/50 px-4 py-3 text-xs text-zinc-500">
-          <span className="font-medium text-zinc-300">Modo demo:</span>{' '}
-          cualquier email y contraseña funcionan. Datos solo en este navegador.
-        </div>
+
+        {!usingSupabase && (
+          <div className="mt-4 rounded-xl border border-edge bg-raised/50 px-4 py-3 text-xs text-zinc-500">
+            <span className="font-medium text-zinc-300">Modo demo:</span>{' '}
+            cualquier email y contraseña funcionan. Datos solo en este navegador.
+          </div>
+        )}
 
         <form className="mt-8 space-y-5" onSubmit={submit}>
           <label className="block">
             <span className="label">Email</span>
-            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input
+              className="input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
           </label>
           <label className="block">
             <span className="label">Contraseña</span>
@@ -71,6 +85,7 @@ export default function AuthLogin({ address, demo, onConnect, onDisconnect }: Pr
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
           </label>
 
@@ -91,8 +106,8 @@ export default function AuthLogin({ address, demo, onConnect, onDisconnect }: Pr
             </div>
           )}
 
-          <button type="submit" className="btn-primary w-full">
-            Entrar
+          <button type="submit" className="btn-primary w-full" disabled={loading}>
+            {loading ? 'Ingresando…' : 'Entrar'}
           </button>
         </form>
 

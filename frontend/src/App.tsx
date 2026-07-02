@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Layout from './components/Layout'
 import WalletGate from './components/WalletGate'
@@ -18,15 +18,21 @@ import { useRole } from './utils/useRole'
 import { useCurrentUser } from './utils/useCurrentUser'
 import { ROLE_ROUTES } from './services/role'
 import { getStoredWalletAddress } from './services/wallet'
-import { logOut } from './services/accounts'
+import { logOut, restoreSession } from './services/accounts'
 import { roleHome } from './utils/roleNav'
 
 export default function App() {
   const [address, setAddress] = useState<string | null>(() => getStoredWalletAddress())
   const [demo, setDemo] = useState(false)
+  const [sessionRestored, setSessionRestored] = useState(false)
   const user = useCurrentUser()
   const role = useRole()
   const location = useLocation()
+
+  // Restaurar sesión de Supabase al recargar la página
+  useEffect(() => {
+    restoreSession().finally(() => setSessionRestored(true))
+  }, [])
 
   function onConnect(a: string, d: boolean) {
     setAddress(a)
@@ -38,12 +44,24 @@ export default function App() {
     setDemo(false)
   }
 
-  function onLogout() {
-    logOut()
+  async function onLogout() {
+    await logOut()
     onDisconnect()
   }
 
   const authProps = { address, demo, onConnect, onDisconnect }
+
+  // Esperar a que se restaure la sesión antes de decidir qué mostrar
+  if (!sessionRestored) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-surface">
+        <div className="space-y-3 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-edge border-t-brand" />
+          <p className="text-sm text-zinc-500">Iniciando…</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!user) {
     return (

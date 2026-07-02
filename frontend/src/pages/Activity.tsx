@@ -44,7 +44,7 @@ export default function Activity({ address }: Props) {
       )}
 
       {!address && (
-        <InlineAlert variant="warning">
+        <InlineAlert variant="warn">
           No hay wallet conectada. Conectá tu wallet Stellar para ver tu actividad real on-chain.
         </InlineAlert>
       )}
