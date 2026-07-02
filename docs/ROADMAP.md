@@ -24,7 +24,7 @@ Leyenda: ✅ hecho · 🟦 buildable (puedo hacerlo) · 🟣 research-grade (inc
   índice de membresía Covenant).
 - ✅ Robustez del contrato: casos borde, depósito+slashing, pausa/versión,
   anti-spam, eventos, y Covenant como gate real del bid (ver §2).
-- ✅ 30+ tests verdes en las capas (18 en el contrato de subasta).
+- ✅ 45+ tests verdes en las capas (18 en el contrato de subasta, 24 en el frontend — commitBid, role, sorobanErrors, format).
 - ✅ **Redespliegue Testnet** (jun 2026): ASP + auction con Covenant activo,
   `version() = 2`. IDs en `deployments.testnet.json`. Script:
   `./scripts/redeploy-auction.sh`.
@@ -77,10 +77,16 @@ Leyenda: ✅ hecho · 🟦 buildable (puedo hacerlo) · 🟣 research-grade (inc
 - 🟦 Estados de error/carga del modo Testnet.
 
 ## 7. Frontend / producto
-- 🟦 Flujo en vivo pulido end-to-end con wallet.
-- 🟦 Notificaciones (cierre, ganaste, hora de revelar/pagar).
+- ✅ ProverProgress: barra animada con pasos ZK (WASM init → R1CS → witnesses → Groth16 → sign).
+- ✅ sorobanErrors: decodificador de Error(Contract, #N) con mensajes en español y acciones sugeridas.
+- ✅ Backend Express con bcrypt + sesión httpOnly (auth real en `backend/`).
+- ✅ StatusBadge con dot animado, segmented controls en filtros, CopyButton, InlineAlert.
+- ✅ stellar.expert links en BankProfile, Account, Activity.
+- ✅ healthcheck.sh para verificación del entorno de desarrollo.
+- 🟦 Flujo en vivo pulido end-to-end con wallet real.
+- 🟦 Notificaciones en tiempo real (cierre, ganaste, hora de revelar/pagar).
 - 🟦 Indexador/backend de lectura (no iterar IDs).
-- 🟦 i18n, accesibilidad, responsive fino.
+- 🟦 i18n, accesibilidad avanzada, responsive fino.
 - 📋 **Asignación detallada para teammate:** [FRONTEND_ROADMAP.md](./FRONTEND_ROADMAP.md) (wallet kit, backend auth, Vercel, UI, video demo, mainnet opcional).
 
 ## 8. Infraestructura / ops
