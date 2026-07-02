@@ -1,6 +1,6 @@
 import { type ReactNode, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PageHeader, RuledPanel } from '../components/Primitives'
+import { InlineAlert, PageHeader, RuledPanel } from '../components/Primitives'
 import ProverProgress from '../components/ProverProgress'
 import { createAuction, getMode } from '../services/data'
 import { decodeSorobanError } from '../services/sorobanErrors'
@@ -92,8 +92,15 @@ export default function CreateAuction({ address }: Props) {
         description="Se genera una prueba de reservas antes de publicar este registro en el protocolo."
       />
 
+      {mode !== 'chain' && (
+        <InlineAlert variant="info">
+          En modo Demo, la prueba de reservas es simulada. Cambiá a Testnet con wallet conectada para
+          una verificación Groth16 real on-chain.
+        </InlineAlert>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
-        <span className="micro-label">Plantillas:</span>
+        <span className="micro-label">Plantillas rápidas:</span>
         {TEMPLATES.map((t) => (
           <button key={t.label} className="btn-ghost min-h-9 px-3 py-1 text-xs" onClick={() => applyTemplate(t)}>
             {t.label}
@@ -201,15 +208,16 @@ export default function CreateAuction({ address }: Props) {
             <div className="divide-y divide-edge border-y border-edge">
               {checks.map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between gap-4 py-4 text-sm">
-                  <span className="text-slate-400">{label}</span>
+                  <span className="text-zinc-400">{label}</span>
                   <span className="text-right font-mono text-[11px] uppercase tracking-[0.18em] text-brand">
                     {value}
                   </span>
                 </div>
               ))}
             </div>
-            <p className="mt-5 text-sm leading-6 text-slate-400">
-              La subasta no se puede emitir hasta que el entorno actual verifique el predicado de reservas.
+            <p className="mt-5 text-sm leading-relaxed text-zinc-400">
+              La subasta no se puede publicar hasta que el predicado de reservas sea verificado en el circuito Groth16.
+              En demo, la verificación es instantánea y simulada.
             </p>
             <div className="mt-5 border border-edge bg-[#0b0b0b] p-4">
               <div className="micro-label">Resumen del registro</div>
