@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import ConfidentialBalance from '../components/ConfidentialBalance'
 import OpeningVerifier from '../components/OpeningVerifier'
-import { EmptyState, PageHeader, RuledPanel } from '../components/Primitives'
+import { EmptyState, InlineAlert, PageHeader, RuledPanel } from '../components/Primitives'
 import StatusBadge from '../components/StatusBadge'
 import { useAuctions } from '../utils/useAuctions'
 import { getStoredWalletAddress } from '../services/wallet'
+import { getMode } from '../services/data'
 import { config } from '../config'
 import { fmtUSD } from '../utils/format'
 import type { Auction } from '../types'
@@ -56,13 +57,22 @@ export default function Audit() {
 
   const auction = auctions.find((item) => item.id === selected) ?? null
 
+  const mode = getMode()
+
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="Auditoría del emisor"
         title="Auditá tus propias subastas."
-        description="Tras el cierre revisá cada oferta, verificá que ganó la más alta y descargá el informe."
+        description="Tras el cierre revisá cada oferta, verificá que ganó la más alta y descargá el informe firmado con hash SHA-256."
       />
+
+      {mode !== 'chain' && (
+        <InlineAlert variant="info">
+          Estás en modo Demo. Las subastas de auditoría son las que emitiste en la sesión actual.
+          Cambiá a Testnet para auditar con datos on-chain reales.
+        </InlineAlert>
+      )}
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
@@ -94,8 +104,13 @@ export default function Audit() {
                   onChange={(event) => setViewKey(event.target.value)}
                 />
               </label>
-              <button className="btn-primary" onClick={() => setUnlocked(true)} disabled={viewKey.length < 3}>
-                Desbloquear
+              <button
+                className="btn-primary"
+                onClick={() => setUnlocked(true)}
+                disabled={viewKey.length < 3}
+                title="Ingresá al menos 3 caracteres como view key demo"
+              >
+                Desbloquear evidencia
               </button>
             </div>
           </RuledPanel>
@@ -169,9 +184,15 @@ export default function Audit() {
                 className="btn-primary w-full"
                 disabled={!unlocked}
                 onClick={() => downloadReport(auction)}
+                title={unlocked ? 'Descarga un JSON firmado con hash SHA-256' : 'Desbloquea la evidencia primero'}
               >
-                Generar informe firmado
+                Generar informe firmado (JSON + SHA-256)
               </button>
+              {unlocked && (
+                <p className="mt-2 text-xs leading-relaxed text-zinc-600">
+                  El archivo incluye el hash SHA-256 del reporte para verificación de integridad.
+                </p>
+              )}
             </div>
           ) : (
             <p className="text-sm leading-6 text-slate-500">No hay ninguna subasta para auditar.</p>
