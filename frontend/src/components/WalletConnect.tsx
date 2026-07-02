@@ -35,9 +35,31 @@ export default function WalletConnect({ address, demo, compact = false, onConnec
     setError(null)
     try {
       const wallet = await connectWallet()
+      if (wallet.demo) {
+        setError('Cancelaste la conexión. Conectá Freighter, xBull u otra wallet Stellar para operar en Testnet.')
+        setBusy(false)
+        return
+      }
       onConnect(wallet.address, wallet.demo)
     } catch (e) {
-      setError((e as Error).message || 'No se pudo conectar la wallet')
+      const msg = (e as Error).message || ''
+      if (msg.toLowerCase().includes('reject') || msg.toLowerCase().includes('cancel') || msg.toLowerCase().includes('user')) {
+        setError('Cancelaste la conexión de wallet.')
+      } else {
+        setError(msg || 'No se pudo conectar la wallet.')
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleConnectDemo() {
+    setBusy(true)
+    setError(null)
+    try {
+      const { connectDemoWallet } = await import('../services/wallet')
+      const wallet = connectDemoWallet()
+      onConnect(wallet.address, wallet.demo)
     } finally {
       setBusy(false)
     }
@@ -89,6 +111,17 @@ export default function WalletConnect({ address, demo, compact = false, onConnec
         <WalletIcon />
         {busy ? 'Conectando…' : 'Conectar wallet'}
       </button>
+      {!compact && (
+        <button
+          type="button"
+          className="btn-ghost btn-sm"
+          onClick={handleConnectDemo}
+          disabled={busy}
+          title="Usar dirección aleatoria para el modo demo"
+        >
+          Modo demo
+        </button>
+      )}
       {error && (
         <div className="text-xs text-red-300" role="status">
           {error}
