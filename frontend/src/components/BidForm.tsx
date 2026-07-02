@@ -75,8 +75,9 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
         <div className="border-b border-edge p-5">
           <div className="font-mono text-xs text-brand">#{String(auction.id).padStart(3, '0')}</div>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">{auction.asset}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-400">
-            Enviá un compromiso sellado. El monto permanece privado hasta el reveal.
+          <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+            Enviá un compromiso sellado <code className="rounded bg-white/[0.05] px-1 text-xs">SHA-256(be16(monto) || salt)</code>.
+            El monto permanece privado hasta el reveal.
           </p>
         </div>
 
