@@ -1,29 +1,10 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
-import { PageHeader, RuledPanel, Toast, EmptyState } from '../components/Primitives'
+import { CopyButton, PageHeader, RuledPanel, Toast, EmptyState } from '../components/Primitives'
 import { getAuctionAdmin, getCapacity, getMode, setCapacity } from '../services/data'
 import { listBanks } from '../services/auth'
 import { decodeSorobanError } from '../services/sorobanErrors'
 import { fmtUSD } from '../utils/format'
 import { shortAddress } from '../services/wallet'
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-  async function copy() {
-    await navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
-  }
-  return (
-    <button
-      onClick={copy}
-      className="btn-ghost btn-sm px-2 py-1 text-[11px]"
-      title="Copiar dirección"
-      aria-label="Copiar dirección"
-    >
-      {copied ? '✓ copiado' : 'copiar'}
-    </button>
-  )
-}
 
 interface Props {
   address: string | null
