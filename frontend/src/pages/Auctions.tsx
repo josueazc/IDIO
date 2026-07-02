@@ -4,9 +4,10 @@ import BidForm from '../components/BidForm'
 import BidResults from '../components/BidResults'
 import PrivacyPanel from '../components/PrivacyPanel'
 import Countdown from '../components/Countdown'
-import { EmptyState, ErrorNotice, PageHeader, RuledPanel, SkeletonRows, Toast } from '../components/Primitives'
+import { CopyButton, EmptyState, ErrorNotice, InlineAlert, PageHeader, RuledPanel, SkeletonRows, Toast } from '../components/Primitives'
 import StatusBadge from '../components/StatusBadge'
 import { settle, revealBid, revealBidManual, getSalt, payWinner, resetDemo, getMode } from '../services/data'
+import { decodeSorobanError } from '../services/sorobanErrors'
 import { can } from '../services/role'
 import { useAuctions } from '../utils/useAuctions'
 import { useRole } from '../utils/useRole'
@@ -71,7 +72,7 @@ export default function Auctions({ address }: Props) {
       await payWinner(auction.id, auction.winner ?? address ?? '', auction.winningAmount ?? 0)
       setNotice({ type: 'success', message: 'Pago confidencial enviado: el monto queda oculto on-chain.' })
     } catch (e) {
-      setNotice({ type: 'error', message: (e as Error).message })
+      setNotice({ type: 'error', message: decodeSorobanError((e as Error).message) })
     } finally {
       setBusy(null)
     }
@@ -85,7 +86,7 @@ export default function Auctions({ address }: Props) {
       await revealBid(auction.id, address ?? '')
       setNotice({ type: 'success', message: 'Oferta revelada on-chain. El emisor puede liquidar cuando todas estén abiertas.' })
     } catch (e) {
-      setNotice({ type: 'error', message: (e as Error).message })
+      setNotice({ type: 'error', message: decodeSorobanError((e as Error).message) })
     } finally {
       setBusy(null)
     }
@@ -113,7 +114,7 @@ export default function Auctions({ address }: Props) {
       await settle(auction.id, address ?? '')
       setNotice({ type: 'success', message: 'Subasta liquidada. Los resultados ya son públicos.' })
     } catch (e) {
-      setNotice({ type: 'error', message: (e as Error).message })
+      setNotice({ type: 'error', message: decodeSorobanError((e as Error).message) })
     } finally {
       setBusy(null)
     }
@@ -134,37 +135,36 @@ export default function Auctions({ address }: Props) {
         }
       />
 
-      <div className="flex flex-wrap gap-2">
-        {(['all', 'open', 'settled'] as const).map((item) => (
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="segmented">
+          {(['all', 'open', 'settled'] as const).map((item) => (
+            <button
+              key={item}
+              onClick={() => setFilter(item)}
+              className={`segmented-btn ${filter === item ? 'segmented-btn-active' : ''}`}
+            >
+              {item === 'all' ? 'Todas' : item === 'open' ? 'Abiertas' : 'Liquidadas'}
+            </button>
+          ))}
+        </div>
+
+        <div className="segmented">
           <button
-            key={item}
-            onClick={() => setFilter(item)}
-            className={`min-h-10 border px-3 text-sm font-semibold transition ${
-              filter === item ? 'border-brand bg-brand text-ink' : 'border-edge bg-white/[0.02] text-slate-400 hover:text-white'
-            }`}
+            onClick={() => setTypeFilter('all')}
+            className={`segmented-btn ${typeFilter === 'all' ? 'segmented-btn-active' : ''}`}
           >
-            {item === 'all' ? 'Todas' : item === 'open' ? 'Abiertas' : 'Liquidadas'}
+            Todas
           </button>
-        ))}
-        <button
-          onClick={() => setTypeFilter('all')}
-          className={`min-h-10 border px-3 text-sm font-semibold transition ${
-            typeFilter === 'all' ? 'border-white/50 bg-white text-ink' : 'border-edge bg-white/[0.02] text-slate-400 hover:text-white'
-          }`}
-        >
-          Todas las clases
-        </button>
-        {ASSET_TYPES.map((type) => (
-          <button
-            key={type.id}
-            onClick={() => setTypeFilter(type.id)}
-            className={`min-h-10 border px-3 text-sm font-semibold transition ${
-              typeFilter === type.id ? 'border-white/50 bg-white text-ink' : 'border-edge bg-white/[0.02] text-slate-400 hover:text-white'
-            }`}
-          >
-            {type.label}
-          </button>
-        ))}
+          {ASSET_TYPES.map((type) => (
+            <button
+              key={type.id}
+              onClick={() => setTypeFilter(type.id)}
+              className={`segmented-btn ${typeFilter === type.id ? 'segmented-btn-active' : ''}`}
+            >
+              {type.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -174,7 +174,7 @@ export default function Auctions({ address }: Props) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <label className="flex items-center gap-2 text-sm text-slate-400">
+        <label className="flex items-center gap-2 text-sm text-zinc-400">
           Ordenar:
           <select className="input w-auto" value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
             <option value="closing">Cierre (más pronto)</option>
@@ -182,7 +182,7 @@ export default function Auctions({ address }: Props) {
             <option value="bids">Ofertas (más)</option>
           </select>
         </label>
-        <span className="text-xs text-slate-500">{filtered.length} resultado(s)</span>
+        <span className="text-xs text-zinc-500">{filtered.length} resultado(s)</span>
       </div>
 
       {error && <ErrorNotice message={`Falló la lectura on-chain: ${error}`} />}
@@ -420,16 +420,22 @@ function InspectionPanel({
             </span>
           </div>
           {[
-            ['Emisor', `${auction.issuer.slice(0, 8)}...${auction.issuer.slice(-4)}`],
             ['Compromiso de reservas', auction.reservesCommitment],
             ['Oferta mínima', fmtUSD(auction.minBid)],
             ['Ofertas selladas', String(auction.bids.length)],
           ].map(([label, value]) => (
             <div key={label} className="flex justify-between gap-4 py-3 text-sm">
-              <span className="text-slate-500">{label}</span>
-              <span className="text-right font-mono text-xs text-slate-200">{value}</span>
+              <span className="text-zinc-500">{label}</span>
+              <span className="text-right font-mono text-xs text-zinc-200">{value}</span>
             </div>
           ))}
+          <div className="py-3 text-sm">
+            <div className="text-zinc-500 mb-1">Emisor</div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-xs text-zinc-300 break-all">{auction.issuer}</span>
+              <CopyButton text={auction.issuer} />
+            </div>
+          </div>
         </div>
         {auction.status === 'Settled' && (
           <div>
