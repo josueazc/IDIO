@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import BrandLogo from '../components/BrandLogo'
 import WalletConnect from '../components/WalletConnect'
-import { accountDescription, accountLabel, signUp, type AccountRole } from '../services/accounts'
+import { accountDescription, accountLabel, signUp, type AccountRole, EmailConfirmationRequiredError } from '../services/accounts'
 import { supabase } from '../services/supabase'
 import { roleHome } from '../utils/roleNav'
 import { shortAddress } from '../services/wallet'
@@ -24,6 +24,7 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [confirmEmail, setConfirmEmail] = useState<string | null>(null)
 
   function markTouched(field: string) {
     setTouched((prev) => ({ ...prev, [field]: true }))
@@ -48,10 +49,54 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
       await signUp({ email, password, role, walletAddress: address, displayName, jurisdiction })
       nav(roleHome(role))
     } catch (err) {
-      setError((err as Error).message)
+      if (err instanceof EmailConfirmationRequiredError) {
+        setConfirmEmail(err.email)
+      } else {
+        setError((err as Error).message)
+      }
     } finally {
       setLoading(false)
     }
+  }
+
+  // Pantalla de confirmación de email
+  if (confirmEmail) {
+    return (
+      <main className="auth-shell">
+        <div className="auth-card w-full max-w-md text-center">
+          <BrandLogo compact />
+
+          <div className="mx-auto mt-8 flex h-16 w-16 items-center justify-center rounded-full border border-brand/30 bg-brand/10">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-brand">
+              <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+
+          <h1 className="font-display mt-6 text-2xl text-white">Revisá tu email</h1>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            Te enviamos un link de confirmación a:
+          </p>
+          <p className="mt-1 font-semibold text-zinc-100">{confirmEmail}</p>
+
+          <div className="mt-6 rounded-xl border border-edge bg-raised/50 px-5 py-4 text-left text-sm text-zinc-400 space-y-2">
+            <p>1. Abrí el email de Supabase en tu bandeja de entrada.</p>
+            <p>2. Hacé click en <strong className="text-zinc-200">"Confirm your email"</strong>.</p>
+            <p>3. Volvé acá e iniciá sesión con tu email y contraseña.</p>
+          </div>
+
+          <Link
+            to="/login"
+            className="btn-primary mt-8 w-full"
+          >
+            Ir a iniciar sesión
+          </Link>
+
+          <p className="mt-4 text-xs text-zinc-600">
+            ¿No llegó el email? Revisá la carpeta de spam o intentá registrarte de nuevo.
+          </p>
+        </div>
+      </main>
+    )
   }
 
   const nameLabel = role === 'emisor' ? 'Nombre de la institución' : 'Nombre del banco'
@@ -73,7 +118,7 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
 
         {usingSupabase && (
           <div className="mt-4 rounded-xl border border-brand/20 bg-brand/5 px-4 py-3 text-xs text-brand/80">
-            <span className="font-medium text-brand">Cuenta real</span> — tus datos se guardan de forma segura en la nube.
+            <span className="font-medium text-brand">Cuenta real</span> — vas a recibir un email de confirmación antes de poder entrar.
           </div>
         )}
 

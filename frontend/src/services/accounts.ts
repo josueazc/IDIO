@@ -22,6 +22,16 @@ export interface UserAccount {
   createdAt: number
 }
 
+// Error especial para distinguir "necesita confirmar email" de un error real
+export class EmailConfirmationRequiredError extends Error {
+  email: string
+  constructor(email: string) {
+    super('Revisá tu email para confirmar la cuenta.')
+    this.name = 'EmailConfirmationRequiredError'
+    this.email = email
+  }
+}
+
 // ─── localStorage fallback (demo sin Supabase) ───────────────────────────────
 
 const USERS_KEY = 'idio.users'
@@ -105,31 +115,34 @@ export async function signUp(input: {
 
   // ── Supabase ──
   if (supabase) {
-    const { data, error } = await supabase.auth.signUp({
-      email: input.email.trim().toLowerCase(),
-      password: input.password,
-    })
-    if (error) throw new Error(translateSupabaseError(error.message))
-    const userId = data.user?.id
-    if (!userId) throw new Error('No se pudo crear el usuario.')
-
-    // Calcular membership index (usamos localStorage temporal para calcular)
     const all = readAll()
     const membershipIndex = input.role === 'oferente' ? nextMembershipIndex(all) : undefined
 
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: userId,
+    // El perfil se crea automáticamente via trigger on_auth_user_created
+    // pasamos los datos como metadata para que el trigger los lea
+    const { data, error } = await supabase.auth.signUp({
       email: input.email.trim().toLowerCase(),
-      role: input.role,
-      wallet_address: input.walletAddress,
-      display_name: input.displayName.trim(),
-      jurisdiction: input.jurisdiction?.trim() ?? '',
-      membership_index: membershipIndex ?? null,
+      password: input.password,
+      options: {
+        data: {
+          role: input.role,
+          wallet_address: input.walletAddress,
+          display_name: input.displayName.trim(),
+          jurisdiction: input.jurisdiction?.trim() ?? '',
+          membership_index: membershipIndex ?? null,
+        },
+      },
     })
-    if (profileError) throw new Error('Error al guardar el perfil: ' + profileError.message)
+    if (error) throw new Error(translateSupabaseError(error.message))
+    if (!data.user) throw new Error('No se pudo crear el usuario.')
+
+    // Si no hay sesión es porque Supabase requiere confirmación de email
+    if (!data.session) {
+      throw new EmailConfirmationRequiredError(input.email.trim().toLowerCase())
+    }
 
     const account: UserAccount = {
-      id: userId,
+      id: data.user.id,
       email: input.email.trim().toLowerCase(),
       role: input.role,
       walletAddress: input.walletAddress,

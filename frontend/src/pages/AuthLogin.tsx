@@ -101,8 +101,15 @@ export default function AuthLogin({ address, demo, onConnect, onDisconnect }: Pr
           )}
 
           {error && (
-            <div className="rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            <div className={`rounded-xl border px-4 py-3 text-sm ${
+              error.includes('Confirmá tu email')
+                ? 'border-amber-400/25 bg-amber-500/10 text-amber-200'
+                : 'border-red-400/25 bg-red-500/10 text-red-200'
+            }`}>
               {error}
+              {error.includes('Confirmá tu email') && (
+                <p className="mt-1 text-xs opacity-75">Revisá tu bandeja de entrada y la carpeta de spam.</p>
+              )}
             </div>
           )}
 
