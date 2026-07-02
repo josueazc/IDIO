@@ -51,8 +51,12 @@ export default function AuthLogin({ address, demo, onConnect, onDisconnect }: Pr
         <p className="eyebrow mt-8">Bienvenido</p>
         <h1 className="font-display mt-2 text-3xl text-white">Iniciar sesión</h1>
         <p className="mt-2 text-sm text-zinc-500">
-          Tu rol quedó fijado al registrarte. Luego conectá la misma wallet.
+          Tu rol quedó fijado al registrarte. Conectá la misma wallet Stellar para continuar.
         </p>
+        <div className="mt-4 rounded-xl border border-edge bg-raised/50 px-4 py-3 text-xs text-zinc-500">
+          <span className="font-medium text-zinc-300">Modo demo:</span>{' '}
+          cualquier email y contraseña funcionan. Datos solo en este navegador.
+        </div>
 
         <form className="mt-8 space-y-5" onSubmit={submit}>
           <label className="block">
