@@ -43,8 +43,11 @@ export default function AuthLogin({ address, demo, onConnect, onDisconnect }: Pr
   const usingSupabase = !!supabase
 
   return (
-    <main className="auth-shell">
-      <div className="mx-auto mb-8 max-w-md">
+    <main className="auth-shell dot-grid">
+      {/* orbs */}
+      <div className="orb orb-green" style={{ width: 500, height: 500, top: -150, left: -100, pointerEvents:'none' }} />
+      <div className="orb orb-blue"  style={{ width: 400, height: 400, bottom: -100, right: -80, pointerEvents:'none' }} />
+      <div className="mx-auto mb-8 max-w-md" style={{ position:'relative', zIndex:1 }}>
         <Link to="/" className="text-sm text-zinc-500 transition hover:text-white">
           ← Inicio
         </Link>
