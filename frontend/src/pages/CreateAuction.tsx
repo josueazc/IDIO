@@ -1,7 +1,9 @@
 import { type ReactNode, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader, RuledPanel } from '../components/Primitives'
+import ProverProgress from '../components/ProverProgress'
 import { createAuction, getMode } from '../services/data'
+import { decodeSorobanError } from '../services/sorobanErrors'
 import { ASSET_TYPES, type AssetType } from '../types'
 import { fmtUSD } from '../utils/format'
 import {
@@ -77,7 +79,7 @@ export default function CreateAuction({ address }: Props) {
       )
       nav('/auctions')
     } catch (e) {
-      setError((e as Error).message)
+      setError(decodeSorobanError((e as Error).message))
       setPhase('form')
     }
   }
@@ -218,8 +220,13 @@ export default function CreateAuction({ address }: Props) {
             </div>
             {error && <div className="mt-4 border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
           </RuledPanel>
+
+          {phase === 'proving' && (
+            <ProverProgress chain={mode === 'chain'} label="Generando prueba de reservas" />
+          )}
+
           <button className="btn-primary w-full" onClick={submit} disabled={phase === 'proving'}>
-            {phase === 'proving' ? 'Generando prueba' : 'Generar prueba y publicar'}
+            {phase === 'proving' ? 'Generando prueba…' : 'Generar prueba y publicar'}
           </button>
         </aside>
       </div>
