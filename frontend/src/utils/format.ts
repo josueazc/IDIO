@@ -1,7 +1,14 @@
 export function fmtUSD(n: number): string {
+  if (!Number.isFinite(n)) return '—'
+  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toLocaleString('en-US', { maximumFractionDigits: 1 })}B`
   if (n >= 1_000_000) return `$${(n / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 1 })}M`
   if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
   return `$${n.toLocaleString('en-US')}`
+}
+
+export function fmtPercent(ratio: number, decimals = 1): string {
+  if (!Number.isFinite(ratio)) return '—'
+  return `${(ratio * 100).toFixed(decimals)}%`
 }
 
 export function timeLeft(endTime: number): string {
