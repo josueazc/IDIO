@@ -21,12 +21,22 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
   const [displayName, setDisplayName] = useState('')
   const [jurisdiction, setJurisdiction] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+
+  function markTouched(field: string) {
+    setTouched((prev) => ({ ...prev, [field]: true }))
+  }
 
   function submit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    setTouched({ email: true, password: true, displayName: true })
     if (!address) {
       setError('Conectá tu wallet Stellar antes de registrarte.')
+      return
+    }
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres.')
       return
     }
     try {
@@ -68,13 +78,17 @@ export default function AuthSignUp({ role, address, demo, onConnect, onDisconnec
           <label className="block">
             <span className="label">Contraseña</span>
             <input
-              className="input"
+              className={`input ${touched.password && password.length > 0 && password.length < 6 ? 'border-red-400/40' : ''}`}
               type="password"
-              placeholder="demo — cualquier valor"
+              placeholder="Mínimo 6 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onBlur={() => markTouched('password')}
               required
             />
+            {touched.password && password.length > 0 && password.length < 6 && (
+              <p className="mt-1 text-xs text-red-300">Mínimo 6 caracteres.</p>
+            )}
           </label>
           <label className="block">
             <span className="label">{nameLabel}</span>
