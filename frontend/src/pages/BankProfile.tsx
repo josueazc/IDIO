@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
-import { EmptyState, Metric, PageHeader, RuledPanel } from '../components/Primitives'
+import { CopyButton, EmptyState, Metric, PageHeader, RuledPanel } from '../components/Primitives'
 import StatusBadge from '../components/StatusBadge'
 import { useAuctions } from '../utils/useAuctions'
 import { fmtUSD } from '../utils/format'
@@ -31,7 +31,20 @@ export default function BankProfile() {
       </section>
 
       <RuledPanel title="Dirección del emisor">
-        <div className="break-all border border-edge bg-white/[0.02] p-4 font-mono text-sm text-slate-300">{address}</div>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="break-all font-mono text-sm text-zinc-300">{address}</span>
+          <CopyButton text={address} />
+          {address && (
+            <a
+              href={`https://stellar.expert/explorer/testnet/account/${address}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-brand hover:underline"
+            >
+              stellar.expert →
+            </a>
+          )}
+        </div>
       </RuledPanel>
 
       {mine.length === 0 ? (
