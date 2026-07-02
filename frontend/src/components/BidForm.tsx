@@ -3,6 +3,8 @@ import type { Auction } from '../types'
 import { fmtUSD } from '../utils/format'
 import { submitBid, getMode, getCapacity, lastProof, lastBidSecret } from '../services/data'
 import { getProfile } from '../services/auth'
+import { decodeSorobanError, errorAction } from '../services/sorobanErrors'
+import ProverProgress from './ProverProgress'
 
 interface Props {
   auction: Auction
@@ -59,7 +61,10 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
         onClose()
       }, 1800)
     } catch (e) {
-      setError((e as Error).message)
+      const raw = (e as Error).message
+      const decoded = decodeSorobanError(raw)
+      const action = errorAction(raw)
+      setError(action ? `${decoded} → ${action}` : decoded)
       setPhase('form')
     }
   }
@@ -130,16 +135,7 @@ export default function BidForm({ auction, bidderAddress, onClose, onDone }: Pro
           {error && <div className="border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
 
           {phase === 'proving' && (
-            <div className="border border-edge bg-white/[0.02] p-4">
-              <div className="text-sm text-slate-300">
-                {getMode() === 'chain'
-                  ? 'Generando la prueba y pidiendo la firma de la billetera vía Stellar Wallets Kit.'
-                  : 'Generando prueba demo local.'}
-              </div>
-              <div className="mt-3 h-1 overflow-hidden bg-white/10">
-                <div className="h-full w-2/3 animate-pulse bg-brand" />
-              </div>
-            </div>
+            <ProverProgress chain={getMode() === 'chain'} />
           )}
 
           {phase === 'done' && (
