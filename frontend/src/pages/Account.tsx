@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { PageHeader, RuledPanel } from '../components/Primitives'
+import { CopyButton, InlineAlert, PageHeader, RuledPanel } from '../components/Primitives'
 import { accountDescription, accountLabel, getCurrentUser, logOut } from '../services/accounts'
 import { useRole } from '../utils/useRole'
 import { shortAddress } from '../services/wallet'
@@ -38,14 +38,23 @@ export default function Account({ address, onLogout }: Props) {
             <dt className="micro-label">Email</dt>
             <dd className="mt-2 font-mono text-sm text-zinc-300">{user.email}</dd>
           </div>
-          <div>
-            <dt className="micro-label">Wallet</dt>
-            <dd className="mt-2 font-mono text-sm text-zinc-300">
-              {shortAddress(user.walletAddress)}
+          <div className="sm:col-span-2">
+            <dt className="micro-label">Wallet Stellar</dt>
+            <dd className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="break-all font-mono text-sm text-zinc-300">{user.walletAddress}</span>
+              <CopyButton text={user.walletAddress} />
+              <a
+                href={`https://stellar.expert/explorer/testnet/account/${user.walletAddress}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-brand hover:underline"
+              >
+                stellar.expert →
+              </a>
               {address === user.walletAddress ? (
-                <span className="ml-2 text-brand">conectada</span>
+                <span className="text-xs font-semibold text-brand">● conectada</span>
               ) : (
-                <span className="ml-2 text-amber-400">desconectada</span>
+                <span className="text-xs font-semibold text-amber-400">○ desconectada</span>
               )}
             </dd>
           </div>
@@ -59,12 +68,11 @@ export default function Account({ address, onLogout }: Props) {
       </RuledPanel>
 
       <RuledPanel title="Sesión">
-        <p className="text-sm leading-relaxed text-zinc-500">
-          El rol no se puede cambiar desde aquí. Para probar otro flujo, cerrá sesión y registrá otra
-          cuenta.
-        </p>
+        <InlineAlert variant="info">
+          El rol no se puede cambiar desde aquí. Para probar otro flujo, cerrá sesión y registrá otra cuenta con otro email.
+        </InlineAlert>
         <div className="mt-6 flex flex-wrap gap-3">
-          <button type="button" className="btn-ghost" onClick={handleLogout}>
+          <button type="button" className="btn-danger" onClick={handleLogout}>
             Cerrar sesión
           </button>
           <Link className="btn-secondary" to="/">
