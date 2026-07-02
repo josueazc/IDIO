@@ -2,8 +2,28 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { PageHeader, RuledPanel, Toast, EmptyState } from '../components/Primitives'
 import { getAuctionAdmin, getCapacity, getMode, setCapacity } from '../services/data'
 import { listBanks } from '../services/auth'
+import { decodeSorobanError } from '../services/sorobanErrors'
 import { fmtUSD } from '../utils/format'
 import { shortAddress } from '../services/wallet'
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  async function copy() {
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
+  return (
+    <button
+      onClick={copy}
+      className="btn-ghost btn-sm px-2 py-1 text-[11px]"
+      title="Copiar dirección"
+      aria-label="Copiar dirección"
+    >
+      {copied ? '✓ copiado' : 'copiar'}
+    </button>
+  )
+}
 
 interface Props {
   address: string | null
@@ -120,7 +140,7 @@ export default function AdminCapacity({ address }: Props) {
       setWho('')
       await refresh()
     } catch (e) {
-      setNotice({ type: 'error', message: (e as Error).message })
+      setNotice({ type: 'error', message: decodeSorobanError((e as Error).message) })
     } finally {
       setBusy(false)
     }
@@ -208,15 +228,28 @@ export default function AdminCapacity({ address }: Props) {
                   onChange={(e) => setAmount(Number(e.target.value))}
                 />
               </Field>
-              <div className="space-y-2 border border-edge bg-[#0b0b0b] p-4 text-sm text-slate-400">
+              <div className="space-y-3 border border-edge bg-raised/60 p-4 text-sm text-slate-400">
                 <div>
-                  Admin on-chain:{' '}
-                  <span className="font-mono text-[11px] text-slate-300">
-                    {onChainAdmin ? shortAddress(onChainAdmin) : '— consultando —'}
-                  </span>
+                  <div className="micro-label mb-1">Admin on-chain</div>
+                  {onChainAdmin ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="break-all font-mono text-[11px] text-slate-300">{onChainAdmin}</span>
+                      <CopyButton text={onChainAdmin} />
+                      <a
+                        href={`https://stellar.expert/explorer/testnet/account/${onChainAdmin}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-brand hover:underline"
+                      >
+                        stellar.expert →
+                      </a>
+                    </div>
+                  ) : (
+                    <span className="text-slate-600">— consultando —</span>
+                  )}
                 </div>
                 <div>
-                  Wallet conectada:{' '}
+                  <div className="micro-label mb-1">Wallet conectada</div>
                   <span className="font-mono text-[11px] text-slate-300">
                     {address ? shortAddress(address) : '— sin wallet —'}
                   </span>
