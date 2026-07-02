@@ -4,18 +4,30 @@
 
 :root {
   color-scheme: dark;
-  --idio-bg: #09090b;
-  --idio-surface: #111113;
-  --idio-raised: #18181b;
-  --idio-line: rgba(255, 255, 255, 0.08);
-  --idio-line-strong: rgba(255, 255, 255, 0.14);
-  --idio-text: #fafafa;
-  --idio-text-muted: #a1a1aa;
-  --idio-text-dim: #71717a;
-  --idio-brand: #34d399;
-  --idio-brand-soft: #6ee7b7;
-  --idio-danger: #f87171;
+  --idio-bg: #030403;
+  --idio-bg-soft: #080a08;
+  --idio-surface: #0d100d;
+  --idio-raised: #111611;
+  --idio-line: rgba(255, 255, 255, 0.1);
+  --idio-line-strong: rgba(255, 255, 255, 0.18);
+  --idio-text: #f4f6f4;
+  --idio-text-muted: #a0a8a0;
+  --idio-text-dim: #6f786f;
+  --idio-brand: #35e66b;
+  --idio-brand-soft: #6ef598;
+  --idio-brand-line: rgba(53, 230, 107, 0.55);
+  --idio-brand-soft-bg: rgba(53, 230, 107, 0.14);
+  --idio-danger: #ff6b6b;
+  --idio-warning: #f5c542;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --font-display: 40px;
+  --font-h1: 32px;
+  --font-h2: 24px;
+  --font-h3: 18px;
+  --font-body: 15px;
+  --font-small: 13px;
+  --font-micro: 11px;
 }
 
 html,
@@ -28,9 +40,9 @@ body {
   margin: 0;
   background-color: var(--idio-bg);
   background-image:
-    radial-gradient(900px 520px at 100% -10%, rgba(52, 211, 153, 0.07), transparent 55%),
-    radial-gradient(640px 400px at -5% 100%, rgba(255, 255, 255, 0.03), transparent 50%),
-    linear-gradient(180deg, #0c0c0e 0%, var(--idio-bg) 45%, #050506 100%);
+    radial-gradient(900px 520px at 100% -10%, rgba(53, 230, 107, 0.05), transparent 55%),
+    radial-gradient(640px 400px at -5% 100%, rgba(255, 255, 255, 0.02), transparent 50%),
+    linear-gradient(180deg, #060806 0%, var(--idio-bg) 45%, #020302 100%);
   color: var(--idio-text);
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 15px;
@@ -333,6 +345,9 @@ button:disabled {
   .bg-raised {
     background-color: var(--idio-raised);
   }
+  .bg-panel {
+    background-color: var(--idio-surface);
+  }
   .border-edge {
     border-color: var(--idio-line);
   }
@@ -345,26 +360,38 @@ button:disabled {
   .text-brand-soft {
     color: var(--idio-brand-soft);
   }
+  .text-ink {
+    color: #030403;
+  }
+  .text-danger {
+    color: var(--idio-danger);
+  }
+  .text-warning {
+    color: var(--idio-warning);
+  }
   .bg-brand {
     background-color: var(--idio-brand);
   }
+  .bg-gold {
+    background-color: var(--idio-warning);
+  }
   .bg-brand\/10 {
-    background-color: rgba(52, 211, 153, 0.1);
+    background-color: rgba(53, 230, 107, 0.1);
   }
   .bg-brand\/15 {
-    background-color: rgba(52, 211, 153, 0.15);
+    background-color: rgba(53, 230, 107, 0.15);
   }
   .border-brand\/20 {
-    border-color: rgba(52, 211, 153, 0.2);
+    border-color: rgba(53, 230, 107, 0.2);
   }
   .border-brand\/25 {
-    border-color: rgba(52, 211, 153, 0.25);
+    border-color: rgba(53, 230, 107, 0.25);
   }
   .border-brand\/30 {
-    border-color: rgba(52, 211, 153, 0.3);
+    border-color: rgba(53, 230, 107, 0.3);
   }
   .border-brand\/40 {
-    border-color: rgba(52, 211, 153, 0.4);
+    border-color: rgba(53, 230, 107, 0.4);
   }
   .hover\:text-brand-soft:hover {
     color: var(--idio-brand-soft);
