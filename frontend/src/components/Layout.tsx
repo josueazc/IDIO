@@ -219,16 +219,25 @@ function SidebarContent({
           <UserAvatar name={user.displayName} />
           <div className="min-w-0 flex-1">
             <div className="truncate font-semibold text-white">{user.displayName}</div>
-            <div className="mt-0.5 text-xs text-zinc-500">{roleInfo?.label ?? user.role}</div>
-            <div className="mt-1 truncate text-xs text-zinc-600">{user.email}</div>
+            <div className="mt-0.5 truncate text-xs text-zinc-600">{user.email}</div>
           </div>
         </div>
-        {profile && (
-          <div className="mt-3 inline-flex rounded-full border border-brand/20 bg-brand/10 px-2.5 py-1 text-[11px] font-medium text-brand">
-            Covenant #{profile.membershipIndex + 1}
-          </div>
-        )}
-        <NavLink className="mt-4 inline-block text-xs font-semibold text-brand hover:text-brand-soft" to="/account">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full border border-edge bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-zinc-300">
+            {roleInfo?.label ?? user.role}
+          </span>
+          {user.jurisdiction && (
+            <span className="inline-flex items-center rounded-full border border-edge bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-zinc-500">
+              {user.jurisdiction}
+            </span>
+          )}
+          {profile && (
+            <span className="inline-flex items-center rounded-full border border-brand/20 bg-brand/10 px-2.5 py-1 text-[11px] font-medium text-brand">
+              Covenant #{profile.membershipIndex + 1}
+            </span>
+          )}
+        </div>
+        <NavLink className="mt-3 inline-block text-xs font-semibold text-brand hover:text-brand-soft" to="/account">
           Ver perfil →
         </NavLink>
       </div>
@@ -247,16 +256,16 @@ function SidebarContent({
         ))}
       </nav>
 
-      <div className="mt-auto space-y-5 border-t border-edge pt-6" data-menu-item style={menuItemStyle(3)}>
+      <div className="mt-auto space-y-4 border-t border-edge pt-6" data-menu-item style={menuItemStyle(3)}>
         <div>
-          <div className="mb-2.5 px-1 micro-label">Red</div>
-          <ModeToggle stacked={mobile} />
+          <div className="mb-2 px-1 micro-label">Red</div>
+          <ModeToggle stacked />
         </div>
         <div>
-          <div className="mb-2.5 px-1 micro-label">Wallet</div>
+          <div className="mb-2 px-1 micro-label">Wallet Stellar</div>
           <WalletConnect address={address} demo={demo} compact onConnect={onConnect} onDisconnect={onDisconnect} />
         </div>
-        <button type="button" className="btn-ghost btn-sm w-full" onClick={onLogout}>
+        <button type="button" className="btn-danger btn-sm w-full" onClick={onLogout}>
           Cerrar sesión
         </button>
       </div>
