@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { CopyButton, InlineAlert, PageHeader, RuledPanel } from '../components/Primitives'
 import { accountDescription, accountLabel, getCurrentUser, logOut } from '../services/accounts'
 import { useRole } from '../utils/useRole'
-import { shortAddress } from '../services/wallet'
 
 interface Props {
   address: string | null

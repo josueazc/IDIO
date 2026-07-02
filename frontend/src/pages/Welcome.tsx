@@ -5,7 +5,7 @@ const STEPS = [
   {
     n: '01',
     title: 'Issue',
-    desc: 'El emisor crea la subasta. El browser genera una prueba de reservas (ZK). El contrato la verifica on-chain antes de publicar.',
+    desc: 'El emisor crea la subasta. El browser genera una prueba de reservas ZK. El contrato la verifica on-chain antes de publicar.',
   },
   {
     n: '02',
@@ -15,12 +15,12 @@ const STEPS = [
   {
     n: '03',
     title: 'Prove',
-    desc: 'Al ofertar, el browser genera una prueba ZK de elegibilidad (cupo ≥ oferta ≥ mínimo). El contrato la verifica on-chain.',
+    desc: 'El browser genera una prueba ZK de elegibilidad. El contrato verifica cupo ≥ oferta ≥ mínimo on-chain.',
   },
   {
     n: '04',
     title: 'Settle',
-    desc: 'Al cerrar se revelan las ofertas, el contrato elige al ganador. El pago queda confidencial en el token Pedersen.',
+    desc: 'Al cerrar se revelan las ofertas, el contrato elige al ganador. El pago queda confidencial via Pedersen.',
   },
 ]
 
@@ -28,49 +28,62 @@ const ROLES = [
   {
     id: 'emisor',
     label: 'Emisor',
-    desc: 'Creá emisiones, asigná cupos, auditá resultados y revisá cumplimiento — todo desde una sola cuenta.',
-    cta: 'Crear cuenta como emisor',
+    desc: 'Creá emisiones, asigná cupos, auditá resultados y revisá cumplimiento desde una sola cuenta.',
+    cta: 'Continuar como emisor',
     to: '/signup/emisor',
-    accent: true,
+    primary: true,
   },
   {
     id: 'oferente',
     label: 'Banco / Oferente',
-    desc: 'Conectá tu wallet Stellar, enviá ofertas selladas y competí sin que otros vean tu precio antes del cierre.',
-    cta: 'Crear cuenta como banco',
+    desc: 'Conectá tu wallet Stellar, enviá ofertas selladas y competí sin revelar tu precio antes del cierre.',
+    cta: 'Continuar como banco',
     to: '/signup/oferente',
-    accent: false,
+    primary: false,
   },
 ]
 
 export default function Welcome() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* Header */}
-      <header className="border-b border-edge bg-surface/60 backdrop-blur-md sticky top-0 z-20">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
+      <header
+        className="sticky top-0 z-20 border-b border-edge"
+        style={{ background: 'rgba(10,10,10,0.85)', backdropFilter: 'blur(12px)' }}
+      >
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3.5 sm:px-8">
           <BrandLogo />
-          <Link className="btn-ghost btn-sm" to="/login">
+          <Link className="btn-secondary btn-sm" to="/login">
             Iniciar sesión
           </Link>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="mx-auto max-w-5xl px-4 pt-20 pb-16 sm:px-8 sm:pt-28 sm:pb-24">
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+      <section className="mx-auto max-w-5xl px-5 pt-24 pb-20 sm:px-8 sm:pt-32">
+        <div className="mb-5 flex flex-wrap items-center gap-2">
           <span className="eyebrow">Stellar Protocol 26</span>
-          <span className="pill border-brand/25 bg-brand/10 text-brand text-[11px]">Testnet live</span>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold"
+            style={{ borderColor: 'var(--brand-line)', color: 'var(--brand)', background: 'var(--brand-dim)' }}
+          >
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
+            Testnet live
+          </span>
         </div>
-        <h1 className="font-display text-4xl leading-[1.06] text-white sm:text-5xl lg:text-[3.5rem] max-w-3xl">
+
+        <h1
+          className="max-w-2xl text-4xl text-white sm:text-5xl"
+          style={{ fontWeight: 700, letterSpacing: '-0.035em', lineHeight: 1.1 }}
+        >
           Subastas institucionales privadas con prueba pública.
         </h1>
-        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
-          IDIO usa Zero-Knowledge proofs para que cada banco oferte en secreto y el proceso sea matemáticamente
-          verificable por reguladores — sin revelar montos ni estrategias.
+        <p className="mt-5 max-w-xl text-base leading-relaxed" style={{ color: 'var(--text-2)' }}>
+          IDIO usa Zero-Knowledge proofs para que cada banco oferte en secreto y el proceso sea
+          matemáticamente verificable por reguladores — sin revelar montos ni estrategias.
         </p>
 
-        <div className="mt-10 flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-wrap gap-2.5">
           <Link to="/signup/emisor" className="btn-primary">
             Empezar como emisor
           </Link>
@@ -78,60 +91,101 @@ export default function Welcome() {
             Entrar como banco
           </Link>
           <Link to="/login" className="btn-ghost">
-            Ya tengo cuenta →
+            Ya tengo cuenta
           </Link>
         </div>
 
-        <div className="mt-8 rounded-xl border border-edge bg-raised/50 px-5 py-3.5 text-sm text-zinc-500 max-w-lg">
-          <span className="font-medium text-zinc-300">Modo demo:</span>{' '}
-          cualquier email y contraseña funcionan. Datos solo en este navegador — sin wallet requerida.
+        <div
+          className="mt-7 inline-flex items-start gap-2.5 rounded-lg border border-edge px-4 py-3 text-sm"
+          style={{ background: 'var(--surface)' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5"
+            className="mt-0.5 shrink-0" style={{ color: 'var(--text-3)' }}>
+            <circle cx="7" cy="7" r="5.5"/>
+            <path d="M7 5v2.5L8.5 9"/>
+          </svg>
+          <span style={{ color: 'var(--text-3)' }}>
+            <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>Modo demo disponible —</span>{' '}
+            cualquier email y contraseña funcionan. Datos solo en este navegador.
+          </span>
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="border-t border-edge bg-surface/40">
-        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-8 sm:py-20">
-          <p className="eyebrow mb-4">Protocolo</p>
-          <h2 className="font-display text-3xl text-white mb-12">Cómo funciona</h2>
+      {/* Steps */}
+      <section className="border-t border-edge" style={{ background: 'var(--surface)' }}>
+        <div className="mx-auto max-w-5xl px-5 py-16 sm:px-8">
+          <p className="eyebrow mb-3">Protocolo</p>
+          <h2 className="mb-10 text-2xl font-bold tracking-tight text-white">Cómo funciona</h2>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((step) => (
-              <div key={step.n} className="border border-edge bg-raised/60 p-6 space-y-3">
-                <div className="font-mono text-[11px] font-semibold tracking-[0.2em] text-brand">{step.n}</div>
-                <div className="text-lg font-semibold text-white">{step.title}</div>
-                <p className="text-sm leading-relaxed text-zinc-500">{step.desc}</p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map((step, i) => (
+              <div
+                key={step.n}
+                className="rounded-xl border border-edge p-5"
+                style={{ background: 'var(--raised)' }}
+              >
+                <div
+                  className="mb-3 inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold"
+                  style={{ background: 'var(--brand-dim)', color: 'var(--brand)' }}
+                >
+                  {i + 1}
+                </div>
+                <div className="text-sm font-semibold text-white">{step.title}</div>
+                <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-3)' }}>
+                  {step.desc}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ZK proof callout */}
+      {/* ZK callout */}
       <section className="border-t border-edge">
-        <div className="mx-auto max-w-5xl px-4 py-14 sm:px-8">
-          <div className="grid gap-8 md:grid-cols-2 items-center">
+        <div className="mx-auto max-w-5xl px-5 py-16 sm:px-8">
+          <div className="grid gap-10 md:grid-cols-2 md:items-center">
             <div>
               <p className="eyebrow mb-3">ZK on-chain verificable</p>
-              <h2 className="font-display text-2xl text-white mb-4">
+              <h2 className="mb-4 text-2xl font-bold tracking-tight text-white">
                 La prueba vive en el contrato, no en la confianza del emisor.
               </h2>
-              <p className="text-sm leading-relaxed text-zinc-400">
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
                 Enviá una prueba adulterada al contrato desplegado y recibís{' '}
-                <span className="font-mono text-red-300">Error(Crypto, InvalidInput)</span> de{' '}
-                <span className="font-mono text-brand">verify_groth16</span>. Eso es verificación real, no simulada.
+                <code
+                  className="rounded px-1.5 py-0.5 text-[12px]"
+                  style={{ background: 'var(--raised)', color: '#fca5a5' }}
+                >
+                  Error(Crypto, InvalidInput)
+                </code>{' '}
+                de{' '}
+                <code
+                  className="rounded px-1.5 py-0.5 text-[12px]"
+                  style={{ background: 'var(--raised)', color: 'var(--brand)' }}
+                >
+                  verify_groth16
+                </code>
+                . Verificación real, no simulada.
               </p>
             </div>
-            <div className="space-y-2">
+
+            <div
+              className="rounded-xl border border-edge p-5"
+              style={{ background: 'var(--surface)' }}
+            >
               {[
                 ['Verificador', 'Groth16 / BN254'],
                 ['Host functions', 'g1_mul · g1_add · pairing_check'],
                 ['Protocolo', 'Stellar Protocol 26'],
                 ['Contratos', '4 desplegados en Testnet'],
-                ['Pruebas ZK', '~1–3 s en hardware rápido'],
+                ['Prover', 'arkworks WASM ~1–3s'],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between border-b border-edge/60 py-2 text-sm last:border-0">
-                  <span className="text-zinc-500">{k}</span>
-                  <span className="font-mono text-xs text-zinc-200">{v}</span>
+                <div
+                  key={k}
+                  className="flex justify-between py-2.5 text-sm"
+                  style={{ borderBottom: '1px solid var(--line)' }}
+                >
+                  <span style={{ color: 'var(--text-3)' }}>{k}</span>
+                  <span className="font-mono text-xs text-white">{v}</span>
                 </div>
               ))}
             </div>
@@ -139,25 +193,50 @@ export default function Welcome() {
         </div>
       </section>
 
-      {/* Role cards */}
-      <section className="border-t border-edge bg-surface/40">
-        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-8">
-          <p className="eyebrow mb-8">Entrá por tu rol</p>
-          <div className="grid gap-5 md:grid-cols-2">
+      {/* Role selection */}
+      <section className="border-t border-edge" style={{ background: 'var(--surface)' }}>
+        <div className="mx-auto max-w-5xl px-5 py-16 sm:px-8">
+          <p className="eyebrow mb-3">Elegí tu rol</p>
+          <h2 className="mb-8 text-2xl font-bold tracking-tight text-white">Entrá por tu acceso</h2>
+
+          <div className="grid gap-4 md:grid-cols-2">
             {ROLES.map((role) => (
-              <Link key={role.id} to={role.to} className="role-card block no-underline">
-                <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
-                  role.accent
-                    ? 'border-brand/25 bg-brand/10 text-brand'
-                    : 'border-white/10 bg-white/[0.04] text-zinc-300'
-                }`}>
+              <Link
+                key={role.id}
+                to={role.to}
+                className="group relative block rounded-xl border border-edge p-6 transition-all duration-200 no-underline"
+                style={{ background: 'var(--raised)' }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand-line)'
+                  ;(e.currentTarget as HTMLElement).style.background = 'var(--overlay)'
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--line)'
+                  ;(e.currentTarget as HTMLElement).style.background = 'var(--raised)'
+                }}
+              >
+                <span
+                  className="inline-flex rounded-md px-2.5 py-1 text-xs font-semibold"
+                  style={role.primary
+                    ? { background: 'var(--brand-dim)', color: 'var(--brand)', border: '1px solid var(--brand-line)' }
+                    : { background: 'var(--overlay)', color: 'var(--text-2)', border: '1px solid var(--line-strong)' }
+                  }
+                >
                   {role.label}
                 </span>
-                <h2 className="font-display mt-5 text-2xl text-white">{role.cta}</h2>
-                <p className="mt-3 text-sm leading-relaxed text-zinc-500">{role.desc}</p>
-                <span className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-brand">
-                  Crear cuenta <span aria-hidden>→</span>
-                </span>
+                <h3 className="mt-4 text-lg font-semibold text-white">{role.cta}</h3>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-3)' }}>
+                  {role.desc}
+                </p>
+                <div
+                  className="mt-6 flex items-center gap-1.5 text-sm font-semibold transition-colors"
+                  style={{ color: 'var(--brand)' }}
+                >
+                  Crear cuenta
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 7h8M8 4l3 3-3 3"/>
+                  </svg>
+                </div>
               </Link>
             ))}
           </div>
@@ -166,9 +245,9 @@ export default function Welcome() {
 
       {/* Footer */}
       <footer className="border-t border-edge">
-        <div className="mx-auto max-w-5xl flex flex-wrap items-center justify-between gap-4 px-4 py-6 sm:px-8 text-xs text-zinc-600">
+        <div className="mx-auto max-w-5xl flex flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-8 text-xs" style={{ color: 'var(--text-3)' }}>
           <span>IDIO — Institutional Decentralized Issuance & Offerings</span>
-          <span>MIT License · Built on Stellar</span>
+          <span>MIT · Stellar Testnet</span>
         </div>
       </footer>
     </main>
